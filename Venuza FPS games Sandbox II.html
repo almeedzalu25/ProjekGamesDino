@@ -1,0 +1,3051 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>HARVEAN II: SISTEM SABIZER // OPERASI LANDON RIVERON (50 LEVELS)</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js r128 CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Three.js PointerLockControls -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: 'Courier New', Courier, monospace;
+      user-select: none;
+      background: #010409;
+      touch-action: none;
+      color: #e2e8f0;
+    }
+
+    #crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 18px;
+      height: 18px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 30;
+      transition: all 0.12s ease;
+    }
+    #crosshair::before, #crosshair::after {
+      content: '';
+      position: absolute;
+      background: #38bdf8;
+      box-shadow: 0 0 8px #0ea5e9;
+    }
+    #crosshair::before { top: 8px; left: 0; width: 18px; height: 2px; }
+    #crosshair::after { top: 0; left: 8px; width: 2px; height: 18px; }
+
+    #crosshair.ads-aim {
+      transform: translate(-50%, -50%) scale(1.35);
+    }
+    #crosshair.ads-aim::before, #crosshair.ads-aim::after {
+      background: #f59e0b;
+      box-shadow: 0 0 10px #f59e0b;
+    }
+
+    /* Sci-Fi Space Screen Vignette */
+    .vignette-overlay {
+      background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(2, 6, 23, 0.75) 100%),
+                  linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+      background-size: 100% 100%, 100% 3px;
+      pointer-events: none;
+    }
+
+    /* Virtual Mobile Controls */
+    #mobile-controls {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 40;
+      pointer-events: none;
+    }
+    .mobile-touch-zone {
+      pointer-events: auto;
+      touch-action: none;
+    }
+    #mobile-joystick {
+      position: absolute;
+      left: 20px;
+      bottom: 24px;
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      background: rgba(2, 6, 23, 0.65);
+      border: 2px solid rgba(56, 189, 248, 0.4);
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+    }
+    #mobile-stick {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 46px;
+      height: 46px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: rgba(56, 189, 248, 0.35);
+      border: 2px solid #38bdf8;
+    }
+
+    @media (max-width: 900px) {
+      #mobile-controls { display: block; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 3D Canvas Container -->
+  <div id="canvas-container" class="absolute inset-0 z-0"></div>
+
+  <!-- Cosmic Vignette Overlay -->
+  <div class="vignette-overlay absolute inset-0 z-10"></div>
+
+  <!-- Crosshair Reticle -->
+  <div id="crosshair" class="hidden"></div>
+
+  <!-- ==================== HUD TOP: TELEMETRI ORBIT & MISI ==================== -->
+  <div id="hud-top" class="hidden absolute top-0 left-0 right-0 z-20 p-3 pointer-events-none flex justify-between items-start">
+    <div class="bg-slate-950/90 border border-sky-500/50 rounded-2xl px-4 py-2.5 backdrop-blur-md shadow-2xl pointer-events-auto flex items-center gap-3">
+      <span class="w-3 h-3 rounded-full bg-sky-400 animate-ping"></span>
+      <div>
+        <div class="text-[9px] uppercase tracking-widest text-sky-400 font-extrabold" id="hud-act-title">ACT I // CINCIN ORBIT VENON</div>
+        <div class="text-xs font-black text-white" id="hud-level-title">LVL 01: Puing Kapal Induk 30KM</div>
+        <div class="text-[8px] text-slate-400 mt-0.5">PERWIRA PENGARAH: <span class="text-amber-300 font-bold">MARSEKAL RION VARIS (KOMANDO)</span></div>
+      </div>
+    </div>
+
+    <!-- Objective Tracker -->
+    <div class="bg-slate-950/90 border border-amber-500/50 rounded-2xl px-5 py-2.5 backdrop-blur-md text-center shadow-2xl">
+      <div class="text-[9px] uppercase tracking-widest text-amber-400 font-black">Direktif Armada Venuza</div>
+      <div class="text-xs font-black text-white tracking-wide" id="hud-objective-text">Amankan Dok Kargo & Basmi Drone Saboteur [0/6]</div>
+    </div>
+
+    <!-- Controls & Status Vital -->
+    <div class="flex items-center gap-2 pointer-events-auto">
+      <button onclick="toggleSolarCommandMap()" class="px-3.5 py-2.5 bg-slate-900/90 border border-sky-500/60 hover:bg-sky-950 text-sky-300 rounded-2xl text-xs font-bold transition shadow-xl flex items-center gap-1.5">
+        <span>🌌</span> Peta Surya (50)
+      </button>
+
+      <button id="btn-hud-opt" onclick="toggleSettingsModal()" class="px-3 py-2.5 bg-slate-900/90 border border-slate-700 hover:bg-slate-800 text-slate-300 rounded-2xl text-xs font-bold transition shadow-xl">
+        ⚙️ Opsi
+      </button>
+
+      <div class="bg-slate-950/90 border border-slate-800 rounded-2xl px-3.5 py-2 backdrop-blur-md text-right">
+        <div class="text-[8px] uppercase text-slate-400 font-bold">Baju Zirah EVA</div>
+        <div class="text-xs font-black text-emerald-400" id="hud-hp-stat">100% // NORM</div>
+      </div>
+
+      <div class="bg-slate-950/90 border border-slate-800 rounded-2xl px-3.5 py-2 backdrop-blur-md text-right">
+        <div class="text-[8px] uppercase text-slate-400 font-bold">Kapasitas O2</div>
+        <div class="text-xs font-black text-cyan-400" id="hud-o2-stat">100% // ATM</div>
+      </div>
+
+      <div class="bg-slate-950/90 border border-slate-800 rounded-2xl px-3.5 py-2 backdrop-blur-md text-right">
+        <div class="text-[8px] uppercase text-slate-400 font-bold">Energi Rel / Baterai</div>
+        <div class="text-xs font-black text-amber-400" id="hud-ammo-stat">30 / 240</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Center Interaction & Boss Bar -->
+  <div id="interact-prompt" class="hidden absolute top-2/3 left-1/2 -translate-x-1/2 z-30 bg-slate-950/95 border border-sky-400 px-6 py-2.5 rounded-full text-sky-300 text-xs font-black tracking-widest animate-pulse shadow-2xl pointer-events-none">
+    [E] KONSOL DOK TERBUKA
+  </div>
+
+  <div id="u-boss-bar-wrap" class="hidden absolute top-16 left-1/2 -translate-x-1/2 z-30 w-80 bg-slate-950/90 border border-rose-500/80 rounded-xl p-2 text-center pointer-events-none shadow-2xl">
+    <div id="u-boss-name" class="text-[9px] uppercase tracking-widest font-black text-rose-400 mb-1">KORVET SILUMAN LACHORES // BOSS</div>
+    <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-rose-900">
+      <div id="u-boss-bar" class="h-full bg-rose-500 w-full transition-all duration-150"></div>
+    </div>
+  </div>
+
+  <!-- ==================== HUD BOTTOM: RADAR BOLA & TELEMETRI REGU ==================== -->
+  <div id="hud-bottom" class="hidden absolute bottom-3 left-3 right-3 z-20 pointer-events-none flex justify-between items-end">
+    <div class="bg-slate-950/90 border border-slate-800 rounded-2xl p-3.5 backdrop-blur-md text-[10px] text-slate-400 space-y-1">
+      <div class="font-bold text-sky-400">PROTOKOL OPERASI: LANDON RIVERON (TAHAP 19-21)</div>
+      <div>WASD: Manuver Kaki / EVA | SPASI: Lompat / Thruster Naik | C: Jongkok / Mag-Boots</div>
+      <div>1/2/3: Ganti Senjata | R: Reload | G: Granat Magnetik | V: Komando Regu Sekutu</div>
+      <div>TAB / O: Layar Taktis 50 Sektor Tata Surya Sabizer | F2: Panel Audio & Skybox</div>
+    </div>
+
+    <!-- Spherical Radar Telemetry -->
+    <div class="bg-slate-950/95 border border-sky-500/50 rounded-3xl p-2.5 shadow-2xl pointer-events-auto flex flex-col items-center">
+      <div class="text-[8px] uppercase tracking-widest text-sky-400 font-black mb-1">Sensor Bola Kosmik (3D)</div>
+      <canvas id="radar-canvas" width="120" height="120" class="rounded-2xl bg-slate-900 border border-slate-800"></canvas>
+    </div>
+  </div>
+
+  <!-- ==================== MOBILE TOUCH CONTROLS CONTAINER ==================== -->
+  <div id="mobile-controls">
+    <div id="mobile-look-zone" class="mobile-touch-zone absolute top-0 right-0 w-3/5 h-3/4"></div>
+    <div id="mobile-joystick" class="mobile-touch-zone"><div id="mobile-stick"></div></div>
+  </div>
+
+  <!-- ==================== MODAL: MAIN MENU ==================== -->
+  <div id="modal-main-menu" class="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-md p-4">
+    <div class="max-w-2xl w-full bg-slate-900/95 border-2 border-sky-500/60 rounded-3xl p-7 shadow-2xl relative overflow-hidden text-center">
+      <span class="px-3.5 py-1 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/40 text-[10px] uppercase font-black tracking-widest">
+        Sistem Semesta Harvean // Babak II: Perang Surya Lokal
+      </span>
+      <h1 class="text-3xl font-black text-white mt-3 tracking-tight">HARVEAN II: SISTEM SABIZER</h1>
+      <p class="text-xs text-sky-200/80 mt-1 font-bold">OPERASI KHUSUS PERWIRA: LANDON RIVERON</p>
+      <p class="text-xs text-slate-400 mt-2 max-w-lg mx-auto">
+        60 tahun pasca-kemenangan Rion Varis di permukaan Venon, armada Lachores meluncurkan serangan balasan di orbit luar. Pimpin regu tempur gabungan menembus 50 sektor stasiun orbital, kawah bulan, hingga batas heliosfer Sabizer.
+      </p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-5 gap-2 my-6">
+        <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl">
+          <div class="text-sky-400 font-bold text-xs">ACT I</div>
+          <div class="text-[9px] text-slate-300 mt-0.5">Orbit Venon</div>
+          <div class="text-[8px] text-slate-500">Lvl 01–10</div>
+        </div>
+        <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl">
+          <div class="text-emerald-400 font-bold text-xs">ACT II</div>
+          <div class="text-[9px] text-slate-300 mt-0.5">Front Bulan</div>
+          <div class="text-[8px] text-slate-500">Lvl 11–20</div>
+        </div>
+        <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl">
+          <div class="text-amber-400 font-bold text-xs">ACT III</div>
+          <div class="text-[9px] text-slate-300 mt-0.5">Sabuk Asteroid</div>
+          <div class="text-[8px] text-slate-500">Lvl 21–30</div>
+        </div>
+        <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl">
+          <div class="text-rose-400 font-bold text-xs">ACT IV</div>
+          <div class="text-[9px] text-slate-300 mt-0.5">Reaktor Surya</div>
+          <div class="text-[8px] text-slate-500">Lvl 31–40</div>
+        </div>
+        <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl">
+          <div class="text-indigo-400 font-bold text-xs">ACT V</div>
+          <div class="text-[9px] text-slate-300 mt-0.5">Heliosfer Luar</div>
+          <div class="text-[8px] text-slate-500">Lvl 41–50</div>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <button onclick="startSolarLevel(1)" class="flex-1 py-3.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-black text-xs rounded-xl uppercase tracking-wider transition shadow-lg shadow-sky-500/25">
+          Mulai Kampanye (Level 01)
+        </button>
+        <button onclick="toggleSolarCommandMap()" class="px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition">
+          Peta Surya (50 Sektor)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: SOLAR COMMAND MAP (PAGINATION 50 LEVELS) ==================== -->
+  <div id="modal-solar-map" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md p-4">
+    <div class="max-w-5xl w-full bg-slate-950 border border-sky-500/50 rounded-3xl p-5 shadow-2xl max-h-[92vh] flex flex-col justify-between">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-3">
+        <div>
+          <div class="text-[9px] uppercase tracking-widest text-sky-400 font-bold">Pusat Komando Strategis Tata Surya Sabizer</div>
+          <h2 class="text-lg font-black text-white">50 SEKTOR PERANG ANATARIKSA // OPERASI LANDON RIVERON</h2>
+        </div>
+        <button onclick="toggleSolarCommandMap()" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-bold rounded-lg text-slate-300">
+          Tutup [ESC]
+        </button>
+      </div>
+
+      <!-- Pagination Tab Acts -->
+      <div class="flex gap-1.5 mb-3 overflow-x-auto pb-1" id="solar-act-tabs">
+        <button onclick="filterSolarAct(1)" class="px-3 py-1.5 rounded-lg text-xs font-black bg-sky-500/30 text-sky-300 border border-sky-500/50" id="tab-act-1">ACT I (1–10)</button>
+        <button onclick="filterSolarAct(2)" class="px-3 py-1.5 rounded-lg text-xs font-black bg-slate-900 text-slate-400 border border-slate-800" id="tab-act-2">ACT II (11–20)</button>
+        <button onclick="filterSolarAct(3)" class="px-3 py-1.5 rounded-lg text-xs font-black bg-slate-900 text-slate-400 border border-slate-800" id="tab-act-3">ACT III (21–30)</button>
+        <button onclick="filterSolarAct(4)" class="px-3 py-1.5 rounded-lg text-xs font-black bg-slate-900 text-slate-400 border border-slate-800" id="tab-act-4">ACT IV (31–40)</button>
+        <button onclick="filterSolarAct(5)" class="px-3 py-1.5 rounded-lg text-xs font-black bg-slate-900 text-slate-400 border border-slate-800" id="tab-act-5">ACT V (41–50)</button>
+      </div>
+
+      <!-- Level Grid (10 Sektor per Halaman / Tab) -->
+      <div class="flex-1 overflow-y-auto pr-1">
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5" id="solar-level-grid">
+          <!-- Diisi otomatis oleh JavaScript -->
+        </div>
+      </div>
+
+      <div class="border-t border-slate-800 pt-3 mt-3 flex justify-between items-center text-[10px] text-slate-400">
+        <span>Transisi armada antariksa: Tahap 19 (Lift & Cincin) menuju Tahap 21 (Megastruktur Surya).</span>
+        <span class="text-sky-400 font-bold" id="solar-progress-stat">Progres Operasi: Sektor 1/50 Dikuasai</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: DEBRIEFING / TRANSISI SEKTOR ==================== -->
+  <div id="modal-debriefing" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+    <div class="max-w-md w-full bg-slate-900 border-2 border-sky-500 rounded-3xl p-6 shadow-2xl text-center">
+      <div class="w-12 h-12 mx-auto mb-2 bg-sky-500/20 rounded-2xl flex items-center justify-center text-2xl">🚀</div>
+      <span class="px-3 py-1 bg-sky-500/20 text-sky-300 font-bold text-[10px] uppercase tracking-widest rounded-full border border-sky-500/30">
+        Sektor Antariksa Diamankan
+      </span>
+      <h3 class="text-lg font-black text-white mt-2 mb-1" id="debrief-title">Sektor Berhasil Dikuasai!</h3>
+      <p class="text-xs text-slate-400 mb-4" id="debrief-desc">Data sensor diteruskan ke stasiun komando Marsekal Rion Varis.</p>
+
+      <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl mb-4 text-xs font-mono text-left space-y-1">
+        <div class="text-sky-400">> Rekonstruksi Armada: Dilanjutkan</div>
+        <div class="text-emerald-400">> VRAM GPU Three.js: Direset Bersih</div>
+        <div class="text-amber-400">> Integritas Regu Gabungan: Siap Tempur</div>
+      </div>
+
+      <button id="btn-next-level" class="w-full py-3 bg-sky-500 hover:bg-sky-400 text-slate-950 font-black text-xs rounded-xl uppercase tracking-wider transition shadow-lg">
+        Lompat ke Sektor Berikutnya
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: PENGATURAN (AUDIO, SKYBOX & KINERJA) ==================== -->
+  <!-- ==================== MODAL: PENGATURAN LENGKAP DENGAN 8 SLOT UPLOAD ==================== -->
+  <div id="modal-settings" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4">
+    <div class="max-w-md w-full bg-slate-950 border border-sky-500/60 rounded-3xl p-5 shadow-2xl text-xs space-y-3 max-h-[90vh] flex flex-col justify-between">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <b class="text-sky-400 font-bold">PENGATURAN OPERASI (F2)</b>
+        <button onclick="toggleSettingsModal()" class="text-slate-400 hover:text-white font-bold px-2 py-1">✕</button>
+      </div>
+
+      <!-- Area Scroll Isi Pengaturan -->
+      <div class="overflow-y-auto pr-1 space-y-3 flex-1">
+        <!-- Audio & Kinerja -->
+        <div>
+          <b class="text-slate-300">VOLUME EFEK TEMBAKAN & VAKUM: <span id="cfg-vol-val">80</span>%</b>
+          <input id="cfg-vol" type="range" min="0" max="100" value="80" class="w-full mt-1">
+        </div>
+
+        <div>
+          <b class="text-slate-300">VOLUME MUSIK KOSMIK: <span id="cfg-mvol-val">65</span>%</b>
+          <input id="cfg-mvol" type="range" min="0" max="100" value="65" class="w-full mt-1">
+        </div>
+
+        <div>
+          <b class="text-slate-300">PROFIL KINERJA GRAFIS</b>
+          <div class="grid grid-cols-2 gap-2 mt-1">
+            <button id="btn-hi-perf" class="py-1.5 rounded-lg border border-sky-500 bg-sky-950/40 text-sky-300 font-bold">TINGGI (PC)</button>
+            <button id="btn-low-perf" class="py-1.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-400 font-bold">HEMAT DAYA (HP)</button>
+          </div>
+        </div>
+
+        <!-- DAFTAR 8 SLOT UPLOAD ASSET -->
+        <div class="border-t border-slate-800 pt-3 space-y-2">
+          <div class="flex justify-between items-center">
+            <b class="text-sky-400 text-xs uppercase tracking-wide">UNGGAH 8 ASET GAMBAR KUSTOM</b>
+          </div>
+          <p class="text-[10px] text-slate-400">Pilih gambar untuk mengganti visual secara instan (tersimpan otomatis).</p>
+
+          <div class="space-y-2 mt-2 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80">
+            <div>
+              <span class="text-sky-300 block font-bold text-[10px]">1. Skybox Panorama 360° (Angkasa/Nebula):</span>
+              <input type="file" accept="image/*" data-slot="sky" class="h2-asset-input w-full mt-0.5 text-[9px] text-slate-400">
+            </div>
+
+            <div>
+              <span class="text-sky-300 block font-bold text-[10px]">2. Tekstur Lantai Dek Baja (Grate / Deck):</span>
+              <input type="file" accept="image/*" data-slot="floor" class="h2-asset-input w-full mt-0.5 text-[9px] text-slate-400">
+            </div>
+
+            <div>
+              <span class="text-sky-300 block font-bold text-[10px]">3. Tekstur Dinding / Pilar (Hull Wall):</span>
+              <input type="file" accept="image/*" data-slot="wall" class="h2-asset-input w-full mt-0.5 text-[9px] text-slate-400">
+            </div>
+
+            <div>
+              <span class="text-sky-300 block font-bold text-[10px]">4. Pintu Airlock / Blast Door Decal:</span>
+              <input type="file" accept="image/*" data-slot="door" class="h2-asset-input w-full mt-0.5 text-[9px] text-slate-400">
+            </div>
+
+            <div>
+              <span class="text-sky-300 block font-bold text-[10px]">5. Panel Konsol / Monitor Hologram:</span>
+              <input type="file" accept="image/*" data-slot="console" class="h2-asset-input w-full mt-0.5 text-[9px] text-slate-400">
+            </div>
+
+            <div>
+              <span class="text-sky-300 block font-bold text-[10px]">6. Skin Zirah Fregat Bos (Hull Camo):</span>
+              <input type="file" accept="image/*" data-slot="boss_skin" class="h2-asset-input w-full mt-0.5 text-[9px] text-slate-400">
+            </div>
+
+            <div>
+              <span class="text-sky-300 block font-bold text-[10px]">7. Normal Map Logam (Relief Ungu-Kebiruan):</span>
+              <input type="file" accept="image/*" data-slot="normal_map" class="h2-asset-input w-full mt-0.5 text-[9px] text-slate-400">
+            </div>
+
+            <div>
+              <span class="text-amber-300 block font-bold text-[10px]">8. Sprite Musuh 2.5D (.PNG Transparan):</span>
+              <input type="file" accept="image/png" data-slot="enemy_sprite" class="h2-asset-input w-full mt-0.5 text-[9px] text-slate-400">
+            </div>
+          </div>
+
+          <button id="btn-clear-all-assets" class="w-full py-2 bg-rose-950/70 border border-rose-800 rounded-xl text-rose-300 font-bold hover:bg-rose-900 text-[10px] transition">
+            🗑 Reset Semua Aset Gambar ke Bawaan
+          </button>applyTextureToSlot
+
+        </div>
+      </div>
+
+      <button onclick="toggleSettingsModal()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black mt-2 shadow-lg transition">
+        TUTUP & TERAPKAN
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== SKRIP TAHAP 1: ARSITEKTUR KAMPANYE 50 LEVEL ==================== -->
+  <script>
+    // -------------------------------------------------------------
+    // DATA LENGKAP 50 LEVEL KAMPANYE HARVEAN II: SISTEM SABIZER
+    // -------------------------------------------------------------
+    const CAMPAIGN_50_LEVELS = [
+      // ACT I: Rekonstruksi & Pertahanan Cincin Orbit Venon (Lvl 01-10)
+      { id: 1, act: "ACT I // CINCIN ORBIT VENON", title: "Puing Kapal Induk 30KM", env: "STATION", enemies: 5, fogColor: 0x020617, starColor: 0x38bdf8, desc: "Basmi drone intai saboteur di dok kargo puing lambung kapal induk." },
+      { id: 2, act: "ACT I // CINCIN ORBIT VENON", title: "Koridor Lift Antariksa", env: "STATION", enemies: 6, fogColor: 0x030816, starColor: 0x0ea5e9, desc: "Amankan poros kabel nanotube dari skuadron android peretas." },
+      { id: 3, act: "ACT I // CINCIN ORBIT VENON", title: "Kubah Pembangkit Fusi 01", env: "STATION", enemies: 6, fogColor: 0x040b1a, starColor: 0x60a5fa, desc: "Rebut kembali kendali reaktor plasma sebelum terjadi kebocoran fusi." },
+      { id: 4, act: "ACT I // CINCIN ORBIT VENON", title: "Anjungan Observasi Cincin", env: "STATION", enemies: 7, fogColor: 0x020713, starColor: 0x38bdf8, desc: "Baku tembak gravitasi buatan berlatar planet Venon raksasa." },
+      { id: 5, act: "ACT I // CINCIN ORBIT VENON", title: "Gantri Perakitan Lambung", env: "STATION", enemies: 8, fogColor: 0x050f24, starColor: 0x818cf8, desc: "Lumpuhkan pencegat ringan yang menembaki teknisi konstruksi." },
+      { id: 6, act: "ACT I // CINCIN ORBIT VENON", title: "Penyergapan Korvet Vanguard", env: "STATION", enemies: 8, fogColor: 0x08132e, starColor: 0xf43f5e, boss: true, desc: "BOS: Korvet Siluman Vanguard-01 membombardir dok perakitan!" },
+      { id: 7, act: "ACT I // CINCIN ORBIT VENON", title: "Dek Dekompresi Darurat", env: "STATION", enemies: 8, fogColor: 0x02091a, starColor: 0x0284c7, desc: "Navigasi koridor vakum bertekanan nol di bawah hujan mikrometeorit." },
+      { id: 8, act: "ACT I // CINCIN ORBIT VENON", title: "Saluran Pipa Deuterium Cair", env: "STATION", enemies: 9, fogColor: 0x030d22, starColor: 0x38bdf8, desc: "Cegah sabotase tangki pendingin superkonduktor utama." },
+      { id: 9, act: "ACT I // CINCIN ORBIT VENON", title: "Baterai Akselerator Pertahanan", env: "STATION", enemies: 9, fogColor: 0x04112c, starColor: 0x0ea5e9, desc: "Kuasai meriam akselerator massa penghalau skuadron musuh." },
+      { id: 10, act: "ACT I // CINCIN ORBIT VENON", title: "Pertempuran Puncak Cincin 01", env: "STATION", enemies: 11, fogColor: 0x091838, starColor: 0xef4444, boss: true, desc: "BOS: Dropship Berat Kelas Breaker berusaha mendaratkan tentara elit." },
+
+      // ACT II: Front Bulan Sabizer & Labirin Kawah Es (Lvl 11-20)
+      { id: 11, act: "ACT II // FRONT BULAN SABIZER", title: "Pendaratan di Kawah Tycho-Ven", env: "MOON", enemies: 8, fogColor: 0x080c14, starColor: 0x94a3b8, desc: "Mendarat di regolith bulan di bawah tarikan 0.16g gravitasi rendah." },
+      { id: 12, act: "ACT II // FRONT BULAN SABIZER", title: "Labirin Tabung Lava Basalt", env: "MOON", enemies: 8, fogColor: 0x05070a, starColor: 0x64748b, desc: "Pertempuran jarak dekat di terowongan bawah tanah bulan." },
+      { id: 13, act: "ACT II // FRONT BULAN SABIZER", title: "Kubah Ekstraksi Es Kutub", env: "MOON", enemies: 9, fogColor: 0x06111e, starColor: 0x7dd3fc, desc: "Amankan deposit es hidrokarbon penopang armada roket." },
+      { id: 14, act: "ACT II // FRONT BULAN SABIZER", title: "Array Radar Komunikasi Jauh", env: "MOON", enemies: 9, fogColor: 0x081528, starColor: 0x38bdf8, desc: "Pulihkan tautan radio orbital langsung ke markas Rion Varis." },
+      { id: 15, act: "ACT II // FRONT BULAN SABIZER", title: "Depo Kendaraan Roda Enam", env: "MOON", enemies: 10, fogColor: 0x0a1622, starColor: 0x94a3b8, desc: "Hancurkan konvoi rover bersenjata sebelum mencapai silo rudal." },
+      { id: 16, act: "ACT II // FRONT BULAN SABIZER", title: "Silo Peluncuran Sub-Permukaan", env: "MOON", enemies: 10, fogColor: 0x0b1a2e, starColor: 0x0284c7, desc: "Rebut peluncur rudal pencegat kinetik berhulu ledak fusi." },
+      { id: 17, act: "ACT II // FRONT BULAN SABIZER", title: "Patahan Retakan Seismik", env: "MOON", enemies: 10, fogColor: 0x0d1e34, starColor: 0x38bdf8, desc: "Melompati jurang gravitasi rendah sembari menembak drone intai." },
+      { id: 18, act: "ACT II // FRONT BULAN SABIZER", title: "Bangkai Satelit Pemindai", env: "MOON", enemies: 11, fogColor: 0x07111d, starColor: 0x60a5fa, desc: "Ambil modul data navigasi sebelum dihancurkan pasukan musuh." },
+      { id: 19, act: "ACT II // FRONT BULAN SABIZER", title: "Gerbang Kompleks Kubah Sentral", env: "MOON", enemies: 11, fogColor: 0x0a192c, starColor: 0x93c5fd, desc: "Tembus barikade terluar pertahanan markas komando musuh." },
+      { id: 20, act: "ACT II // FRONT BULAN SABIZER", title: "Benteng Kubah Komando Bulan", env: "MOON", enemies: 13, fogColor: 0x140a12, starColor: 0xf43f5e, boss: true, desc: "BOS: Mekanoid Titan Penjaga Kubah Bulan Lachores." },
+
+      // ACT III: Sabuk Asteroid Luar & Koridor Silikat (Lvl 21-30)
+      { id: 21, act: "ACT III // SABUK ASTEROID LUAR", title: "Koloni Batuan Melayang 404", env: "ASTEROID", enemies: 9, fogColor: 0x0d0914, starColor: 0xa855f7, desc: "Melompat antar platform penambangan asteroid tanpa gravitasi." },
+      { id: 22, act: "ACT III // SABUK ASTEROID LUAR", title: "Pabrik Pemurnian Titanium", env: "ASTEROID", enemies: 9, fogColor: 0x120a1c, starColor: 0xc084fc, desc: "Bersihkan terak logam dan serbuan drone pekerja bersenjata." },
+      { id: 23, act: "ACT III // SABUK ASTEROID LUAR", title: "Jembatan Kargo Antar-Batuan", env: "ASTEROID", enemies: 10, fogColor: 0x160c24, starColor: 0xd8b4fe, desc: "Baku tembak di rel magnetik penghubung dua asteroid besar." },
+      { id: 24, act: "ACT III // SABUK ASTEROID LUAR", title: "Kawah Tambang Silikat Hitam", env: "ASTEROID", enemies: 10, fogColor: 0x11091a, starColor: 0xa855f7, desc: "Pertempuran di ceruk gelap minim cahaya matahari Sabizer." },
+      { id: 25, act: "ACT III // SABUK ASTEROID LUAR", title: "Depo Bahan Bakar Hidrazin", env: "ASTEROID", enemies: 11, fogColor: 0x1a0f28, starColor: 0xe879f9, desc: "Hindari peluru nyasar ke tangki bahan bakar volatil." },
+      { id: 26, act: "ACT III // SABUK ASTEROID LUAR", title: "Anjungan Defleksi Jalur Tabrakan", env: "ASTEROID", enemies: 11, fogColor: 0x150b22, starColor: 0xc084fc, desc: "Aktifkan pendorong roket asteroid untuk mengubah orbit tabrakan." },
+      { id: 27, act: "ACT III // SABUK ASTEROID LUAR", title: "Labirin Batuan Es Metana", env: "ASTEROID", enemies: 12, fogColor: 0x0d1222, starColor: 0x38bdf8, desc: "Suhu ekstrem beku di dalam retakan asteroid kometik." },
+      { id: 28, act: "ACT III // SABUK ASTEROID LUAR", title: "Stasiun Relai Sensor Jauh", env: "ASTEROID", enemies: 12, fogColor: 0x121024, starColor: 0x818cf8, desc: "Sinkronkan uplink telemetri regu ke seluruh sektor Sabizer." },
+      { id: 29, act: "ACT III // SABUK ASTEROID LUAR", title: "Dok Penyelundup Gelap", env: "ASTEROID", enemies: 12, fogColor: 0x170d28, starColor: 0xa855f7, desc: "Hancurkan pangkalan logistik rahasia armada Lachores." },
+      { id: 30, act: "ACT III // SABUK ASTEROID LUAR", title: "Anjungan Bor Inti Raksasa", env: "ASTEROID", enemies: 14, fogColor: 0x240b1a, starColor: 0xf43f5e, boss: true, desc: "BOS: Anjungan Tambang Bergerak Bersenjata Meriam Plasma!" },
+
+      // ACT IV: Stasiun Reaktor Surya Sabizer (Lvl 31-40)
+      { id: 31, act: "ACT IV // REAKTOR SURYA SABIZER", title: "Koridor Pengumpul Fluks Surya", env: "SOLAR", enemies: 10, fogColor: 0x1f1004, starColor: 0xf59e0b, desc: "Suhu membara di dalam fasilitas penangkap energi bintang Sabizer." },
+      { id: 32, act: "ACT IV // REAKTOR SURYA SABIZER", title: "Cincin Radiator Termal", env: "SOLAR", enemies: 10, fogColor: 0x241405, starColor: 0xfbbf24, desc: "Menembus kabut panas di anjungan pendingin superkonduktor." },
+      { id: 33, act: "ACT IV // REAKTOR SURYA SABIZER", title: "Lab Sintesis Antimateri", env: "SOLAR", enemies: 11, fogColor: 0x261706, starColor: 0xf97316, desc: "Amankan tabung perangkap magnetik sebelum meledak." },
+      { id: 34, act: "ACT IV // REAKTOR SURYA SABIZER", title: "Jalur Pipa Plasma Super-Kritis", env: "SOLAR", enemies: 11, fogColor: 0x2b1a08, starColor: 0xf59e0b, desc: "Pertarungan di atas jembatan sempit melintasi arus plasma." },
+      { id: 35, act: "ACT IV // REAKTOR SURYA SABIZER", title: "Menara Pemfokus Laser Daya", env: "SOLAR", enemies: 12, fogColor: 0x2e1d09, starColor: 0xfbbf24, desc: "Lumpuhkan meriam pemancar tenaga surya yang diarahkan ke Venon." },
+      { id: 36, act: "ACT IV // REAKTOR SURYA SABIZER", title: "Perisai Deflektor Korona", env: "SOLAR", enemies: 12, fogColor: 0x221206, starColor: 0xf97316, desc: "Baku tembak di balik dinding medan pelindung badai radiasi." },
+      { id: 37, act: "ACT IV // REAKTOR SURYA SABIZER", title: "Aula Turbin Magnetohidrodinamik", env: "SOLAR", enemies: 12, fogColor: 0x281607, starColor: 0xf59e0b, desc: "Suara bising generator raksasa pengonversi medan magnetik." },
+      { id: 38, act: "ACT IV // REAKTOR SURYA SABIZER", title: "Anjungan Pembuangan Panas", env: "SOLAR", enemies: 13, fogColor: 0x301b0a, starColor: 0xfbbf24, desc: "Lawan skuadron robot tahan panas berzirah karbida tebal." },
+      { id: 39, act: "ACT IV // REAKTOR SURYA SABIZER", title: "Inti Konvergensi Radiasi", env: "SOLAR", enemies: 13, fogColor: 0x351d0b, starColor: 0xf97316, desc: "Dekati pusat stasiun fusi bintang dengan perlindungan baju EVA." },
+      { id: 40, act: "ACT IV // REAKTOR SURYA SABIZER", title: "Kapal Induk Kelas Destroyer Solar", env: "SOLAR", enemies: 15, fogColor: 0x3a0d0d, starColor: 0xef4444, boss: true, desc: "BOS: Destroyer Perintis Lachores Berpelindung Radiasi Surya!" },
+
+      // ACT V: Ambang Batas Heliosfer & Armada Induk (Lvl 41-50)
+      { id: 41, act: "ACT V // AMBANG HELIOSFER", title: "Perbatasan Angin Surya", env: "NEBULA", enemies: 11, fogColor: 0x090518, starColor: 0x818cf8, desc: "Tiba di tepi luar tata surya Sabizer di mana gas antar-bintang bermula." },
+      { id: 42, act: "ACT V // AMBANG HELIOSFER", title: "Medan Ranjau Gravitasi Hampa", env: "NEBULA", enemies: 11, fogColor: 0x0e0824, starColor: 0xa855f7, desc: "Waspadai ranjau medan tarik mikro sembari menembak drone intai." },
+      { id: 43, act: "ACT V // AMBANG HELIOSFER", title: "Lambung Kapal Bendera Venuza", env: "NEBULA", enemies: 12, fogColor: 0x130b30, starColor: 0xc084fc, desc: "Pertahankan dek luar kapal komando Venuza dari invasi musuh." },
+      { id: 44, act: "ACT V // AMBANG HELIOSFER", title: "Gantri Peluncur Pesawat Pencegat", env: "NEBULA", enemies: 12, fogColor: 0x160d38, starColor: 0x818cf8, desc: "Buka jalan bagi skuadron tempur sekutu untuk meluncur." },
+      { id: 45, act: "ACT V // AMBANG HELIOSFER", title: "Anjungan Meriam Rel Relativistik", env: "NEBULA", enemies: 13, fogColor: 0x190f42, starColor: 0x6366f1, desc: "Sinkronkan tembakan kanon berat ke arah armada induk musuh." },
+      { id: 46, act: "ACT V // AMBANG HELIOSFER", title: "Breach Lambung Fregat Pengawal", env: "NEBULA", enemies: 13, fogColor: 0x1d114c, starColor: 0xa855f7, desc: "Menembus masuk ke dalam lorong kapal perang musuh." },
+      { id: 47, act: "ACT V // AMBANG HELIOSFER", title: "Koridor Reaktor Massa-Negatif", env: "NEBULA", enemies: 14, fogColor: 0x110c36, starColor: 0x818cf8, desc: "Pertempuran di dekat mesin warp eksperimental milik Lachores." },
+      { id: 48, act: "ACT V // AMBANG HELIOSFER", title: "Pusat Kendali Armada Otomatis", env: "NEBULA", enemies: 14, fogColor: 0x140e40, starColor: 0x6366f1, desc: "Putuskan transmisi AI kendali skuadron drone jarak jauh." },
+      { id: 49, act: "ACT V // AMBANG HELIOSFER", title: "Anjungan Komando Tertinggi", env: "NEBULA", enemies: 15, fogColor: 0x1a0a38, starColor: 0xf43f5e, desc: "Bersihkan pengawal elit terakhir sebelum menghadapi kapal pemimpin." },
+      { id: 50, act: "ACT V // AMBANG HELIOSFER", title: "Fregat Komando Archon-Breaker", env: "NEBULA", enemies: 18, fogColor: 0x22052a, starColor: 0xff0055, boss: true, desc: "KLIMAKS: Hancurkan Fregat Komando Lachores & Amankan Sistem Sabizer!" }
+    ];
+
+    // Variabel Inti State Game
+    let currentLevelNumber = 1;
+    let currentActPage = 1;
+    let isSolarMapOpen = false;
+    let isSettingsOpen = false;
+
+    // Fungsi Pengatur Peta Surya (Pagination 50 Level)
+    function renderSolarGrid(actNum) {
+      currentActPage = actNum;
+      const container = document.getElementById("solar-level-grid");
+      if (!container) return;
+      container.innerHTML = "";
+
+      // Perbarui Tampilan Tab
+      for (let i = 1; i <= 5; i++) {
+        const tab = document.getElementById(`tab-act-${i}`);
+        if (tab) {
+          if (i === actNum) {
+            tab.className = "px-3 py-1.5 rounded-lg text-xs font-black bg-sky-500/30 text-sky-300 border border-sky-500/50";
+          } else {
+            tab.className = "px-3 py-1.5 rounded-lg text-xs font-black bg-slate-900 text-slate-400 border border-slate-800";
+          }
+        }
+      }
+
+      // Ambil 10 Level Sesuai Act
+      const startIdx = (actNum - 1) * 10;
+      const endIdx = startIdx + 10;
+      const pageLevels = CAMPAIGN_50_LEVELS.slice(startIdx, endIdx);
+
+      pageLevels.forEach(lvl => {
+        const btn = document.createElement("button");
+        const isCurrent = (lvl.id === currentLevelNumber);
+        btn.className = `p-3 rounded-2xl border text-left transition flex flex-col justify-between h-24 ${
+          isCurrent 
+            ? "bg-sky-950/70 border-sky-400 text-white shadow-lg shadow-sky-500/20" 
+            : (lvl.boss ? "bg-rose-950/40 border-rose-800/80 text-rose-200" : "bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700")
+        }`;
+
+        btn.innerHTML = `
+          <div class="flex justify-between items-center w-full">
+            <span class="text-[10px] font-black ${lvl.boss ? 'text-rose-400' : 'text-sky-400'}">SEKTOR ${String(lvl.id).padStart(2, '0')}</span>
+            <span class="text-[8px] px-1.5 py-0.5 rounded bg-slate-950 font-mono font-bold ${lvl.boss ? 'text-rose-400' : 'text-slate-400'}">
+              ${lvl.boss ? '⚠️ BOS' : lvl.env}
+            </span>
+          </div>
+          <div class="text-[11px] font-black text-slate-200 leading-tight line-clamp-2">${lvl.title}</div>
+          <div class="text-[8px] text-slate-500 font-mono truncate">${lvl.enemies} Unit Musuh</div>
+        `;
+
+        btn.onclick = () => {
+          toggleSolarCommandMap();
+          startSolarLevel(lvl.id);
+        };
+        container.appendChild(btn);
+      });
+
+      const progStat = document.getElementById("solar-progress-stat");
+      if (progStat) progStat.textContent = `Progres Operasi: Sektor ${currentLevelNumber}/50 Dikuasai`;
+    }
+
+    function filterSolarAct(actNum) {
+      renderSolarGrid(actNum);
+    }
+
+    function toggleSolarCommandMap() {
+      const modal = document.getElementById("modal-solar-map");
+      if (!modal) return;
+      isSolarMapOpen = modal.classList.contains("hidden");
+      if (isSolarMapOpen) {
+        if (window.controls && controls.isLocked) controls.unlock();
+        modal.classList.remove("hidden");
+        // Buka tab act dari level yang sedang aktif
+        const activeAct = Math.ceil(currentLevelNumber / 10);
+        renderSolarGrid(activeAct);
+      } else {
+        modal.classList.add("hidden");
+        if (window.controls && !controls.isLocked) controls.lock();
+      }
+    }
+
+    function toggleSettingsModal() {
+      const modal = document.getElementById("modal-settings");
+      if (!modal) return;
+      isSettingsOpen = modal.classList.contains("hidden");
+      if (isSettingsOpen) {
+        if (window.controls && controls.isLocked) controls.unlock();
+        modal.classList.remove("hidden");
+      } else {
+        modal.classList.add("hidden");
+        if (window.controls && !controls.isLocked) controls.lock();
+      }
+    }
+
+    function startSolarLevel(lvlNum) {
+      currentLevelNumber = lvlNum;
+      document.getElementById("modal-main-menu").classList.add("hidden");
+      if (typeof window.loadEngineLevel === 'function') {
+        window.loadEngineLevel(lvlNum);
+      }
+      setTimeout(() => {
+        if (window.controls) controls.lock();
+      }, 150);
+    }
+
+    // Keyboard Shortcuts Global untuk Peta & Opsi
+    window.addEventListener('keydown', e => {
+      if (e.code === 'KeyO' || e.code === 'Tab') {
+        e.preventDefault();
+        toggleSolarCommandMap();
+      } else if (e.code === 'F2') {
+        e.preventDefault();
+        toggleSettingsModal();
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderSolarGrid(1);
+    });
+// =============================================================
+    // 2. MESIN AUDIO KOSMIK PROSEDURAL (WEB AUDIO API)
+    // =============================================================
+    const CosmicAudio = {
+      ctx: null,
+      noiseBuf: null,
+      volEff: 0.8,
+      volMus: 0.65,
+      bgmTimer: 0,
+      step: 0,
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+      },
+
+      getNoise() {
+        if (!this.noiseBuf && this.ctx) {
+          this.noiseBuf = this.ctx.createBuffer(1, this.ctx.sampleRate * 2, this.ctx.sampleRate);
+          const d = this.noiseBuf.getChannelData(0);
+          for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+        }
+        return this.noiseBuf;
+      },
+
+      playRailgun() {
+        try {
+          this.init();
+          const n = this.ctx.currentTime;
+          // Ledakan kinetik teredam vakum antariksa
+          const osc = this.ctx.createOscillator();
+          const fl = this.ctx.createBiquadFilter();
+          const g = this.ctx.createGain();
+
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(440, n);
+          osc.frequency.exponentialRampToValueAtTime(32, n + 0.18);
+
+          fl.type = 'lowpass';
+          fl.frequency.setValueAtTime(2200, n);
+          fl.frequency.exponentialRampToValueAtTime(300, n + 0.18);
+
+          g.gain.setValueAtTime(this.volEff * 0.45, n);
+          g.gain.exponentialRampToValueAtTime(0.001, n + 0.2);
+
+          osc.connect(fl); fl.connect(g); g.connect(this.ctx.destination);
+          osc.start(n); osc.stop(n + 0.2);
+        } catch(e){}
+      },
+
+      playLaserPulse() {
+        try {
+          this.init();
+          const n = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const g = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(880, n);
+          osc.frequency.exponentialRampToValueAtTime(110, n + 0.12);
+
+          g.gain.setValueAtTime(this.volEff * 0.25, n);
+          g.gain.exponentialRampToValueAtTime(0.001, n + 0.13);
+
+          osc.connect(g); g.connect(this.ctx.destination);
+          osc.start(n); osc.stop(n + 0.14);
+        } catch(e){}
+      },
+
+      playThrusterHiss() {
+        try {
+          this.init();
+          const n = this.ctx.currentTime;
+          const src = this.ctx.createBufferSource();
+          src.buffer = this.getNoise();
+          const fl = this.ctx.createBiquadFilter();
+          const g = this.ctx.createGain();
+
+          fl.type = 'bandpass';
+          fl.frequency.setValueAtTime(1200, n);
+          g.gain.setValueAtTime(this.volEff * 0.18, n);
+          g.gain.exponentialRampToValueAtTime(0.001, n + 0.22);
+
+          src.connect(fl); fl.connect(g); g.connect(this.ctx.destination);
+          src.start(n, Math.random(), 0.23);
+        } catch(e){}
+      },
+
+      playExplosion(p) {
+        try {
+          this.init();
+          const n = this.ctx.currentTime;
+          const src = this.ctx.createBufferSource();
+          src.buffer = this.getNoise();
+          const fl = this.ctx.createBiquadFilter();
+          const g = this.ctx.createGain();
+
+          fl.type = 'lowpass';
+          fl.frequency.setValueAtTime(1400, n);
+          fl.frequency.exponentialRampToValueAtTime(80, n + 0.7);
+
+          let panVal = 0;
+          if (p && window.camera) {
+            const dx = p.x - camera.position.x;
+            const dz = p.z - camera.position.z;
+            panVal = Math.max(-1, Math.min(1, dx / (Math.hypot(dx, dz) || 1)));
+          }
+
+          g.gain.setValueAtTime(this.volEff * 0.7, n);
+          g.gain.exponentialRampToValueAtTime(0.001, n + 0.8);
+
+          if (this.ctx.createStereoPanner) {
+            const panner = this.ctx.createStereoPanner();
+            panner.pan.value = panVal;
+            src.connect(fl); fl.connect(g); g.connect(panner); panner.connect(this.ctx.destination);
+          } else {
+            src.connect(fl); fl.connect(g); g.connect(this.ctx.destination);
+          }
+          src.start(n, 0, 0.8);
+        } catch(e){}
+      },
+
+      playLevelComplete() {
+        try {
+          this.init();
+          const n = this.ctx.currentTime;
+          const chord = [392, 523.25, 659.25, 783.99, 1046.50];
+          chord.forEach((freq, idx) => {
+            const o = this.ctx.createOscillator();
+            const g = this.ctx.createGain();
+            o.type = 'triangle';
+            o.frequency.setValueAtTime(freq, n + idx * 0.1);
+            g.gain.setValueAtTime(this.volMus * 0.25, n + idx * 0.1);
+            g.gain.exponentialRampToValueAtTime(0.001, n + idx * 0.1 + 0.55);
+            o.connect(g); g.connect(this.ctx.destination);
+            o.start(n + idx * 0.1); o.stop(n + idx * 0.1 + 0.6);
+          });
+        } catch(e){}
+      },
+
+      tickBGM(dt, isAlert) {
+        if (!controls || !controls.isLocked || this.volMus <= 0.01) return;
+        this.init();
+        const n = this.ctx.currentTime;
+        const tempo = isAlert ? 0.22 : 0.44;
+        if (n - this.bgmTimer < tempo) return;
+        this.bgmTimer = n;
+
+        const calmPitches = [65.41, 77.78, 87.31, 98.0, 77.78, 65.41, 58.27, 65.41];
+        const battlePitches = [110, 130.81, 146.83, 164.81, 130.81, 110, 98, 110];
+        const f = isAlert ? battlePitches[this.step % 8] : calmPitches[this.step % 8];
+        this.step++;
+
+        try {
+          const osc = this.ctx.createOscillator();
+          const fl = this.ctx.createBiquadFilter();
+          const g = this.ctx.createGain();
+
+          osc.type = isAlert ? 'sawtooth' : 'sine';
+          osc.frequency.setValueAtTime(f, n);
+
+          fl.type = 'lowpass';
+          fl.frequency.setValueAtTime(isAlert ? 900 : 350, n);
+
+          g.gain.setValueAtTime(0.001, n);
+          g.gain.linearRampToValueAtTime(this.volMus * (isAlert ? 0.18 : 0.12), n + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.001, n + tempo * 0.95);
+
+          osc.connect(fl); fl.connect(g); g.connect(this.ctx.destination);
+          osc.start(n); osc.stop(n + tempo);
+        } catch(e){}
+      }
+    };
+
+    // -------------------------------------------------------------
+    // 3. THREE.JS ENGINE INITIALIZATION & DISPOSAL
+    // -------------------------------------------------------------
+    let scene, camera, renderer, controls;
+    let levelMeshes = [];
+    let enemies = [];
+    let allies = [];
+    let projectiles = [];
+    let particles = [];
+    let staticColliders = []; // {x, y, z, r, type: 'cylinder'|'sphere'|'box'}
+    let extractionDock = null;
+    let weaponGroup = null;
+    let customSkyTexture = null;
+
+    // Status Fisika & Astronot Landon Riveron
+    const LandonState = {
+      hp: 100,
+      o2: 100,
+      ammo: 30,
+      reserveAmmo: 240,
+      weaponIdx: 0,
+      isMagBoots: true,
+      evaFuel: 100,
+      vy: 0,
+      thrustActive: false,
+      kills: 0,
+      isADS: false,
+      isLowPerf: false
+    };
+
+    const WEAPON_TYPES = [
+      { name: "SENAPAN REL KINETIK", mag: 30, dmg: 48, rate: 140, spread: 0.015 },
+      { name: "MERIAM PLASMA PULSA", mag: 12, dmg: 95, rate: 420, spread: 0.035 },
+      { name: "AKSELERATOR GAUSS ANTI-MAT", mag: 5, dmg: 220, rate: 950, spread: 0.003 }
+    ];
+
+    let moveF = false, moveB = false, moveL = false, moveR = false;
+    let evaUp = false, evaDown = false;
+    let prevFrameTime = performance.now();
+    const velocity = new THREE.Vector3();
+    const direction = new THREE.Vector3();
+
+    function initEngine() {
+      const container = document.getElementById("canvas-container");
+      container.innerHTML = "";
+
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.25;
+      renderer.outputEncoding = THREE.sRGBEncoding;
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      container.appendChild(renderer.domElement);
+
+      controls = new THREE.PointerLockControls(camera, document.body);
+
+      // Listener Lock Pointer & Tembak
+      document.body.addEventListener('click', (e) => {
+        if (e.target.closest('#modal-main-menu') || e.target.closest('#modal-solar-map') || 
+            e.target.closest('#modal-debriefing') || e.target.closest('#modal-settings')) return;
+        if (!controls.isLocked) {
+          controls.lock();
+        } else {
+          fireLandonWeapon();
+        }
+      });
+
+      window.addEventListener('mousedown', (e) => {
+        if (e.button === 2 && controls.isLocked) setAimDownSights(true);
+      });
+      window.addEventListener('mouseup', (e) => {
+        if (e.button === 2) setAimDownSights(false);
+      });
+      window.addEventListener('contextmenu', e => e.preventDefault());
+
+      controls.addEventListener('lock', () => {
+        document.getElementById("crosshair").classList.remove("hidden");
+        document.getElementById("hud-top").classList.remove("hidden");
+        document.getElementById("hud-bottom").classList.remove("hidden");
+      });
+      controls.addEventListener('unlock', () => {
+        document.getElementById("crosshair").classList.add("hidden");
+        setAimDownSights(false);
+      });
+
+      window.addEventListener('keydown', onKeyDown);
+      window.addEventListener('keyup', onKeyUp);
+      window.addEventListener('resize', onWindowResize);
+
+      buildLandonWeaponRig();
+      initAudioAndSettingsListeners();
+      animateEngineLoop();
+    }
+
+    function setAimDownSights(aiming) {
+      LandonState.isADS = aiming;
+      const cross = document.getElementById("crosshair");
+      if (aiming) {
+        camera.fov = LandonState.weaponIdx === 2 ? 18 : 38;
+        if (cross) cross.classList.add("ads-aim");
+        if (weaponGroup) weaponGroup.position.set(0, -0.22, -0.42);
+      } else {
+        camera.fov = 75;
+        if (cross) cross.classList.remove("ads-aim");
+        if (weaponGroup) weaponGroup.position.set(0.26, -0.26, -0.52);
+      }
+      camera.updateProjectionMatrix();
+    }
+
+    function buildLandonWeaponRig() {
+      weaponGroup = new THREE.Group();
+
+      // Bodi Senapan Rel Antariksa Landon (Warna Hitam Karbon & Aksen Cyan)
+      const bGeo = new THREE.BoxGeometry(0.09, 0.13, 0.72);
+      const bMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.85, roughness: 0.25 });
+      const body = new THREE.Mesh(bGeo, bMat);
+      weaponGroup.add(body);
+
+      // Rel Akselerator Ganda Berpendar
+      const railG = new THREE.BoxGeometry(0.015, 0.05, 0.76);
+      const railM = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.8 });
+      const rL = new THREE.Mesh(railG, railM);
+      rL.position.set(-0.052, 0.02, -0.04);
+      const rR = rL.clone();
+      rR.position.x = 0.052;
+      weaponGroup.add(rL, rR);
+
+      // Teropong Hologram Kolimator
+      const scopeG = new THREE.BoxGeometry(0.04, 0.05, 0.09);
+      const scopeM = new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true });
+      const sc = new THREE.Mesh(scopeG, scopeM);
+      sc.position.set(0, 0.09, -0.12);
+      weaponGroup.add(sc);
+
+      // Muzzle Light Flash
+      const mLight = new THREE.PointLight(0x38bdf8, 0, 10);
+      mLight.position.set(0, 0.02, -0.48);
+      weaponGroup.add(mLight);
+      weaponGroup.userData.muzzleLight = mLight;
+
+      weaponGroup.position.set(0.26, -0.26, -0.52);
+      camera.add(weaponGroup);
+      scene.add(camera);
+    }
+
+    // -------------------------------------------------------------
+    // 4. GENERATOR 3D LINGKUNGAN KOSMIK (STATION / MOON / ASTEROID / SOLAR / NEBULA)
+    // -------------------------------------------------------------
+    function disposeCurrentLevel() {
+      for (let i = levelMeshes.length - 1; i >= 0; i--) {
+        const obj = levelMeshes[i];
+        scene.remove(obj);
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) {
+          if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+          else obj.material.dispose();
+        }
+      }
+      levelMeshes = [];
+
+      enemies.forEach(e => {
+        scene.remove(e.group);
+        e.group.traverse(c => {
+          if (c.geometry) c.geometry.dispose();
+          if (c.material) c.material.dispose();
+        });
+      });
+      enemies = [];
+
+      allies.forEach(a => {
+        scene.remove(a.group);
+        a.group.traverse(c => {
+          if (c.geometry) c.geometry.dispose();
+          if (c.material) c.material.dispose();
+        });
+      });
+      allies = [];
+
+      projectiles.forEach(p => scene.remove(p.mesh));
+      projectiles = [];
+
+      particles.forEach(pt => scene.remove(pt.mesh));
+      particles = [];
+
+      staticColliders = [];
+      extractionDock = null;
+    }
+
+    function buildCosmicSkybox(lvlData) {
+  const activeTexture = (typeof H2_TEXTURES !== 'undefined' && H2_TEXTURES.sky) ? H2_TEXTURES.sky : customSkyTexture;
+
+  if (activeTexture) {
+    activeTexture.mapping = THREE.EquirectangularReflectionMapping;
+    activeTexture.encoding = THREE.sRGBEncoding;
+    scene.background = activeTexture;
+    return;
+  }
+
+  // Jika belum ada gambar panorama, gunakan warna kosmik bawaan level
+  scene.background = new THREE.Color(lvlData.fogColor || 0x020617);
+
+  // Partikel Bintang Prosedural (Diberi fog: false agar tidak tertutup kabut)
+  const starG = new THREE.BufferGeometry();
+  const starCount = 1800;
+  const starPos = new Float32Array(starCount * 3);
+  for (let i = 0; i < starCount * 3; i += 3) {
+    const r = 400 + Math.random() * 200;
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(Math.random() * 2 - 1);
+    starPos[i] = r * Math.sin(phi) * Math.cos(theta);
+    starPos[i + 1] = r * Math.sin(phi) * Math.sin(theta);
+    starPos[i + 2] = r * Math.cos(phi);
+  }
+  starG.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+  const starM = new THREE.PointsMaterial({ 
+    color: lvlData.starColor || 0xffffff, 
+    size: 2.0, 
+    transparent: true, 
+    opacity: 0.9,
+    fog: false 
+  });
+  const stars = new THREE.Points(starG, starM);
+  scene.add(stars);
+  levelMeshes.push(stars);
+
+  // Planet Venon di latar belakang (Diberi fog: false agar tetap terlihat jernih)
+  if (lvlData.env === 'STATION' || lvlData.env === 'MOON') {
+    const venonG = new THREE.SphereGeometry(140, 32, 24);
+    const venonM = new THREE.MeshBasicMaterial({ color: 0x0284c7, fog: false });
+    const venon = new THREE.Mesh(venonG, venonM);
+    venon.position.set(0, -200, -320);
+    scene.add(venon);
+    levelMeshes.push(venon);
+  } else if (lvlData.env === 'SOLAR') {
+    const sunG = new THREE.SphereGeometry(90, 24, 24);
+    const sunM = new THREE.MeshBasicMaterial({ color: 0xffedd5, fog: false });
+    const sun = new THREE.Mesh(sunG, sunM);
+    sun.position.set(220, 180, -450);
+    scene.add(sun);
+    levelMeshes.push(sun);
+  }
+}
+
+    buildModularEnvironment = function(lvlData) {
+  const env = lvlData.env;
+  const id = lvlData.id;
+  const addObj = o => { scene.add(o); levelMeshes.push(o); return o; };
+
+  // Pemilihan Palet & Tekstur berdasarkan Bioma Sektor
+  const floorMat = new THREE.MeshStandardMaterial({
+    map: H2_TEXTURES.floor || null,
+    normalMap: H2_TEXTURES.normalMap || null,
+    normalScale: new THREE.Vector2(1.2, 1.2),
+    color: H2_TEXTURES.floor ? 0xffffff : (env === 'MOON' ? 0x1e293b : (env === 'SOLAR' ? 0x331e0b : (env === 'ASTEROID' ? 0x171221 : 0x0a1124))),
+    metalness: env === 'MOON' ? 0.2 : 0.82,
+    roughness: env === 'MOON' ? 0.9 : 0.3
+  });
+
+  const wallMat = new THREE.MeshStandardMaterial({
+    map: H2_TEXTURES.wall || null,
+    normalMap: H2_TEXTURES.normalMap || null,
+    color: H2_TEXTURES.wall ? 0xffffff : (env === 'SOLAR' ? 0x451a03 : (env === 'NEBULA' ? 0x2e1065 : 0x1e293b)),
+    metalness: 0.85,
+    roughness: 0.35
+  });
+
+  const doorMat = new THREE.MeshStandardMaterial({
+    map: H2_TEXTURES.door || null,
+    color: H2_TEXTURES.door ? 0xffffff : 0x475569,
+    metalness: 0.7,
+    roughness: 0.4
+  });
+
+  const consoleMat = new THREE.MeshBasicMaterial({
+    map: H2_TEXTURES.console || null,
+    color: H2_TEXTURES.console ? 0xffffff : 0x38bdf8
+  });
+
+  // Variasi Geometri Tata Letak Berdasarkan Kelompok Babak (5 Pola Berbeda)
+  const layoutType = ((id - 1) % 5); 
+
+  if (layoutType === 0) {
+    // -------------------------------------------------------------
+    // POLA A: LORONG LURUS DOK GANDA BERSEKAT (Air-lock Bastion)
+    // -------------------------------------------------------------
+    const fl = addObj(new THREE.Mesh(new THREE.BoxGeometry(32, 1.2, 190), floorMat));
+    fl.position.set(0, -0.6, -85);
+    fl.receiveShadow = true;
+    staticColliders.push({ x: 0, y: 0, z: -85, w: 32, d: 190, type: 'floor' });
+
+    for (let i = 0; i < 9; i++) {
+      const z = -12 - i * 20;
+      const pilL = addObj(new THREE.Mesh(new THREE.BoxGeometry(2.5, 12, 2.5), wallMat));
+      pilL.position.set(-15, 5.5, z);
+      const pilR = pilL.clone(); pilR.position.x = 15; addObj(pilR);
+
+      const roof = addObj(new THREE.Mesh(new THREE.BoxGeometry(32.5, 1.8, 2.5), wallMat));
+      roof.position.set(0, 11.5, z);
+
+      // Pintu Sekat Blast Door zigzag di tengah
+      if (i % 2 === 1) {
+        const doorWall = addObj(new THREE.Mesh(new THREE.BoxGeometry(16, 8, 1.2), doorMat));
+        const side = (i % 4 === 1 ? -7 : 7);
+        doorWall.position.set(side, 4, z);
+        staticColliders.push({ x: side, z: z, r: 6.5, type: 'col' });
+      }
+
+      staticColliders.push({ x: -15, z: z, r: 2.2, type: 'col' });
+      staticColliders.push({ x: 15, z: z, r: 2.2, type: 'col' });
+    }
+
+  } else if (layoutType === 1) {
+    // -------------------------------------------------------------
+    // POLA B: DUA JALUR CABANG KANAN-KIRI DENGAN JURANG VAKUM TENGAH
+    // -------------------------------------------------------------
+    for (let side of [-11, 11]) {
+      const fl = addObj(new THREE.Mesh(new THREE.BoxGeometry(14, 1.2, 185), floorMat));
+      fl.position.set(side, -0.6, -85);
+      fl.receiveShadow = true;
+      staticColliders.push({ x: side, y: 0, z: -85, w: 14, d: 185, type: 'floor' });
+    }
+
+    // Jembatan Titian Penghubung di Tengah
+    for (let bz of [-45, -95, -145]) {
+      const br = addObj(new THREE.Mesh(new THREE.BoxGeometry(14, 0.8, 8), wallMat));
+      br.position.set(0, -0.4, bz);
+      staticColliders.push({ x: 0, y: 0, z: bz, w: 14, d: 8, type: 'floor' });
+
+      const term = addObj(new THREE.Mesh(new THREE.BoxGeometry(2.5, 2.0, 1.2), consoleMat));
+      term.position.set(0, 1.2, bz);
+      staticColliders.push({ x: 0, z: bz, r: 1.8, type: 'col' });
+    }
+
+  } else if (layoutType === 2) {
+    // -------------------------------------------------------------
+    // POLA C: TINGKAT VERTICAL BERTINGKAT / ELEVASI TINGGI-RENDAH
+    // -------------------------------------------------------------
+    for (let step = 0; step < 5; step++) {
+      const sz = -15 - step * 36;
+      const sy = (step % 2 === 1 ? 4.5 : 0);
+      const fl = addObj(new THREE.Mesh(new THREE.BoxGeometry(36, 1.2, 38), floorMat));
+      fl.position.set(0, sy - 0.6, sz);
+      staticColliders.push({ x: 0, y: sy, z: sz, w: 36, d: 38, type: 'floor' });
+
+      // Tangga Tanjakan Rangka Antar Dek
+      if (step < 4) {
+        const ramp = addObj(new THREE.Mesh(new THREE.BoxGeometry(12, 1.0, 14), wallMat));
+        ramp.position.set(0, sy + 2.0, sz - 20);
+        ramp.rotation.x = (step % 2 === 1 ? 0.28 : -0.28);
+      }
+    }
+
+  } else if (layoutType === 3) {
+    // -------------------------------------------------------------
+    // POLA D: ARENA KUBUS / PLAZA TERBUKA LEBAR (Dome Plaza)
+    // -------------------------------------------------------------
+    const fl = addObj(new THREE.Mesh(new THREE.BoxGeometry(55, 1.2, 180), floorMat));
+    fl.position.set(0, -0.6, -85);
+    staticColliders.push({ x: 0, y: 0, z: -85, w: 55, d: 180, type: 'floor' });
+
+    // Pilar-Pilar Raksasa Pelindung di Tengah Lapangan
+    for (let px of [-16, 16]) {
+      for (let pz of [-35, -75, -115, -150]) {
+        const pil = addObj(new THREE.Mesh(new THREE.CylinderGeometry(2.8, 3.2, 16, 8), wallMat));
+        pil.position.set(px, 7.5, pz);
+        staticColliders.push({ x: px, z: pz, r: 3.4, type: 'col' });
+
+        // Layar Konsol Mengelilingi Pilar
+        const sc = addObj(new THREE.Mesh(new THREE.PlaneGeometry(3, 1.5), consoleMat));
+        sc.position.set(px, 2.5, pz + 3.1);
+      }
+    }
+
+  } else {
+    // -------------------------------------------------------------
+    // POLA E: JALUR LABIRIN ZIG-ZAG SEMPIT DENGAN KORIDOR SERVO
+    // -------------------------------------------------------------
+    const fl = addObj(new THREE.Mesh(new THREE.BoxGeometry(38, 1.2, 185), floorMat));
+    fl.position.set(0, -0.6, -85);
+    staticColliders.push({ x: 0, y: 0, z: -85, w: 38, d: 185, type: 'floor' });
+
+    for (let k = 0; k < 7; k++) {
+      const z = -20 - k * 23;
+      const isLeft = (k % 2 === 0);
+      const wall = addObj(new THREE.Mesh(new THREE.BoxGeometry(24, 6, 2.0), wallMat));
+      wall.position.set(isLeft ? -7 : 7, 2.5, z);
+      staticColliders.push({ x: isLeft ? -7 : 7, z: z, r: 8.5, type: 'col' });
+    }
+  }
+
+  // Elemen Lingkungan Eksternal Spesifik Bioma
+  if (env === 'ASTEROID' || env === 'NEBULA') {
+    const astMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.95, flatShading: true });
+    for (let i = 0; i < 20; i++) {
+      const az = -10 - i * 8.5;
+      const ax = ((i * 7) % 36 - 18) * 1.6;
+      const ay = (Math.sin(i * 1.5) * 6) + 4;
+      const ar = 2.0 + (i % 4) * 1.2;
+
+      const ast = addObj(new THREE.Mesh(new THREE.IcosahedronGeometry(ar, 1), astMat));
+      ast.position.set(ax, ay, az);
+      ast.rotation.set(i, i * 0.4, 0);
+      staticColliders.push({ x: ax, y: ay, z: az, r: ar * 0.9, type: 'sphere' });
+    }
+  } else if (env === 'MOON') {
+    const moonMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.95 });
+    for (let i = 0; i < 16; i++) {
+      const rz = -15 - i * 10;
+      const rx = (i % 2 === 0 ? 1 : -1) * (14 + (i % 3) * 3);
+      const cr = addObj(new THREE.Mesh(new THREE.CylinderGeometry(1.5, 3.5, 6, 7), moonMat));
+      cr.position.set(rx, 2.5, rz);
+      staticColliders.push({ x: rx, z: rz, r: 2.8, type: 'col' });
+    }
+  }
+
+  // Suar Dok Ekstraksi di Ujung Sektor
+  buildExtractionDock(-175);
+};
+
+    function buildExtractionDock(zPos) {
+      extractionDock = new THREE.Group();
+      extractionDock.position.set(0, 0, zPos);
+
+      // Cincin Dok Pendaratan Kapal Angkut
+      const ringG = new THREE.CylinderGeometry(5, 5, 0.4, 24);
+      const ringM = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.7 });
+      const ring = new THREE.Mesh(ringG, ringM);
+      ring.position.y = 0.2;
+      extractionDock.add(ring);
+
+      const light = new THREE.PointLight(0x38bdf8, 3, 25);
+      light.position.y = 3;
+      extractionDock.add(light);
+
+      scene.add(extractionDock);
+      levelMeshes.push(extractionDock);
+    }
+
+    // -------------------------------------------------------------
+    // 5. FISIKA ASTRONOT & KENDALI SISTEM GERAK LANDON
+    // -------------------------------------------------------------
+    window.loadEngineLevel = function(lvlNumber) {
+  currentLevelNumber = lvlNumber;
+  const lvlData = CAMPAIGN_50_LEVELS[lvlNumber - 1];
+  if (!lvlData) return;
+
+  disposeCurrentLevel();
+
+  // Reset Telemetri Landon
+  LandonState.hp = 180;
+  LandonState.maxHp = 180;
+  LandonState.o2 = 100;
+  LandonState.evaFuel = 100;
+  LandonState.ammo = WEAPON_TYPES[LandonState.weaponIdx].mag;
+  LandonState.reserveAmmo = 240;
+  LandonState.kills = 0;
+  LandonState.vy = 0;
+
+  // Titik Awal Misi (Pangkal Dek Z = 10)
+  camera.position.set(0, 1.7, 10);
+  camera.rotation.set(0, 0, 0);
+  velocity.set(0, 0, 0);
+
+  // Latar Belakang & Kabut
+  const activeTexture = (typeof H2_TEXTURES !== 'undefined' && H2_TEXTURES.sky) ? H2_TEXTURES.sky : customSkyTexture;
+  if (activeTexture) {
+    activeTexture.mapping = THREE.EquirectangularReflectionMapping;
+    activeTexture.encoding = THREE.sRGBEncoding;
+    scene.background = activeTexture;
+    scene.fog = null; // Matikan kabut agar pemandangan luar angkasa 100% jernih dan tajam
+  } else {
+    scene.background = new THREE.Color(lvlData.fogColor || 0x020617);
+    scene.fog = new THREE.FogExp2(lvlData.fogColor || 0x020617, 0.005);
+  }
+
+  renderer.setClearColor(lvlData.fogColor || 0x020617);
+
+  // Pencahayaan
+  const ambLight = new THREE.AmbientLight(0xffffff, 0.55);
+  scene.add(ambLight);
+  levelMeshes.push(ambLight);
+
+  const dirLight = new THREE.DirectionalLight(0xffffff, 1.1);
+  dirLight.position.set(40, 80, 50);
+  dirLight.castShadow = !LandonState.isLowPerf;
+  dirLight.shadow.mapSize.set(1024, 1024);
+  scene.add(dirLight);
+  levelMeshes.push(dirLight);
+
+  // Bangun Dunia, Musuh, dan Sekutu
+  buildCosmicSkybox(lvlData);
+  buildModularEnvironment(lvlData);
+  spawnCosmicEnemies(lvlData);
+  spawnOrbitalSquad();
+
+  // Perbarui Informasi Teks HUD
+  const actElem = document.getElementById("hud-act-title");
+  const lvlElem = document.getElementById("hud-level-title");
+  const objElem = document.getElementById("hud-objective-text");
+
+  if (actElem) actElem.textContent = lvlData.act;
+  if (lvlElem) lvlElem.textContent = `LVL ${String(lvlNumber).padStart(2, '0')}: ${lvlData.title}`;
+  if (objElem) objElem.textContent = `${lvlData.desc} [0/${lvlData.enemies}]`;
+
+  updateLandonHUD();
+};
+
+    function resolveStaticCollisions(pos, radius) {
+      for (const col of staticColliders) {
+        if (col.type === 'col') {
+          const dx = pos.x - col.x;
+          const dz = pos.z - col.z;
+          const minDist = col.r + radius;
+          const distSq = dx * dx + dz * dz;
+          if (distSq < minDist * minDist && distSq > 0.0001) {
+            const d = Math.sqrt(distSq);
+            pos.x = col.x + (dx / d) * minDist;
+            pos.z = col.z + (dz / d) * minDist;
+          }
+        }
+      }
+    }
+
+    function fireLandonWeapon() {
+      const wep = WEAPON_TYPES[LandonState.weaponIdx];
+      if (LandonState.ammo <= 0) {
+        reloadLandonWeapon();
+        return;
+      }
+      LandonState.ammo--;
+
+      if (LandonState.weaponIdx === 0) CosmicAudio.playRailgun();
+      else CosmicAudio.playLaserPulse();
+
+      // Animasi Hentakan & Kilat Moncong
+      if (weaponGroup) {
+        weaponGroup.position.z += 0.07;
+        setTimeout(() => { weaponGroup.position.z -= 0.07; }, 80);
+        if (weaponGroup.userData.muzzleLight) {
+          weaponGroup.userData.muzzleLight.intensity = 4.5;
+          setTimeout(() => { weaponGroup.userData.muzzleLight.intensity = 0; }, 50);
+        }
+      }
+
+      // Raycast Peluru Hitscan ke Musuh
+      const ray = new THREE.Raycaster();
+      const spread = (LandonState.isADS ? 0.002 : wep.spread);
+      const rndX = (Math.random() - 0.5) * spread;
+      const rndY = (Math.random() - 0.5) * spread;
+      ray.setFromCamera(new THREE.Vector2(rndX, rndY), camera);
+
+      const targetList = [];
+      enemies.forEach(e => {
+        if (e.isAlive) e.group.traverse(c => { if (c.isMesh) targetList.push(c); });
+      });
+
+      const hits = ray.intersectObjects(targetList, false);
+      if (hits.length > 0 && hits[0].distance < 160) {
+        let root = hits[0].object;
+        while (root.parent && root.parent !== scene) root = root.parent;
+        const hitEnemy = enemies.find(e => e.group === root);
+        if (hitEnemy && hitEnemy.isAlive) {
+          hitEnemy.hp -= wep.dmg;
+          spawnHitSpark(hits[0].point, 0x38bdf8);
+          if (hitEnemy.hp <= 0 && typeof window.killCosmicEnemy === 'function') {
+            window.killCosmicEnemy(hitEnemy);
+          }
+        }
+      }
+
+      updateLandonHUD();
+    }
+
+    function reloadLandonWeapon() {
+      const wep = WEAPON_TYPES[LandonState.weaponIdx];
+      const needed = wep.mag - LandonState.ammo;
+      if (needed <= 0 || LandonState.reserveAmmo <= 0) return;
+      const taken = Math.min(needed, LandonState.reserveAmmo);
+      LandonState.ammo += taken;
+      LandonState.reserveAmmo -= taken;
+      updateLandonHUD();
+    }
+
+    function spawnHitSpark(pos, colorHex) {
+      const g = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+      const m = new THREE.MeshBasicMaterial({ color: colorHex });
+      for (let i = 0; i < 4; i++) {
+        const p = new THREE.Mesh(g, m);
+        p.position.copy(pos);
+        scene.add(p);
+        particles.push({
+          mesh: p,
+          v: new THREE.Vector3((Math.random() - 0.5) * 6, Math.random() * 4 + 1, (Math.random() - 0.5) * 6),
+          life: 0.35
+        });
+      }
+    }
+
+    function updateLandonHUD() {
+      const wep = WEAPON_TYPES[LandonState.weaponIdx];
+      const hpElem = document.getElementById("hud-hp-stat");
+      const o2Elem = document.getElementById("hud-o2-stat");
+      const ammoElem = document.getElementById("hud-ammo-stat");
+
+      if (hpElem) hpElem.textContent = `${Math.ceil(LandonState.hp)}% // ${LandonState.hp > 60 ? 'NORM' : 'KRITIS'}`;
+      if (o2Elem) o2Elem.textContent = `${Math.ceil(LandonState.o2)}% // ${LandonState.isMagBoots ? 'ATM' : 'EVA'}`;
+      if (ammoElem) ammoElem.textContent = `${LandonState.ammo} / ${LandonState.reserveAmmo}`;
+    }
+
+    // -------------------------------------------------------------
+    // 6. MAIN ENGINE ANIMATION LOOP (GAMEPLAY CYCLE)
+    // -------------------------------------------------------------
+    function animateEngineLoop() {
+      requestAnimationFrame(animateEngineLoop);
+      const time = performance.now();
+      const dt = Math.min((time - prevFrameTime) / 1000, 0.05);
+      prevFrameTime = time;
+
+      if (controls && controls.isLocked) {
+        // Reduksi Kecepatan Gesek Sumbu Datar
+        velocity.x -= velocity.x * 10.0 * dt;
+        velocity.z -= velocity.z * 10.0 * dt;
+
+        direction.z = Number(moveF) - Number(moveB);
+        direction.x = Number(moveR) - Number(moveL);
+        direction.normalize();
+
+        const moveSpeed = 48.0;
+        if (moveF || moveB) velocity.z -= direction.z * moveSpeed * dt;
+        if (moveL || moveR) velocity.x -= direction.x * moveSpeed * dt;
+
+        controls.moveRight(-velocity.x * dt);
+        controls.moveForward(-velocity.z * dt);
+
+        const pos = camera.position;
+
+        // Fisika Pendorong EVA Jetpack (Spasi / C) vs Magnetik Dek
+        if (evaUp) {
+          LandonState.vy += 22 * dt;
+          LandonState.isMagBoots = false;
+          CosmicAudio.playThrusterHiss();
+        } else if (evaDown) {
+          LandonState.vy -= 22 * dt;
+          CosmicAudio.playThrusterHiss();
+        } else if (LandonState.isMagBoots) {
+          // Gravitasi Magnetik Menempel ke Lantai
+          LandonState.vy = 0;
+          pos.y = 1.7;
+        } else {
+          // Inersia Melayang di Ruang Hampa
+          LandonState.vy *= 0.95;
+        }
+
+        pos.y += LandonState.vy * dt;
+
+        // Jika Mendekati Lantai, Tempelkan Mag-Boots Otomatis
+        if (pos.y <= 1.7 && Math.abs(pos.x) < 20 && pos.z <= 10 && pos.z >= -170) {
+          pos.y = 1.7;
+          LandonState.vy = 0;
+          LandonState.isMagBoots = true;
+        }
+
+        // Resolusi Tabrakan Kolom
+        resolveStaticCollisions(pos, 0.65);
+
+        // Konsumsi O2 jika Terlontar Keluar dari Zona Stasiun
+        if (pos.y > 18 || Math.abs(pos.x) > 22 || pos.z > 15 || pos.z < -175) {
+          LandonState.isMagBoots = false;
+          LandonState.o2 = Math.max(0, LandonState.o2 - 6 * dt);
+          if (LandonState.o2 <= 0) {
+            LandonState.hp = Math.max(0, LandonState.hp - 15 * dt);
+          }
+        } else {
+          LandonState.o2 = Math.min(100, LandonState.o2 + 20 * dt);
+        }
+
+        // Deteksi Sampai di Dok Ekstraksi
+        if (extractionDock && pos.distanceTo(extractionDock.position) < 4.5) {
+          triggerCosmicDebrief();
+        }
+
+        // Jalankan Tick Musik Adaptif Ruang Hampa
+        const inAlert = enemies.some(e => e.isAlive && e.alert > 0);
+        CosmicAudio.tickBGM(dt, inAlert);
+
+        updateLandonHUD();
+        renderCosmicRadar();
+      }
+
+      // Pembaruan Partikel Percikan
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const pt = particles[i];
+        pt.mesh.position.addScaledVector(pt.v, dt);
+        pt.life -= dt;
+        if (pt.life <= 0) {
+          scene.remove(pt.mesh);
+          particles.splice(i, 1);
+        }
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    function triggerCosmicDebrief() {
+      if (!controls) return;
+      controls.unlock();
+      CosmicAudio.playLevelComplete();
+
+      const modal = document.getElementById("modal-debriefing");
+      const title = document.getElementById("debrief-title");
+      const curLvl = CAMPAIGN_50_LEVELS[currentLevelNumber - 1];
+
+      if (title && curLvl) {
+        title.textContent = `SEKTOR ${String(currentLevelNumber).padStart(2, '0')} DIAMANKAN: ${curLvl.title}`;
+      }
+      if (modal) modal.classList.remove("hidden");
+
+      const btnNext = document.getElementById("btn-next-level");
+      if (btnNext) {
+        btnNext.onclick = () => {
+          modal.classList.add("hidden");
+          if (currentLevelNumber < 50) {
+            startSolarLevel(currentLevelNumber + 1);
+          } else {
+            alert("SELAMAT PERWIRA LANDON! 50 SEKTOR TATA SURYA SABIZER SEPENUHNYA DIBEBASKAN!");
+            document.getElementById("modal-main-menu").classList.remove("hidden");
+          }
+        };
+      }
+    }
+
+    function renderCosmicRadar() {
+      const cv = document.getElementById("radar-canvas");
+      if (!cv || !camera) return;
+      const ctx = cv.getContext("2d");
+      const w = cv.width, c = w / 2;
+
+      ctx.clearRect(0, 0, w, cv.height);
+      ctx.strokeStyle = "rgba(56, 189, 248, 0.35)";
+      ctx.strokeRect(0, 0, w, cv.height);
+
+      // Cincin Bola 3D
+      ctx.beginPath();
+      ctx.arc(c, c, c - 4, 0, Math.PI * 2);
+      ctx.arc(c, c, (c - 4) * 0.5, 0, Math.PI * 2);
+      ctx.stroke();
+
+      const fwd = new THREE.Vector3();
+      camera.getWorldDirection(fwd);
+      const fl = Math.hypot(fwd.x, fwd.z) || 1;
+      const ux = fwd.x / fl, uz = fwd.z / fl;
+
+      // Gambar Titik Musuh di Radar
+      enemies.forEach(e => {
+        if (e.isAlive) {
+          const rx = e.group.position.x - camera.position.x;
+          const rz = e.group.position.z - camera.position.z;
+          const a = (-rx * uz + rz * ux) * 0.9;
+          const b = (rx * ux + rz * uz) * 0.9;
+          if (Math.hypot(a, b) < c - 6) {
+            ctx.fillStyle = e.boss ? '#f43f5e' : (e.alert > 0 ? '#ef4444' : '#f97316');
+            ctx.fillRect(c + a - 2, c - b - 2, e.boss ? 6 : 4, e.boss ? 6 : 4);
+          }
+        }
+      });
+
+      // Titik Landon (Pusat Biru Cyan)
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath();
+      ctx.arc(c, c, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // -------------------------------------------------------------
+    // 7. INPUT LISTENERS KEYBOARD & PENGATURAN
+    // -------------------------------------------------------------
+    function onKeyDown(e) {
+      switch (e.code) {
+        case 'KeyW': moveF = true; break;
+        case 'KeyS': moveB = true; break;
+        case 'KeyA': moveL = true; break;
+        case 'KeyD': moveR = true; break;
+        case 'Space':
+          e.preventDefault();
+          evaUp = true;
+          break;
+        case 'KeyC':
+          e.preventDefault();
+          evaDown = true;
+          break;
+        case 'KeyR':
+          reloadLandonWeapon();
+          break;
+        case 'Digit1':
+          switchWeapon(0);
+          break;
+        case 'Digit2':
+          switchWeapon(1);
+          break;
+        case 'Digit3':
+          switchWeapon(2);
+          break;
+      }
+    }
+
+    function onKeyUp(e) {
+      switch (e.code) {
+        case 'KeyW': moveF = false; break;
+        case 'KeyS': moveB = false; break;
+        case 'KeyA': moveL = false; break;
+        case 'KeyD': moveR = false; break;
+        case 'Space': evaUp = false; break;
+        case 'KeyC': evaDown = false; break;
+      }
+    }
+
+    function switchWeapon(idx) {
+      if (idx === LandonState.weaponIdx) return;
+      LandonState.weaponIdx = idx;
+      LandonState.ammo = WEAPON_TYPES[idx].mag;
+      if (weaponGroup) {
+        weaponGroup.scale.z = [1.0, 0.8, 1.4][idx];
+      }
+      updateLandonHUD();
+    }
+
+    function onWindowResize() {
+      if (!camera || !renderer) return;
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function initAudioAndSettingsListeners() {
+      const vEff = document.getElementById("cfg-vol");
+      const vMus = document.getElementById("cfg-mvol");
+      const skyIn = document.getElementById("cfg-sky-file");
+      const skyReset = document.getElementById("cfg-sky-reset");
+      const btnHi = document.getElementById("btn-hi-perf");
+      const btnLow = document.getElementById("btn-low-perf");
+
+      if (vEff) vEff.oninput = e => {
+        CosmicAudio.volEff = e.target.value / 100;
+        document.getElementById("cfg-vol-val").textContent = e.target.value;
+      };
+      if (vMus) vMus.oninput = e => {
+        CosmicAudio.volMus = e.target.value / 100;
+        document.getElementById("cfg-mvol-val").textContent = e.target.value;
+      };
+      if (skyIn) skyIn.onchange = e => {
+        const file = e.target.files[0];
+        if (file) {
+          const img = new Image();
+          img.onload = () => {
+            const cv = document.createElement("canvas");
+            cv.width = img.width; cv.height = img.height;
+            cv.getContext("2d").drawImage(img, 0, 0);
+            customSkyTexture = new THREE.CanvasTexture(cv);
+            if (levelMeshes.length) window.loadEngineLevel(currentLevelNumber);
+          };
+          img.src = URL.createObjectURL(file);
+        }
+      };
+      if (skyReset) skyReset.onclick = () => {
+        customSkyTexture = null;
+        if (levelMeshes.length) window.loadEngineLevel(currentLevelNumber);
+      };
+      if (btnHi && btnLow) {
+        btnHi.onclick = () => {
+          LandonState.isLowPerf = false;
+          renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+          renderer.shadowMap.enabled = true;
+          btnHi.className = "py-1.5 rounded-lg border border-sky-500 bg-sky-950/40 text-sky-300 font-bold";
+          btnLow.className = "py-1.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-400 font-bold";
+        };
+        btnLow.onclick = () => {
+          LandonState.isLowPerf = true;
+          renderer.setPixelRatio(1);
+          renderer.shadowMap.enabled = false;
+          btnLow.className = "py-1.5 rounded-lg border border-sky-500 bg-sky-950/40 text-sky-300 font-bold";
+          btnHi.className = "py-1.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-400 font-bold";
+        };
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initEngine();
+    });
+// =============================================================
+    // 8. AI MUSUH ANTARIKSA, PESAWAT TEMPUR, & DRONE
+    // =============================================================
+    
+    // Model Pesawat Tempur / Pencegat Ringan Lachores (Interseptor 3D)
+    function createFighterShipMesh() {
+      const g = new THREE.Group();
+      const hullMat = new THREE.MeshStandardMaterial({ color: 0x1e1b4b, metalness: 0.8, roughness: 0.3 });
+      const wingMat = new THREE.MeshStandardMaterial({ color: 0x312e81, metalness: 0.7, roughness: 0.4 });
+      const glowMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+
+      // Lambung Utama Tirus Meruncing
+      const body = new THREE.Mesh(new THREE.ConeGeometry(0.8, 3.4, 4), hullMat);
+      body.rotation.x = Math.PI / 2;
+      body.castShadow = true;
+      g.add(body);
+
+      // Sayap Swept-Back Kiri & Kanan
+      const wingL = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.08, 1.2), wingMat);
+      wingL.position.set(-1.3, 0, 0.2);
+      wingL.rotation.y = 0.35;
+      const wingR = wingL.clone();
+      wingR.position.x = 1.3;
+      wingR.rotation.y = -0.35;
+      g.add(wingL, wingR);
+
+      // Pendorong Api Mesin Plasma (Thruster Exhaust)
+      const exhaust = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 0.6, 8), glowMat);
+      exhaust.rotation.x = Math.PI / 2;
+      exhaust.position.set(0, 0, 1.8);
+      g.add(exhaust);
+
+      return g;
+    }
+
+    // Model Drone Pengintai Melayang
+    function createSpaceDroneMesh() {
+      const g = new THREE.Group();
+      const core = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.65, 0),
+        new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8, roughness: 0.2 })
+      );
+      core.castShadow = true;
+      g.add(core);
+
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8), new THREE.MeshBasicMaterial({ color: 0xf97316 }));
+      eye.position.set(0, 0, 0.55);
+      g.add(eye);
+
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(0.95, 0.05, 6, 16),
+        new THREE.MeshBasicMaterial({ color: 0xef4444, wireframe: true })
+      );
+      ring.rotation.x = Math.PI / 2;
+      g.add(ring);
+      g.userData.ring = ring;
+
+      return g;
+    }
+
+    // Model Kapal Bos Fregat Komando Raksasa (Kelipatan 10 Level)
+    function createBossFrigateMesh(bossName) {
+      const g = new THREE.Group();
+      const hullMat = new THREE.MeshStandardMaterial({ color: 0x450a0a, metalness: 0.85, roughness: 0.25 });
+      const plateMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, metalness: 0.6, roughness: 0.5 });
+      const glowMat = new THREE.MeshBasicMaterial({ color: 0xff0055 });
+
+      // Lambung Fregat Utama Sepanjang 18 Meter
+      const hull = new THREE.Mesh(new THREE.BoxGeometry(6.5, 3.2, 18), hullMat);
+      hull.castShadow = true;
+      g.add(hull);
+
+      // Sayap Menara Radar Komando Atas
+      const tower = new THREE.Mesh(new THREE.BoxGeometry(3.5, 2.2, 5.0), plateMat);
+      tower.position.set(0, 2.4, -2.0);
+      g.add(tower);
+
+      // Kubah Senjata Meriam Plasma Ganda Samping
+      for (let s = -1; s <= 1; s += 2) {
+        const pod = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.2, 4.5, 8), plateMat);
+        pod.rotation.x = Math.PI / 2;
+        pod.position.set(s * 4.2, 0, 2.0);
+        const canon = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 5.0, 8), glowMat);
+        canon.rotation.x = Math.PI / 2;
+        canon.position.set(s * 4.2, 0, -2.5);
+        g.add(pod, canon);
+      }
+
+      g.position.y = 10;
+      return g;
+    }
+
+    // Spawn Musuh per Level
+    function spawnCosmicEnemies(lvlData) {
+      const count = lvlData.enemies;
+      const isBoss = !!lvlData.boss;
+      const regularCount = isBoss ? Math.max(3, count - 1) : count;
+
+      for (let i = 0; i < regularCount; i++) {
+        const isShip = (i % 2 === 0);
+        const mesh = isShip ? createFighterShipMesh() : createSpaceDroneMesh();
+        const z = -25 - (i * (130 / regularCount));
+        const x = (Math.random() - 0.5) * 32;
+        const y = isShip ? 5.5 + Math.random() * 6 : 2.5 + Math.random() * 4;
+
+        mesh.position.set(x, y, z);
+        scene.add(mesh);
+
+        const enemyObj = {
+          group: mesh,
+          isAlive: true,
+          isShip: isShip,
+          hp: isShip ? 80 + currentLevelNumber * 3 : 50 + currentLevelNumber * 2,
+          speed: isShip ? 5.5 : 3.8,
+          alert: 0,
+          cd: 1.2 + Math.random() * 1.5,
+          angle: Math.random() * Math.PI * 2,
+          burstCount: 0
+        };
+
+        mesh.traverse(c => { if (c.isMesh) c.userData.en = enemyObj; });
+        enemies.push(enemyObj);
+        levelMeshes.push(mesh);
+      }
+
+      // Spawn Bos Khusus
+      if (isBoss) {
+        const bName = `LACHORES ARCHON-FRIGATE // SEKTOR ${String(lvlData.id).padStart(2, '0')}`;
+        const bMesh = createBossFrigateMesh(bName);
+        bMesh.position.set(0, 12, -140);
+        scene.add(bMesh);
+
+        const bossObj = {
+          group: bMesh,
+          isAlive: true,
+          isShip: true,
+          boss: true,
+          name: bName,
+          hp: 650 + currentLevelNumber * 35,
+          maxHp: 650 + currentLevelNumber * 35,
+          speed: 2.2,
+          alert: 10,
+          cd: 1.0,
+          phase2: false,
+          burst: 0,
+          burstCd: 0
+        };
+
+        bMesh.traverse(c => { if (c.isMesh) c.userData.en = bossObj; });
+        enemies.push(bossObj);
+        levelMeshes.push(bMesh);
+
+        // Tampilkan Bar Bos di HUD
+        const bWrap = document.getElementById("u-boss-bar-wrap");
+        const bLabel = document.getElementById("u-boss-name");
+        if (bWrap) bWrap.classList.remove("hidden");
+        if (bLabel) bLabel.textContent = bName;
+      } else {
+        const bWrap = document.getElementById("u-boss-bar-wrap");
+        if (bWrap) bWrap.classList.add("hidden");
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 9. PASUKAN SEKUTU ORBITAL (REGU TAKTIS GABUNGAN AI)
+    // -------------------------------------------------------------
+    const SQUAD_STATE = { cmd: 0 }; // 0: Ikuti, 1: Tahan Posisi, 2: Serang Bebas
+
+    function createOrbitalAllyMesh(idx) {
+      const g = new THREE.Group();
+      const suitMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.6, roughness: 0.4 });
+      const visorMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+
+      // Badan Baju EVA Sekutu (Warna Biru Langit Venuza)
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.0, 0.45), suitMat);
+      body.position.y = 1.3;
+      body.castShadow = true;
+      g.add(body);
+
+      // Helm & Kaca Visor Bercahaya
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.38, 0.38), suitMat);
+      head.position.y = 1.95;
+      const visor = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.12, 0.08), visorMat);
+      visor.position.set(0, 1.95, 0.2);
+      g.add(head, visor);
+
+      // Tangki Oksigen Ganda di Punggung
+      const tankL = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.7, 8), suitMat);
+      tankL.position.set(-0.18, 1.3, -0.28);
+      const tankR = tankL.clone();
+      tankR.position.x = 0.18;
+      g.add(tankL, tankR);
+
+      return g;
+    }
+
+    function spawnOrbitalSquad() {
+      allies = [];
+      const squadCount = 3; // 3 Prajurit Komando Sekutu Pendamping Landon
+      for (let i = 0; i < squadCount; i++) {
+        const mesh = createOrbitalAllyMesh(i);
+        const x = (i === 0 ? -3 : (i === 1 ? 3 : 0));
+        const z = (i === 2 ? 6 : 4);
+        mesh.position.set(x, 1.7, z);
+        scene.add(mesh);
+
+        allies.push({
+          group: mesh,
+          isAlive: true,
+          hp: 140,
+          speed: 4.8,
+          cd: 0.8 + Math.random() * 0.8,
+          target: null,
+          offset: new THREE.Vector3(x, 0, z)
+        });
+        levelMeshes.push(mesh);
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 10. PEMBARUAN PROYEKTIIL, AI MUSUH, & SEKUTU DALAM LOOP
+    // -------------------------------------------------------------
+    function updateCosmicAI(dt) {
+      const pPos = camera.position;
+
+      // 1. Update AI Musuh
+      enemies.forEach(e => {
+        if (!e.isAlive) return;
+        const ePos = e.group.position;
+        const dx = pPos.x - ePos.x;
+        const dz = pPos.z - ePos.z;
+        const dist = Math.hypot(dx, dz) || 1;
+
+        if (dist < 85) e.alert = 6;
+        else e.alert = Math.max(0, e.alert - dt);
+
+        if (e.isShip && !e.boss) {
+          // Manuver Terbang Pesawat Pencegat (Mengitari & Menukik)
+          e.angle += 1.2 * dt;
+          const targetX = pPos.x + Math.sin(e.angle) * 16;
+          const targetZ = pPos.z + Math.cos(e.angle) * 16;
+          ePos.x += (targetX - ePos.x) * Math.min(1, 2.5 * dt);
+          ePos.z += (targetZ - ePos.z) * Math.min(1, 2.5 * dt);
+          e.group.lookAt(pPos.x, ePos.y, pPos.z);
+
+          // Tembakan Pesawat Pencegat
+          if (e.alert > 0) {
+            e.cd -= dt;
+            if (e.cd <= 0) {
+              e.cd = 1.4 + Math.random() * 1.2;
+              fireEnemyPlasma(ePos, pPos, 0xef4444);
+            }
+          }
+        } else if (!e.isShip && !e.boss) {
+          // Manuver Drone Intai Melayang
+          if (e.group.userData.ring) e.group.userData.ring.rotation.z += 8 * dt;
+          if (dist > 12) {
+            ePos.x += (dx / dist) * e.speed * dt;
+            ePos.z += (dz / dist) * e.speed * dt;
+          }
+          e.group.lookAt(pPos.x, ePos.y, pPos.z);
+
+          if (e.alert > 0) {
+            e.cd -= dt;
+            if (e.cd <= 0) {
+              e.cd = 1.6 + Math.random();
+              fireEnemyPlasma(ePos, pPos, 0xf97316);
+            }
+          }
+        } else if (e.boss) {
+          // Logika Bos Fregat Komando
+          e.group.lookAt(pPos.x, ePos.y, pPos.z);
+          e.cd -= dt;
+
+          // Fase 2 saat HP di bawah 50%
+          if (!e.phase2 && e.hp < e.maxHp * 0.5) {
+            e.phase2 = true;
+            CosmicAudio.playExplosion(ePos);
+          }
+
+          if (e.cd <= 0) {
+            e.cd = e.phase2 ? 1.6 : 2.5;
+            e.burst = e.phase2 ? 5 : 3;
+            e.burstCd = 0.08;
+          }
+
+          if (e.burst > 0) {
+            e.burstCd -= dt;
+            if (e.burstCd <= 0) {
+              e.burst--;
+              e.burstCd = 0.14;
+              fireEnemyPlasma(ePos, pPos, 0xff0055, 1.4);
+            }
+          }
+
+          // Perbarui Bar Bos HUD
+          const bBar = document.getElementById("u-boss-bar");
+          if (bBar) bBar.style.width = `${Math.max(0, (e.hp / e.maxHp) * 100)}%`;
+        }
+      });
+
+      // 2. Update AI Sekutu Orbital Landon
+      allies.forEach(a => {
+        if (!a.isAlive) return;
+        const aPos = a.group.position;
+
+        // Tentukan Target Musuh Terdekat
+        let closest = null, minD = 70;
+        enemies.forEach(e => {
+          if (e.isAlive) {
+            const d = aPos.distanceTo(e.group.position);
+            if (d < minD) { minD = d; closest = e; }
+          }
+        });
+        a.target = closest;
+
+        // Navigasi Mengikuti Landon / Menembak Musuh
+        if (SQUAD_STATE.cmd === 0) {
+          // Ikuti Landon Sesuai Offset Posisi
+          const dest = pPos.clone().add(a.offset);
+          const distToDest = aPos.distanceTo(dest);
+          if (distToDest > 1.8) {
+            const dir = dest.sub(aPos).normalize();
+            aPos.x += dir.x * a.speed * dt;
+            aPos.z += dir.z * a.speed * dt;
+          }
+        } else if (SQUAD_STATE.cmd === 2 && closest) {
+          // Menyerbu ke Arah Musuh
+          const ePos = closest.group.position;
+          const d = aPos.distanceTo(ePos);
+          if (d > 16) {
+            const dir = ePos.clone().sub(aPos).normalize();
+            aPos.x += dir.x * a.speed * dt;
+            aPos.z += dir.z * a.speed * dt;
+          }
+        }
+
+        if (closest) {
+          a.group.lookAt(closest.group.position.x, aPos.y, closest.group.position.z);
+          a.cd -= dt;
+          if (a.cd <= 0) {
+            a.cd = 0.9 + Math.random() * 0.7;
+            fireAllyLaser(aPos, closest.group.position);
+          }
+        } else {
+          a.group.lookAt(pPos.x, aPos.y, pPos.z);
+        }
+      });
+
+      // 3. Update Proyektil di Ruang Hampa
+      for (let i = projectiles.length - 1; i >= 0; i--) {
+        const p = projectiles[i];
+        p.mesh.position.addScaledVector(p.v, dt);
+        p.life -= dt;
+        let removeProj = (p.life <= 0);
+
+        if (p.isEnemy) {
+          // Kena Landon
+          if (p.mesh.position.distanceTo(camera.position) < 1.1) {
+            LandonState.hp = Math.max(0, LandonState.hp - p.dmg);
+            CosmicAudio.playExplosion(p.mesh.position);
+            removeProj = true;
+            updateLandonHUD();
+            if (LandonState.hp <= 0) {
+              alert("MISI GAGAL // INTEGRITAS BAJU EVA HANCUR!");
+              window.loadEngineLevel(currentLevelNumber);
+              return;
+            }
+          }
+        } else if (p.isAlly) {
+          // Kena Musuh
+          for (let k = 0; k < enemies.length; k++) {
+            const e = enemies[k];
+            if (e.isAlive && p.mesh.position.distanceTo(e.group.position) < (e.boss ? 4.5 : 1.8)) {
+              e.hp -= 34;
+              spawnHitSpark(p.mesh.position, 0x38bdf8);
+              if (e.hp <= 0) window.killCosmicEnemy(e);
+              removeProj = true;
+              break;
+            }
+          }
+        }
+
+        if (removeProj) {
+          scene.remove(p.mesh);
+          projectiles.splice(i, 1);
+        }
+      }
+    }
+
+    function fireEnemyPlasma(from, to, colorHex, scale = 1.0) {
+      const g = new THREE.SphereGeometry(0.25 * scale, 8, 8);
+      const m = new THREE.MeshBasicMaterial({ color: colorHex });
+      const proj = new THREE.Mesh(g, m);
+      proj.position.copy(from);
+      scene.add(proj);
+
+      const dir = to.clone().sub(from).normalize();
+      dir.x += (Math.random() - 0.5) * 0.08;
+      dir.y += (Math.random() - 0.5) * 0.08;
+      dir.z += (Math.random() - 0.5) * 0.08;
+
+      projectiles.push({
+        mesh: proj,
+        v: dir.normalize().multiplyScalar(42),
+        life: 3.5,
+        dmg: 14 * scale,
+        isEnemy: true
+      });
+      CosmicAudio.playLaserPulse();
+    }
+
+    function fireAllyLaser(from, to) {
+      const g = new THREE.CylinderGeometry(0.06, 0.06, 0.8, 6);
+      const m = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+      const proj = new THREE.Mesh(g, m);
+      proj.rotation.x = Math.PI / 2;
+      proj.position.copy(from).add(new THREE.Vector3(0, 1.3, 0));
+      scene.add(proj);
+
+      const dir = to.clone().sub(proj.position).normalize();
+      proj.lookAt(to);
+
+      projectiles.push({
+        mesh: proj,
+        v: dir.multiplyScalar(58),
+        life: 2.5,
+        isAlly: true
+      });
+      CosmicAudio.playLaserPulse();
+    }
+
+    window.killCosmicEnemy = function(enemy) {
+      enemy.isAlive = false;
+      CosmicAudio.playExplosion(enemy.group.position);
+      spawnHitSpark(enemy.group.position, 0xf97316);
+      scene.remove(enemy.group);
+
+      LandonState.kills++;
+      const lvl = CAMPAIGN_50_LEVELS[currentLevelNumber - 1];
+      const objElem = document.getElementById("hud-objective-text");
+      if (objElem) objElem.textContent = `${lvl.desc} [${LandonState.kills}/${lvl.enemies}]`;
+
+      // Jika Semua Target Hancur, Dok Ekstraksi Siap Menerima Pendaratan
+      if (LandonState.kills >= lvl.enemies) {
+        if (objElem) objElem.textContent = "SEKTOR BERSIH // CAPAI DOK EKSTRAKSI DI UJUNG!";
+      }
+    };
+
+    // Sambungkan Update AI & Sekutu ke Loop Engine
+    const _baseEngineAnimate = animateEngineLoop;
+    animateEngineLoop = function() {
+      _baseEngineAnimate();
+      if (controls && controls.isLocked) {
+        const dt = 0.016;
+        updateCosmicAI(dt);
+      }
+    };
+
+    // Sambungkan Pemuatan Musuh & Sekutu ke loadEngineLevel
+    const _baseLoadEngineLevel = window.loadEngineLevel;
+    window.loadEngineLevel = function(lvlNumber) {
+      _baseLoadEngineLevel(lvlNumber);
+      const lvlData = CAMPAIGN_50_LEVELS[lvlNumber - 1];
+      spawnCosmicEnemies(lvlData);
+      spawnOrbitalSquad();
+    };
+
+    // -------------------------------------------------------------
+    // 11. SISTEM KONTROL SENTUH VIRTUAL MOBILE LENGKAP
+    // -------------------------------------------------------------
+    function setupMobileTouchControls() {
+      const joy = document.getElementById("mobile-joystick");
+      const stick = document.getElementById("mobile-stick");
+      let joyTouchId = null;
+
+      if (joy && stick) {
+        joy.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          const t = e.changedTouches[0];
+          joyTouchId = t.identifier;
+        });
+
+        joy.addEventListener('touchmove', (e) => {
+          e.preventDefault();
+          const t = [...e.changedTouches].find(tc => tc.identifier === joyTouchId);
+          if (!t) return;
+
+          const rect = joy.getBoundingClientRect();
+          const cx = rect.left + rect.width / 2;
+          const cy = rect.top + rect.height / 2;
+          let dx = t.clientX - cx;
+          let dy = t.clientY - cy;
+          const dist = Math.hypot(dx, dy);
+          const maxDist = 38;
+
+          if (dist > maxDist) {
+            dx = (dx / dist) * maxDist;
+            dy = (dy / dist) * maxDist;
+          }
+
+          stick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+          moveF = (dy < -10);
+          moveB = (dy > 10);
+          moveL = (dx < -10);
+          moveR = (dx > 10);
+        });
+
+        const resetJoy = () => {
+          stick.style.transform = `translate(-50%, -50%)`;
+          moveF = moveB = moveL = moveR = false;
+          joyTouchId = null;
+        };
+        joy.addEventListener('touchend', resetJoy);
+        joy.addEventListener('touchcancel', resetJoy);
+      }
+
+      // Touch Look Pad (Sisi Kanan Layar)
+      const lookZone = document.getElementById("mobile-look-zone");
+      if (lookZone) {
+        let lastLX = 0, lastLY = 0, lookId = null;
+        lookZone.addEventListener('touchstart', (e) => {
+          const t = e.changedTouches[0];
+          lookId = t.identifier;
+          lastLX = t.clientX;
+          lastLY = t.clientY;
+        });
+
+        lookZone.addEventListener('touchmove', (e) => {
+          const t = [...e.changedTouches].find(tc => tc.identifier === lookId);
+          if (!t) return;
+          const dx = t.clientX - lastLX;
+          const dy = t.clientY - lastLY;
+          lastLX = t.clientX;
+          lastLY = t.clientY;
+
+          const sens = LandonState.isADS ? 0.0022 : 0.0042;
+          camera.rotation.y -= dx * sens;
+          camera.rotation.x = Math.max(-1.3, Math.min(1.3, camera.rotation.x - dy * sens));
+        });
+
+        const resetLook = () => { lookId = null; };
+        lookZone.addEventListener('touchend', resetLook);
+        lookZone.addEventListener('touchcancel', resetLook);
+      }
+
+      // Panel Tombol Sentuh Aksi
+      const mc = document.getElementById("mobile-controls");
+      if (mc && !document.getElementById("m-touch-grid")) {
+        const grid = document.createElement("div");
+        grid.id = "m-touch-grid";
+        grid.style.cssText = "position:absolute;right:14px;bottom:14px;display:grid;grid-template-columns:repeat(4, 52px);grid-template-rows:repeat(3, 52px);gap:8px;z-index:45;pointer-events:auto;";
+
+        const touchButtons = [
+          { label: 'REL<br>(1)', act: () => switchWeapon(0), col: '1', row: '1', bg: '#0f172a', tc: '#38bdf8' },
+          { label: 'PLS<br>(2)', act: () => switchWeapon(1), col: '2', row: '1', bg: '#0f172a', tc: '#38bdf8' },
+          { label: 'GSS<br>(3)', act: () => switchWeapon(2), col: '3', row: '1', bg: '#0f172a', tc: '#38bdf8' },
+          { label: 'REGU<br>(V)', act: () => toggleSquadCommandMobile(), col: '4', row: '1', bg: '#1e293b', tc: '#fbbf24' },
+
+          { label: 'EVA▲<br>THRUST', actDown: () => { evaUp = true; }, actUp: () => { evaUp = false; }, col: '1', row: '2', bg: '#065f46', tc: '#6ee7b7' },
+          { label: 'ISI<br>(R)', act: () => reloadLandonWeapon(), col: '2', row: '2', bg: '#0f172a', tc: '#cbd5e1' },
+          { label: 'ZOOM<br>ADS', act: () => setAimDownSights(!LandonState.isADS), col: '3', row: '2', bg: '#78350f', tc: '#f59e0b' },
+          { label: 'FIRE<br>💥', act: () => fireLandonWeapon(), col: '4', row: '2 / span 2', bg: '#881337', tc: '#fda4af', h: '112px' },
+
+          { label: 'EVA▼<br>MAG', actDown: () => { evaDown = true; }, actUp: () => { evaDown = false; }, col: '1', row: '3', bg: '#1e293b', tc: '#94a3b8' },
+          { label: 'PETA<br>(O)', act: () => toggleSolarCommandMap(), col: '2', row: '3', bg: '#0f172a', tc: '#38bdf8' },
+          { label: 'OPSI<br>⚙️', act: () => toggleSettingsModal(), col: '3', row: '3', bg: '#0f172a', tc: '#94a3b8' }
+        ];
+
+        touchButtons.forEach(b => {
+          const btn = document.createElement("button");
+          btn.innerHTML = b.label;
+          btn.style.cssText = `
+            grid-column: ${b.col};
+            grid-row: ${b.row};
+            height: ${b.h || '52px'};
+            background: ${b.bg};
+            border: 1px solid rgba(56, 189, 248, 0.45);
+            border-radius: 14px;
+            color: ${b.tc};
+            font: 900 10px monospace;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            line-height: 1.1;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            user-select: none;
+            touch-action: manipulation;
+          `;
+
+          if (b.actDown && b.actUp) {
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); b.actDown(); });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); b.actUp(); });
+          } else if (b.act) {
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); b.act(); });
+          }
+          grid.appendChild(btn);
+        });
+
+        mc.appendChild(grid);
+      }
+    }
+
+    function toggleSquadCommandMobile() {
+      SQUAD_STATE.cmd = (SQUAD_STATE.cmd + 1) % 3;
+      const cmdNames = ['IKUTI LANDON', 'TAHAN POSISI', 'SERANG BEBAS'];
+      const objElem = document.getElementById("hud-objective-text");
+      if (objElem) objElem.textContent = `KOMANDO REGU SEKUTU: ${cmdNames[SQUAD_STATE.cmd]}`;
+    }
+
+    // Keyboard Shortcut V untuk Komando Regu Sekutu
+    window.addEventListener('keydown', e => {
+      if (e.code === 'KeyV') {
+        toggleSquadCommandMobile();
+      }
+    });
+
+    // Inisialisasi Kontrol Sentuh saat Dokumen Siap
+    window.addEventListener('DOMContentLoaded', () => {
+      setupMobileTouchControls();
+    });
+// =============================================================
+    // PENINGKATAN VISUAL STASIUN, TEKSTUR PENUNJANG, & DURABILITAS
+    // =============================================================
+    
+    // Variabel Penampung Tekstur Gambar Unggahan
+    let customFloorTexture = null;
+    let customWallTexture = null;
+
+    // Muat tekstur tersimpan dari localStorage jika ada
+    try {
+      const savedFloor = localStorage.getItem('h2_tex_floor');
+      if (savedFloor) {
+        const imgF = new Image();
+        imgF.onload = () => {
+          const t = new THREE.Texture(imgF);
+          t.wrapS = t.wrapT = THREE.RepeatWrapping;
+          t.repeat.set(8, 36);
+          t.needsUpdate = true;
+          customFloorTexture = t;
+          if (levelMeshes.length) window.loadEngineLevel(currentLevelNumber);
+        };
+        imgF.src = savedFloor;
+      }
+
+      const savedWall = localStorage.getItem('h2_tex_wall');
+      if (savedWall) {
+        const imgW = new Image();
+        imgW.onload = () => {
+          const t = new THREE.Texture(imgW);
+          t.wrapS = t.wrapT = THREE.RepeatWrapping;
+          t.repeat.set(2, 6);
+          t.needsUpdate = true;
+          customWallTexture = t;
+          if (levelMeshes.length) window.loadEngineLevel(currentLevelNumber);
+        };
+        imgW.src = savedWall;
+      }
+    } catch(e){}
+
+    // 1. PENYELARASAN DURABILITAS LANDON (TIDAK MUDAH MATI)
+    LandonState.maxHp = 180;
+    LandonState.hp = 180;
+
+    // 2. OVERRIDE GENERATOR MODULAR DENGAN MATERIAL TEKSTUR & DETAIL SCI-FI
+    const _baseBuildModular = buildModularEnvironment;
+    buildModularEnvironment = function(lvlData) {
+      const env = lvlData.env;
+      const addObj = o => { scene.add(o); levelMeshes.push(o); return o; };
+
+      // Buat tekstur prosedural cadangan jika belum mengunggah gambar
+      const floorMat = new THREE.MeshStandardMaterial({
+        map: customFloorTexture || null,
+        color: customFloorTexture ? 0xffffff : (env === 'MOON' ? 0x1e293b : (env === 'SOLAR' ? 0x292524 : 0x0f172a)),
+        metalness: 0.8,
+        roughness: 0.25
+      });
+
+      // Lantai Dek Magnetik Utama
+      const floorG = new THREE.BoxGeometry(40, 1.2, 180);
+      const floor = addObj(new THREE.Mesh(floorG, floorMat));
+      floor.position.set(0, -0.6, -80);
+      floor.receiveShadow = true;
+      staticColliders.push({ x: 0, y: 0, z: -80, w: 40, d: 180, type: 'floor' });
+
+      // Garis Pandu Neon Dek
+      const neonG = new THREE.BoxGeometry(0.3, 0.05, 180);
+      const neonM = new THREE.MeshBasicMaterial({ color: lvlData.starColor || 0x38bdf8 });
+      const lineL = addObj(new THREE.Mesh(neonG, neonM));
+      lineL.position.set(-14, 0.03, -80);
+      const lineR = lineL.clone();
+      lineR.position.x = 14;
+      addObj(lineR);
+
+      // Material Dinding / Pilar Baja Bertekstur
+      const archMat = new THREE.MeshStandardMaterial({
+        map: customWallTexture || null,
+        color: customWallTexture ? 0xffffff : 0x1e293b,
+        metalness: 0.85,
+        roughness: 0.3
+      });
+
+      // Modul Berdasarkan Lingkungan
+      if (env === 'STATION' || env === 'SOLAR') {
+        for (let i = 0; i < 9; i++) {
+          const z = -10 - i * 20;
+          const pilL = addObj(new THREE.Mesh(new THREE.BoxGeometry(2.4, 14, 2.8), archMat));
+          pilL.position.set(-18, 6, z);
+          pilL.castShadow = true;
+          const pilR = pilL.clone();
+          pilR.position.x = 18;
+          addObj(pilR);
+
+          const roof = addObj(new THREE.Mesh(new THREE.BoxGeometry(38, 2.0, 2.8), archMat));
+          roof.position.set(0, 13, z);
+
+          // Lampu Strip Neon Interior
+          const stripG = new THREE.BoxGeometry(0.4, 0.15, 18);
+          const stripM = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+          const stripL = addObj(new THREE.Mesh(stripG, stripM));
+          stripL.position.set(-16.8, 12, z);
+          const stripR = stripL.clone();
+          stripR.position.x = 16.8;
+          addObj(stripR);
+
+          staticColliders.push({ x: -18, z: z, r: 2.4, type: 'col' });
+          staticColliders.push({ x: 18, z: z, r: 2.4, type: 'col' });
+        }
+      } else if (env === 'ASTEROID' || env === 'NEBULA') {
+        const astMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.9, flatShading: true });
+        for (let i = 0; i < 18; i++) {
+          const az = -15 - i * 9.5;
+          const side = (i % 2 === 0 ? 1 : -1);
+          const ax = side * (12 + (i % 4) * 3);
+          const ay = (Math.sin(i) * 5) + 3;
+          const ar = 2.5 + (i % 3) * 1.5;
+
+          const ast = addObj(new THREE.Mesh(new THREE.IcosahedronGeometry(ar, 1), astMat));
+          ast.position.set(ax, ay, az);
+          ast.castShadow = true;
+          ast.rotation.set(i, i * 0.5, 0);
+          staticColliders.push({ x: ax, y: ay, z: az, r: ar * 0.9, type: 'sphere' });
+        }
+      } else if (env === 'MOON') {
+        const moonRockMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.95 });
+        for (let i = 0; i < 14; i++) {
+          const rz = -12 - i * 12;
+          const rx = (i % 2 === 0 ? 1 : -1) * 13;
+          const rock = addObj(new THREE.Mesh(new THREE.CylinderGeometry(1.4, 2.8, 5, 6), moonRockMat));
+          rock.position.set(rx, 2.5, rz);
+          staticColliders.push({ x: rx, z: rz, r: 2.2, type: 'col' });
+        }
+      }
+
+      // Barikade Perlindungan Infanteri
+      for (let k = 0; k < 6; k++) {
+        const bz = -25 - k * 26;
+        const bx = (k % 2 === 0 ? -6 : 6);
+        const bar = addObj(new THREE.Mesh(new THREE.BoxGeometry(8, 2.4, 1.4), archMat));
+        bar.position.set(bx, 1.2, bz);
+        bar.castShadow = true;
+        staticColliders.push({ x: bx, z: bz, r: 3.5, type: 'col' });
+      }
+
+      buildExtractionDock(-165);
+    };
+
+    // 3. PENYESUAIAN PENGURANGAN DAMAGE & TOLERANSI OKSIGEN DI LOOP MESIN
+    const _baseLoopDurability = animateEngineLoop;
+    animateEngineLoop = function() {
+      _baseLoopDurability();
+
+      if (controls && controls.isLocked) {
+        const pos = camera.position;
+        const dt = 0.016;
+
+        // Zona aman lebih luas agar tidak langsung kehabisan napas
+        if (pos.y > 45 || Math.abs(pos.x) > 55 || pos.z > 25 || pos.z < -205) {
+          LandonState.isMagBoots = false;
+          LandonState.o2 = Math.max(0, LandonState.o2 - 2.5 * dt);
+          if (LandonState.o2 <= 0) {
+            LandonState.hp = Math.max(0, LandonState.hp - 5 * dt);
+          }
+        } else {
+          LandonState.o2 = Math.min(100, LandonState.o2 + 30 * dt);
+          // Regenerasi zirah EVA perlahan saat menempel aman di dek
+          if (LandonState.isMagBoots && LandonState.hp < LandonState.maxHp) {
+            LandonState.hp = Math.min(LandonState.maxHp, LandonState.hp + 3.5 * dt);
+          }
+        }
+      }
+    };
+
+    // Teredamnya damage proyektil musuh oleh baju EVA Landon
+    const _baseUpdateCosmicAI = updateCosmicAI;
+    updateCosmicAI = function(dt) {
+      // Modifikasi sementara damage proyektil musuh
+      projectiles.forEach(p => {
+        if (p.isEnemy && !p._damped) {
+          p.dmg *= 0.45; // Mengurangi damage drastis agar pertempuran seimbang
+          p._damped = true;
+        }
+      });
+      _baseUpdateCosmicAI(dt);
+    };
+
+    // 4. PENAMBAHAN ELEMEN INPUT UPLOAD TEKSTUR PADA MODAL PENGATURAN (F2)
+    function attachTextureUploadUI() {
+      const modalSet = document.getElementById("modal-settings");
+      if (!modalSet || document.getElementById("cfg-floor-file")) return;
+
+      const innerBox = modalSet.querySelector(".space-y-3");
+      if (!innerBox) return;
+
+      const texSection = document.createElement("div");
+      texSection.className = "border-t border-slate-800 pt-2 space-y-2";
+      texSection.innerHTML = `
+        <b class="text-sky-400 block">TEKSTUR LOGAM STASIUN (SEAMLESS)</b>
+        
+        <div>
+          <span class="text-slate-300 block text-[10px]">Tekstur Lantai Baja (Grate / Deck):</span>
+          <input id="cfg-floor-file" type="file" accept="image/*" class="w-full mt-0.5 text-[9px] text-slate-400">
+        </div>
+
+        <div>
+          <span class="text-slate-300 block text-[10px]">Tekstur Dinding / Pilar (Hull Plating):</span>
+          <input id="cfg-wall-file" type="file" accept="image/*" class="w-full mt-0.5 text-[9px] text-slate-400">
+        </div>
+
+        <button id="cfg-tex-reset" class="w-full py-1 bg-rose-950/60 border border-rose-800 rounded-lg text-rose-300 font-bold hover:bg-rose-900 text-[10px]">
+          Reset Semua Tekstur ke Bawaan
+        </button>
+      `;
+
+      // Selipkan sebelum tombol tutup
+      const closeBtn = innerBox.querySelector("button[onclick='toggleSettingsModal()']");
+      if (closeBtn) innerBox.insertBefore(texSection, closeBtn);
+
+      // Listener Upload Lantai
+      document.getElementById("cfg-floor-file").onchange = e => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = ev => {
+            const dataUrl = ev.target.result;
+            const img = new Image();
+            img.onload = () => {
+              const t = new THREE.Texture(img);
+              t.wrapS = t.wrapT = THREE.RepeatWrapping;
+              t.repeat.set(8, 36);
+              t.needsUpdate = true;
+              customFloorTexture = t;
+              try { localStorage.setItem('h2_tex_floor', dataUrl); } catch(x){}
+              if (levelMeshes.length) window.loadEngineLevel(currentLevelNumber);
+            };
+            img.src = dataUrl;
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+
+      // Listener Upload Dinding / Pilar
+      document.getElementById("cfg-wall-file").onchange = e => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = ev => {
+            const dataUrl = ev.target.result;
+            const img = new Image();
+            img.onload = () => {
+              const t = new THREE.Texture(img);
+              t.wrapS = t.wrapT = THREE.RepeatWrapping;
+              t.repeat.set(2, 6);
+              t.needsUpdate = true;
+              customWallTexture = t;
+              try { localStorage.setItem('h2_tex_wall', dataUrl); } catch(x){}
+              if (levelMeshes.length) window.loadEngineLevel(currentLevelNumber);
+            };
+            img.src = dataUrl;
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+
+      // Tombol Reset Tekstur
+      document.getElementById("cfg-tex-reset").onclick = () => {
+        customFloorTexture = null;
+        customWallTexture = null;
+        try {
+          localStorage.removeItem('h2_tex_floor');
+          localStorage.removeItem('h2_tex_wall');
+        } catch(x){}
+        if (levelMeshes.length) window.loadEngineLevel(currentLevelNumber);
+      };
+    }
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      attachTextureUploadUI();
+    } else {
+      window.addEventListener('DOMContentLoaded', attachTextureUploadUI);
+    }
+
+// =============================================================
+    // MODUL PENUH: SISTEM 8 ASSET GAMBAR (TEXTURE, NORMAL, DECAL, SPRITE)
+    // =============================================================
+
+    const H2_TEXTURES = {
+      sky: null,
+      floor: null,
+      wall: null,
+      door: null,
+      console: null,
+      bossSkin: null,
+      normalMap: null,
+      enemySprite: null
+    };
+
+    // 1. SISTEM PENYIMPANAN GAMBAR INDEXEDDB (PERSISTENSI PENUH)
+    const AssetDB = {
+      dbName: 'Harvean2AssetDB',
+      storeName: 'assets',
+      open() {
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open(this.dbName, 1);
+          req.onupgradeneeded = e => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(this.storeName)) {
+              db.createObjectStore(this.storeName, { keyPath: 'slot' });
+            }
+          };
+          req.onsuccess = e => resolve(e.target.result);
+          req.onerror = e => reject(e.target.error);
+        });
+      },
+      async save(slot, dataUrl) {
+        try {
+          const db = await this.open();
+          return new Promise((res, rej) => {
+            const tx = db.transaction(this.storeName, 'readwrite');
+            tx.objectStore(this.storeName).put({ slot, dataUrl });
+            tx.oncomplete = () => res(true);
+            tx.onerror = e => rej(e);
+          });
+        } catch(e) {}
+      },
+      async loadAll() {
+        try {
+          const db = await this.open();
+          return new Promise((res, rej) => {
+            const tx = db.transaction(this.storeName, 'readonly');
+            const req = tx.objectStore(this.storeName).getAll();
+            req.onsuccess = () => res(req.result || []);
+            req.onerror = () => res([]);
+          });
+        } catch(e) { return []; }
+      },
+      async clearAll() {
+        try {
+          const db = await this.open();
+          return new Promise((res, rej) => {
+            const tx = db.transaction(this.storeName, 'readwrite');
+            tx.objectStore(this.storeName).clear();
+            tx.oncomplete = () => res(true);
+            tx.onerror = () => res(false);
+          });
+        } catch(e) {}
+      }
+    };
+
+    function applyTextureToSlot(slot, img) {
+  const t = new THREE.Texture(img);
+  t.needsUpdate = true;
+
+  if (slot === 'floor') {
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(8, 36);
+    H2_TEXTURES.floor = t;
+  } else if (slot === 'wall') {
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(2, 6);
+    H2_TEXTURES.wall = t;
+  } else if (slot === 'normal_map') {
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(8, 36);
+    H2_TEXTURES.normalMap = t;
+  } else if (slot === 'sky') {
+    t.mapping = THREE.EquirectangularReflectionMapping;
+    t.encoding = THREE.sRGBEncoding;
+    customSkyTexture = t;
+    H2_TEXTURES.sky = t;
+    if (typeof scene !== 'undefined' && scene) {
+      scene.background = t;
+    }
+  } else if (slot === 'door') {
+    H2_TEXTURES.door = t;
+  } else if (slot === 'console') {
+    H2_TEXTURES.console = t;
+  } else if (slot === 'boss_skin') {
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(4, 2);
+    H2_TEXTURES.bossSkin = t;
+  } else if (slot === 'enemy_sprite') {
+    H2_TEXTURES.enemySprite = t;
+  }
+
+  if (typeof levelMeshes !== 'undefined' && levelMeshes.length) {
+    window.loadEngineLevel(currentLevelNumber);
+  }
+}
+
+    async function restoreAllSavedAssets() {
+      const records = await AssetDB.loadAll();
+      for (const rec of records) {
+        const img = new Image();
+        img.onload = () => applyTextureToSlot(rec.slot, img);
+        img.src = rec.dataUrl;
+      }
+    }
+
+    // 2. OVERRIDE GENERATOR LINGKUNGAN DENGAN 8 ASET LENGKAP
+    buildModularEnvironment = function(lvlData) {
+      const env = lvlData.env;
+      const addObj = o => { scene.add(o); levelMeshes.push(o); return o; };
+
+      // Lantai Dek Magnetik Utama (dengan Normal Map jika diunggah)
+      const floorMat = new THREE.MeshStandardMaterial({
+        map: H2_TEXTURES.floor || null,
+        normalMap: H2_TEXTURES.normalMap || null,
+        normalScale: new THREE.Vector2(1.2, 1.2),
+        color: H2_TEXTURES.floor ? 0xffffff : (env === 'MOON' ? 0x1e293b : (env === 'SOLAR' ? 0x292524 : 0x0f172a)),
+        metalness: 0.82,
+        roughness: 0.28
+      });
+      const floorG = new THREE.BoxGeometry(40, 1.2, 180);
+      const floor = addObj(new THREE.Mesh(floorG, floorMat));
+      floor.position.set(0, -0.6, -80);
+      floor.receiveShadow = true;
+      staticColliders.push({ x: 0, y: 0, z: -80, w: 40, d: 180, type: 'floor' });
+
+      // Garis Pandu Neon Dek
+      const neonG = new THREE.BoxGeometry(0.3, 0.05, 180);
+      const neonM = new THREE.MeshBasicMaterial({ color: lvlData.starColor || 0x38bdf8 });
+      const lineL = addObj(new THREE.Mesh(neonG, neonM));
+      lineL.position.set(-14, 0.03, -80);
+      const lineR = lineL.clone();
+      lineR.position.x = 14;
+      addObj(lineR);
+
+      // Material Dinding / Pilar Baja
+      const wallMat = new THREE.MeshStandardMaterial({
+        map: H2_TEXTURES.wall || null,
+        normalMap: H2_TEXTURES.normalMap || null,
+        color: H2_TEXTURES.wall ? 0xffffff : 0x1e293b,
+        metalness: 0.85,
+        roughness: 0.3
+      });
+
+      // Material Pintu Airlock Blast Door
+      const doorMat = new THREE.MeshStandardMaterial({
+        map: H2_TEXTURES.door || null,
+        color: H2_TEXTURES.door ? 0xffffff : 0x334155,
+        metalness: 0.7,
+        roughness: 0.4
+      });
+
+      // Material Panel Konsol Hologram Bercahaya
+      const consoleMat = new THREE.MeshBasicMaterial({
+        map: H2_TEXTURES.console || null,
+        color: H2_TEXTURES.console ? 0xffffff : 0x0284c7
+      });
+
+      if (env === 'STATION' || env === 'SOLAR') {
+        for (let i = 0; i < 9; i++) {
+          const z = -10 - i * 20;
+          const pilL = addObj(new THREE.Mesh(new THREE.BoxGeometry(2.4, 14, 2.8), wallMat));
+          pilL.position.set(-18, 6, z);
+          pilL.castShadow = true;
+          const pilR = pilL.clone();
+          pilR.position.x = 18;
+          addObj(pilR);
+
+          const roof = addObj(new THREE.Mesh(new THREE.BoxGeometry(38, 2.0, 2.8), wallMat));
+          roof.position.set(0, 13, z);
+
+          // Strip Lampu Neon Langit-langit
+          const stripG = new THREE.BoxGeometry(0.4, 0.15, 18);
+          const stripM = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+          const stripL = addObj(new THREE.Mesh(stripG, stripM));
+          stripL.position.set(-16.8, 12, z);
+          const stripR = stripL.clone();
+          stripR.position.x = 16.8;
+          addObj(stripR);
+
+          // Pasang Terminal Monitor Konsol di Sisi Dek
+          if (i % 2 === 1) {
+            const conTable = addObj(new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.2, 1.4), wallMat));
+            conTable.position.set(-14, 0.6, z);
+            const conScreen = addObj(new THREE.Mesh(new THREE.PlaneGeometry(2.8, 1.2), consoleMat));
+            conScreen.position.set(-14, 1.6, z);
+            conScreen.rotation.y = Math.PI / 2;
+          }
+
+          staticColliders.push({ x: -18, z: z, r: 2.4, type: 'col' });
+          staticColliders.push({ x: 18, z: z, r: 2.4, type: 'col' });
+        }
+      } else if (env === 'ASTEROID' || env === 'NEBULA') {
+        const astMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.9, flatShading: true });
+        for (let i = 0; i < 18; i++) {
+          const az = -15 - i * 9.5;
+          const side = (i % 2 === 0 ? 1 : -1);
+          const ax = side * (12 + (i % 4) * 3);
+          const ay = (Math.sin(i) * 5) + 3;
+          const ar = 2.5 + (i % 3) * 1.5;
+
+          const ast = addObj(new THREE.Mesh(new THREE.IcosahedronGeometry(ar, 1), astMat));
+          ast.position.set(ax, ay, az);
+          ast.castShadow = true;
+          ast.rotation.set(i, i * 0.5, 0);
+          staticColliders.push({ x: ax, y: ay, z: az, r: ar * 0.9, type: 'sphere' });
+        }
+      } else if (env === 'MOON') {
+        const moonRockMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.95 });
+        for (let i = 0; i < 14; i++) {
+          const rz = -12 - i * 12;
+          const rx = (i % 2 === 0 ? 1 : -1) * 13;
+          const rock = addObj(new THREE.Mesh(new THREE.CylinderGeometry(1.4, 2.8, 5, 6), moonRockMat));
+          rock.position.set(rx, 2.5, rz);
+          staticColliders.push({ x: rx, z: rz, r: 2.2, type: 'col' });
+        }
+      }
+
+      // Barikade Perlindungan & Pintu Blast Door Sekat Ruangan
+      for (let k = 0; k < 6; k++) {
+        const bz = -25 - k * 26;
+        const bx = (k % 2 === 0 ? -6 : 6);
+        const bar = addObj(new THREE.Mesh(new THREE.BoxGeometry(8, 2.4, 1.4), doorMat));
+        bar.position.set(bx, 1.2, bz);
+        bar.castShadow = true;
+        staticColliders.push({ x: bx, z: bz, r: 3.5, type: 'col' });
+      }
+
+      buildExtractionDock(-165);
+    };
+
+    // 3. OVERRIDE PEMBUATAN MUSUH (SUPPORT 2.5D SPRITE & SKIN BOS)
+    const _baseSpawnEnemies = spawnCosmicEnemies;
+    spawnCosmicEnemies = function(lvlData) {
+      // Jika sprite musuh diunggah, gunakan THREE.Sprite untuk musuh reguler
+      if (H2_TEXTURES.enemySprite) {
+        enemies = [];
+        const count = lvlData.enemies;
+        const isBoss = !!lvlData.boss;
+        const regularCount = isBoss ? Math.max(3, count - 1) : count;
+
+        const spriteMat = new THREE.SpriteMaterial({
+          map: H2_TEXTURES.enemySprite,
+          transparent: true
+        });
+
+        for (let i = 0; i < regularCount; i++) {
+          const sprite = new THREE.Sprite(spriteMat);
+          sprite.scale.set(3.4, 3.4, 1.0);
+          const z = -25 - (i * (130 / regularCount));
+          const x = (Math.random() - 0.5) * 30;
+          const y = 3.5 + Math.random() * 3.5;
+          sprite.position.set(x, y, z);
+          scene.add(sprite);
+
+          const enemyObj = {
+            group: sprite,
+            isAlive: true,
+            isShip: true,
+            hp: 75 + currentLevelNumber * 2.5,
+            speed: 4.8,
+            alert: 0,
+            cd: 1.2 + Math.random(),
+            angle: Math.random() * Math.PI * 2
+          };
+          sprite.userData.en = enemyObj;
+          enemies.push(enemyObj);
+          levelMeshes.push(sprite);
+        }
+
+        // Bos Fregat (dengan Skin Khusus jika diunggah)
+        if (isBoss) {
+          const bName = `LACHORES ARCHON-FRIGATE // SEKTOR ${String(lvlData.id).padStart(2, '0')}`;
+          const bMesh = createBossFrigateMesh(bName);
+          if (H2_TEXTURES.bossSkin) {
+            bMesh.traverse(c => {
+              if (c.isMesh && c.material) {
+                c.material.map = H2_TEXTURES.bossSkin;
+                c.material.needsUpdate = true;
+              }
+            });
+          }
+          bMesh.position.set(0, 12, -140);
+          scene.add(bMesh);
+
+          const bossObj = {
+            group: bMesh,
+            isAlive: true,
+            isShip: true,
+            boss: true,
+            name: bName,
+            hp: 650 + currentLevelNumber * 35,
+            maxHp: 650 + currentLevelNumber * 35,
+            speed: 2.2,
+            alert: 10,
+            cd: 1.0,
+            phase2: false,
+            burst: 0,
+            burstCd: 0
+          };
+          bMesh.traverse(c => { if (c.isMesh) c.userData.en = bossObj; });
+          enemies.push(bossObj);
+          levelMeshes.push(bMesh);
+
+          const bWrap = document.getElementById("u-boss-bar-wrap");
+          const bLabel = document.getElementById("u-boss-name");
+          if (bWrap) bWrap.classList.remove("hidden");
+          if (bLabel) bLabel.textContent = bName;
+        } else {
+          const bWrap = document.getElementById("u-boss-bar-wrap");
+          if (bWrap) bWrap.classList.add("hidden");
+        }
+      } else {
+        // Fallback ke model 3D primitif jika gambar sprite belum diunggah
+        _baseSpawnEnemies(lvlData);
+        if (H2_TEXTURES.bossSkin) {
+          const boss = enemies.find(e => e.boss);
+          if (boss) {
+            boss.group.traverse(c => {
+              if (c.isMesh && c.material) {
+                c.material.map = H2_TEXTURES.bossSkin;
+                c.material.needsUpdate = true;
+              }
+            });
+          }
+        }
+      }
+    };
+
+    // 4. UI 8 SLOT UPLOAD GAMBAR PADA MODAL PENGATURAN (F2)
+    function build8SlotsUploadUI() {
+      const modal = document.getElementById("modal-settings");
+      if (!modal || document.getElementById("h2-8-assets-box")) return;
+
+      const inner = modal.querySelector(".space-y-3");
+      if (!inner) return;
+
+      const assetBox = document.createElement("div");
+      assetBox.id = "h2-8-assets-box";
+      assetBox.className = "border-t border-slate-800 pt-3 space-y-2 max-h-56 overflow-y-auto pr-1 text-[10px]";
+      assetBox.innerHTML = `
+        <b class="text-sky-400 block text-xs">UNGGAH 8 ASET VISUAL LENGKAP</b>
+        <p class="text-[9px] text-slate-400">Pilih file gambar Anda. Tersimpan otomatis ke memori browser.</p>
+
+        <div class="space-y-1.5 mt-1">
+          <div>
+            <span class="text-sky-200 block font-bold">1. Skybox Panorama 360° (.jpg/.png):</span>
+            <input type="file" accept="image/*" data-slot="sky" class="w-full text-[9px] text-slate-400">
+          </div>
+          <div>
+            <span class="text-sky-200 block font-bold">2. Tekstur Lantai Dek Baja (Grate / Deck):</span>
+            <input type="file" accept="image/*" data-slot="floor" class="w-full text-[9px] text-slate-400">
+          </div>
+          <div>
+            <span class="text-sky-200 block font-bold">3. Tekstur Dinding / Pilar (Hull Wall):</span>
+            <input type="file" accept="image/*" data-slot="wall" class="w-full text-[9px] text-slate-400">
+          </div>
+          <div>
+            <span class="text-sky-200 block font-bold">4. Pintu Airlock / Blast Door Decal:</span>
+            <input type="file" accept="image/*" data-slot="door" class="w-full text-[9px] text-slate-400">
+          </div>
+          <div>
+            <span class="text-sky-200 block font-bold">5. Panel Konsol / Monitor Hologram:</span>
+            <input type="file" accept="image/*" data-slot="console" class="w-full text-[9px] text-slate-400">
+          </div>
+          <div>
+            <span class="text-sky-200 block font-bold">6. Skin Zirah Fregat Bos (Hull Camo):</span>
+            <input type="file" accept="image/*" data-slot="boss_skin" class="w-full text-[9px] text-slate-400">
+          </div>
+          <div>
+            <span class="text-sky-200 block font-bold">7. Normal Map Logam (Ungu-Kebiruan):</span>
+            <input type="file" accept="image/*" data-slot="normal_map" class="w-full text-[9px] text-slate-400">
+          </div>
+          <div>
+            <span class="text-amber-300 block font-bold">8. Sprite Musuh 2.5D (.PNG Transparan):</span>
+            <input type="file" accept="image/png" data-slot="enemy_sprite" class="w-full text-[9px] text-slate-400">
+          </div>
+        </div>
+
+        <button id="btn-clear-all-assets" class="w-full mt-2 py-1.5 bg-rose-950/70 border border-rose-800 rounded-lg text-rose-300 font-bold hover:bg-rose-900 text-[10px]">
+          🗑 Hapus Semua Aset Tersimpan (Reset Bawaan)
+        </button>
+      `;
+
+      // Sisipkan sebelum tombol tutup
+      const closeBtn = inner.querySelector("button[onclick='toggleSettingsModal()']");
+      if (closeBtn) inner.insertBefore(assetBox, closeBtn);
+
+      // Event Listener File Reader untuk Semua 8 Slot
+      const inputs = assetBox.querySelectorAll("input[type='file'][data-slot]");
+      inputs.forEach(inp => {
+        inp.onchange = e => {
+          const file = e.target.files[0];
+          const slot = inp.getAttribute("data-slot");
+          if (!file || !slot) return;
+
+          const reader = new FileReader();
+          reader.onload = ev => {
+            const dataUrl = ev.target.result;
+            const img = new Image();
+            img.onload = () => {
+              applyTextureToSlot(slot, img);
+              AssetDB.save(slot, dataUrl);
+            };
+            img.src = dataUrl;
+          };
+          reader.readAsDataURL(file);
+        };
+      });
+
+      // Tombol Reset Bersih
+      document.getElementById("btn-clear-all-assets").onclick = async () => {
+        await AssetDB.clearAll();
+        for (const k in H2_TEXTURES) H2_TEXTURES[k] = null;
+        customSkyTexture = null;
+        if (levelMeshes.length) window.loadEngineLevel(currentLevelNumber);
+        alert("Semua aset tersimpan berhasil dihapus. Menggunakan visual bawaan!");
+      };
+    }
+
+    // Inisialisasi Otomatis
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      restoreAllSavedAssets();
+      build8SlotsUploadUI();
+    } else {
+      window.addEventListener('DOMContentLoaded', () => {
+        restoreAllSavedAssets();
+        build8SlotsUploadUI();
+      });
+    }
+// =============================================================
+    // PENGHUBUNG 8 SLOT INPUT GAMBAR KE ENGINE THREE.JS & MEMORI
+    // =============================================================
+    function setupDirectAssetInputs() {
+      // Cari semua tombol input file yang ada di modal F2
+      const inputs = document.querySelectorAll('.h2-asset-input');
+      
+      inputs.forEach(inp => {
+        inp.onchange = e => {
+          const file = e.target.files[0];
+          const slot = inp.getAttribute('data-slot');
+          if (!file || !slot) return;
+
+          // Baca file gambar yang Anda pilih
+          const reader = new FileReader();
+          reader.onload = ev => {
+            const dataUrl = ev.target.result;
+            const img = new Image();
+            img.onload = () => {
+              // 1. Terapkan langsung ke tekstur 3D game
+              if (typeof applyTextureToSlot === 'function') {
+                applyTextureToSlot(slot, img);
+              }
+              // 2. Simpan permanen ke database browser
+              if (typeof AssetDB !== 'undefined' && AssetDB.save) {
+                AssetDB.save(slot, dataUrl);
+              }
+            };
+            img.src = dataUrl;
+          };
+          reader.readAsDataURL(file);
+        };
+      });
+
+      // Tombol Reset Semua Gambar
+      const resetBtn = document.getElementById('btn-clear-all-assets');
+      if (resetBtn) {
+        resetBtn.onclick = async () => {
+          if (typeof AssetDB !== 'undefined' && AssetDB.clearAll) {
+            await AssetDB.clearAll();
+          }
+          if (typeof H2_TEXTURES !== 'undefined') {
+            for (const k in H2_TEXTURES) H2_TEXTURES[k] = null;
+          }
+          customSkyTexture = null;
+          if (typeof currentLevelNumber !== 'undefined' && typeof window.loadEngineLevel === 'function') {
+            window.loadEngineLevel(currentLevelNumber);
+          }
+          alert('Semua gambar kustom berhasil direset ke tampilan bawaan.');
+        };
+      }
+    }
+
+    // Jalankan otomatis saat halaman selesai dimuat
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      setupDirectAssetInputs();
+    } else {
+      window.addEventListener('DOMContentLoaded', setupDirectAssetInputs);
+    }
+  </script>
+</body>
+</html>

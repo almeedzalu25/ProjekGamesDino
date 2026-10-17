@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>HARVEAN // PROTOKOL TIER-8: 30-LEVEL CAMPAIGN</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js r128 CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Three.js PointerLockControls -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: 'Courier New', Courier, monospace;
+      user-select: none;
+      background: #020617;
+      touch-action: none;
+    }
+
+    #crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 14px;
+      height: 14px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 30;
+      transition: all 0.15s ease;
+    }
+    #crosshair::before, #crosshair::after {
+      content: '';
+      position: absolute;
+      background: #00f0ff;
+      box-shadow: 0 0 6px #00f0ff;
+    }
+    #crosshair::before { top: 6px; left: 0; width: 14px; height: 2px; }
+    #crosshair::after { top: 0; left: 6px; width: 2px; height: 14px; }
+
+    #crosshair.ads-aim {
+      transform: translate(-50%, -50%) scale(1.4);
+    }
+    #crosshair.ads-aim::before, #crosshair.ads-aim::after {
+      background: #f59e0b;
+      box-shadow: 0 0 8px #f59e0b;
+    }
+
+    /* CRT Scanline & Sci-Fi Screen Overlay */
+    .crt-overlay {
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+      background-size: 100% 3px, 6px 100%;
+      pointer-events: none;
+    }
+
+    /* Virtual Mobile Controls */
+    #mobile-controls {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 40;
+      pointer-events: none;
+    }
+    .mobile-touch-zone {
+      pointer-events: auto;
+      touch-action: none;
+    }
+    #mobile-joystick {
+      position: absolute;
+      left: 20px;
+      bottom: 24px;
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      background: rgba(2, 6, 23, 0.55);
+      border: 2px solid rgba(0, 240, 255, 0.4);
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);
+    }
+    #mobile-stick {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 48px;
+      height: 48px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: rgba(0, 240, 255, 0.3);
+      border: 2px solid #00f0ff;
+    }
+
+    @media (max-width: 900px) {
+      #mobile-controls { display: block; }
+    }
+  </style>
+</head>
+<body class="text-slate-200">
+
+  <!-- 3D Viewport Canvas Container -->
+  <div id="canvas-container" class="absolute inset-0 z-0"></div>
+
+  <!-- CRT Vignette Overlay -->
+  <div class="crt-overlay absolute inset-0 z-10"></div>
+
+  <!-- Reticle Crosshair -->
+  <div id="crosshair" class="hidden"></div>
+
+  <!-- ==================== UI HUD OVERLAYS ==================== -->
+
+  <!-- Top Tactical Telemetry Bar -->
+  <div id="hud-top" class="hidden absolute top-0 left-0 right-0 z-20 p-3 pointer-events-none flex justify-between items-start">
+    <div class="bg-slate-950/85 border border-cyan-500/40 rounded-xl px-4 py-2 backdrop-blur-md shadow-lg pointer-events-auto">
+      <div class="flex items-center gap-3">
+        <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+        <div>
+          <div class="text-[9px] uppercase tracking-widest text-cyan-400 font-bold" id="hud-act-title">ACT I // LITOSFER K-19</div>
+          <div class="text-xs font-black text-white" id="hud-level-title">LVL 01: Koridor Pipa K-19</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center Compass & Objective Tracker -->
+    <div class="bg-slate-950/85 border border-amber-500/40 rounded-xl px-5 py-2 backdrop-blur-md text-center shadow-lg">
+      <div class="text-[9px] uppercase tracking-widest text-amber-400 font-bold">Direktif Protokol</div>
+      <div class="text-xs font-bold text-white tracking-wide" id="hud-objective-text">Musnahkan Unit Sintetis Lachores [0/3]</div>
+    </div>
+
+    <!-- Right Controls: Orbital Map Switcher & Health/Ammo -->
+    <div class="flex items-center gap-2 pointer-events-auto">
+      <button onclick="toggleOrbitalSandbox()" class="px-3 py-2 bg-slate-900/90 border border-cyan-500/50 hover:bg-cyan-950 text-cyan-300 rounded-xl text-xs font-bold transition shadow-lg flex items-center gap-1.5">
+        <span>🌐</span> Peta Orbit
+      </button>
+
+      <button onclick="toggleSettingsModal()" class="px-3 py-2 bg-slate-900/90 border border-cyan-500/50 hover:bg-cyan-950 text-cyan-300 rounded-xl text-xs font-bold transition shadow-lg flex items-center gap-1.5">
+        <span>⚙️</span> Opsi (F2)
+      </button>
+
+      <div class="bg-slate-950/85 border border-slate-700 rounded-xl px-4 py-2 backdrop-blur-md text-right">
+        <div class="text-[9px] uppercase text-slate-400 font-bold">Integritas Baju Tempur</div>
+        <div class="text-xs font-black text-emerald-400" id="hud-hp-stat">100% // NORM</div>
+      </div>
+
+      <div class="bg-slate-950/85 border border-slate-700 rounded-xl px-4 py-2 backdrop-blur-md text-right">
+        <div class="text-[9px] uppercase text-slate-400 font-bold">Rel Kinetik</div>
+        <div class="text-xs font-black text-amber-400" id="hud-ammo-stat">180 / 180</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Center Interaction Prompt -->
+  <div id="interact-prompt" class="hidden absolute top-2/3 left-1/2 -translate-x-1/2 z-30 bg-slate-950/90 border border-cyan-400 px-5 py-2 rounded-full text-cyan-300 text-xs font-bold tracking-wider animate-pulse shadow-xl pointer-events-none">
+    [E] AKTIFKAN TERMINAL REAKTOR
+  </div>
+
+  <!-- Bottom Tactical Radar & Level Controls -->
+  <div id="hud-bottom" class="hidden absolute bottom-3 left-3 right-3 z-20 pointer-events-none flex justify-between items-end">
+    <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 backdrop-blur text-[10px] text-slate-400 space-y-1">
+      <div>WASD: Manuver Kaki | SHIFT: Lari Cepat | SPASI: Lompat</div>
+      <div>KLIK KIRI: Tembak Rel Kinetik | KLIK KANAN: Zoom ADS Hologram</div>
+      <div>E: Interaksi Katup/Monolit | TAB / O: Peta Orbital Komando | F2: 10 Slot Aset</div>
+    </div>
+
+    <!-- Tactical Radar Canvas -->
+    <div class="bg-slate-950/90 border border-cyan-500/40 rounded-2xl p-2 shadow-2xl pointer-events-auto flex flex-col items-center">
+      <div class="text-[8px] uppercase tracking-widest text-cyan-400 font-bold mb-1">Sensor Litosfer</div>
+      <canvas id="radar-canvas" width="110" height="110" class="rounded-xl bg-slate-900 border border-slate-800"></canvas>
+    </div>
+  </div>
+
+  <!-- ==================== MOBILE TOUCH CONTROLS ==================== -->
+  <div id="mobile-controls">
+    <div id="mobile-look-zone" class="mobile-touch-zone absolute top-0 right-0 w-3/5 h-3/4"></div>
+    <div id="mobile-joystick" class="mobile-touch-zone"><div id="mobile-stick"></div></div>
+  </div>
+
+  <!-- ==================== MODAL: MAIN MENU ==================== -->
+  <div id="modal-main-menu" class="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4">
+    <div class="max-w-2xl w-full bg-slate-900/90 border-2 border-cyan-500/60 rounded-3xl p-7 shadow-2xl relative overflow-hidden">
+      <div class="text-center mb-6">
+        <span class="px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-[10px] uppercase font-bold tracking-widest">
+          Sistem Semesta Harvean // Protokol Venuza Tier-8
+        </span>
+        <h1 class="text-3xl font-black text-white mt-2 tracking-tight">HARVEAN: 30-LEVEL CAMPAIGN</h1>
+        <p class="text-xs text-slate-400 mt-1 max-w-lg mx-auto">
+          Pimpin Rion Varis dari kedalaman Parit K-19 menyusuri 5 benua permukaan Planet Venon hingga mematahkan blokade armada Lachores di orbit tinggi[cite: 3].
+        </p>
+      </div>
+
+      <!-- Campaign Act Previews -->
+      <div class="grid grid-cols-1 sm:grid-cols-5 gap-2 mb-6">
+        <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl text-center">
+          <div class="text-cyan-400 font-bold text-xs">ACT I</div>
+          <div class="text-[10px] text-slate-300 mt-1">Litosfer K-19</div>
+          <div class="text-[9px] text-slate-500 mt-1">Lvl 1–6</div>
+        </div>
+        <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl text-center">
+          <div class="text-amber-400 font-bold text-xs">ACT II</div>
+          <div class="text-[10px] text-slate-300 mt-1">Karvon-Magna</div>
+          <div class="text-[9px] text-slate-500 mt-1">Lvl 7–12</div>
+        </div>
+        <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl text-center">
+          <div class="text-rose-400 font-bold text-xs">ACT III</div>
+          <div class="text-[10px] text-slate-300 mt-1">Gurun Oroxia</div>
+          <div class="text-[9px] text-slate-500 mt-1">Lvl 13–18</div>
+        </div>
+        <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl text-center">
+          <div class="text-indigo-400 font-bold text-xs">ACT IV</div>
+          <div class="text-[10px] text-slate-300 mt-1">Megakota Thalakor</div>
+          <div class="text-[9px] text-slate-500 mt-1">Lvl 19–24</div>
+        </div>
+        <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl text-center">
+          <div class="text-sky-400 font-bold text-xs">ACT V</div>
+          <div class="text-[10px] text-slate-300 mt-1">Gletser & Orbit</div>
+          <div class="text-[9px] text-slate-500 mt-1">Lvl 25–30</div>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <button onclick="startCampaignLevel(1)" class="flex-1 py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs rounded-xl uppercase tracking-wider transition shadow-lg shadow-cyan-500/25">
+          Inisiasi Kampanye (Level 01)
+        </button>
+        <button onclick="toggleOrbitalSandbox()" class="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition">
+          Peta Orbital
+        </button>
+        <button onclick="toggleSettingsModal()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs rounded-xl transition">
+          ⚙️ Kustomisasi (10 Aset)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: DEBRIEFING / TRANSISI LEVEL ==================== -->
+  <div id="modal-debriefing" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4">
+    <div class="max-w-md w-full bg-slate-900 border-2 border-emerald-500 rounded-3xl p-6 shadow-2xl text-center">
+      <div class="w-12 h-12 mx-auto mb-2 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-2xl">✨</div>
+      <span class="px-3 py-1 bg-emerald-500/20 text-emerald-300 font-bold text-[10px] uppercase tracking-widest rounded-full border border-emerald-500/30">
+        Sektor Berhasil Dikuasai
+      </span>
+      <h3 class="text-lg font-black text-white mt-2 mb-1" id="debrief-title">Level Selesai!</h3>
+      <p class="text-xs text-slate-400 mb-4" id="debrief-desc">Data transmisi berhasil diunggah ke jaringan pertahanan planetary Venon[cite: 3].</p>
+
+      <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl mb-4 text-xs font-mono text-left space-y-1">
+        <div class="text-cyan-400">> VRAM GPU: Disposed & Rebuilt [OK][cite: 3]</div>
+        <div class="text-emerald-400">> Entropi Sektor: Ditumpas[cite: 3]</div>
+        <div class="text-amber-400">> Otorisasi Tier-8: Naik[cite: 3]</div>
+      </div>
+
+      <button id="btn-next-level" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl uppercase tracking-wider transition shadow-lg">
+        Lanjut ke Sektor Berikutnya
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: ORBITAL COMMAND MAP ==================== -->
+  <div id="modal-orbital" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+    <div class="max-w-5xl w-full bg-slate-950 border border-cyan-500/50 rounded-3xl p-5 shadow-2xl max-h-[92vh] flex flex-col justify-between">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-3">
+        <div>
+          <div class="text-[9px] uppercase tracking-widest text-cyan-400 font-bold">Layar Komando Strategis</div>
+          <h2 class="text-lg font-black text-white">ORBITAL SANDBOX // SISTEM SABIZER (PLANET VENON)</h2>
+        </div>
+        <button onclick="toggleOrbitalSandbox()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-bold rounded-lg text-slate-300">
+          Tutup [ESC]
+        </button>
+      </div>
+
+      <!-- Orbital Info Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-2 mb-3">
+        <div class="p-2.5 bg-slate-900 border border-slate-800 rounded-xl">
+          <div class="text-[8px] uppercase text-slate-400">Total Pasukan Darat</div>
+          <div class="text-sm font-black text-cyan-400">740.000.000</div>
+        </div>
+        <div class="p-2.5 bg-slate-900 border border-slate-800 rounded-xl">
+          <div class="text-[8px] uppercase text-slate-400">Kapal Induk Musuh</div>
+          <div class="text-sm font-black text-rose-400">1x Invader (30 km)[cite: 3]</div>
+        </div>
+        <div class="p-2.5 bg-slate-900 border border-slate-800 rounded-xl">
+          <div class="text-[8px] uppercase text-slate-400">Tekanan Atmosfer</div>
+          <div class="text-sm font-black text-amber-400">1.68 atm // Sub-Sabizer[cite: 3]</div>
+        </div>
+        <div class="p-2.5 bg-slate-900 border border-slate-800 rounded-xl">
+          <div class="text-[8px] uppercase text-slate-400">Progres Pembebasan</div>
+          <div class="text-sm font-black text-emerald-400" id="orbital-liberation-pct">3.3% (1/30)[cite: 3]</div>
+        </div>
+      </div>
+
+      <!-- Level Nodes Grid (30 Levels Interactive Selector) -->
+      <div class="flex-1 overflow-y-auto pr-1">
+        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Pilih Titik Pendaratan (30 Sektor)[cite: 3]</div>
+        <div class="grid grid-cols-2 sm:grid-cols-5 md:grid-cols-6 gap-2" id="orbital-level-grid"></div>
+      </div>
+
+      <div class="border-t border-slate-800 pt-3 mt-3 flex justify-between items-center text-[10px] text-slate-400">
+        <span>Setiap level yang selesai akan membersihkan blokade sektor di atas orbit planet[cite: 3].</span>
+        <span class="text-cyan-400 font-bold">Protokol Pembebasan Venon Aktif[cite: 3]</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: 10 SLOT UPLOAD GAMBAR & PENGATURAN (F2) ==================== -->
+  <div id="modal-settings" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+    <div class="max-w-lg w-full bg-slate-950 border border-cyan-500/60 rounded-3xl p-5 shadow-2xl text-xs space-y-3 max-h-[92vh] flex flex-col justify-between">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <div>
+          <b class="text-cyan-400 font-black text-sm">PENGATURAN & 10 SLOT ASET GAMBAR (F2)</b>
+          <div class="text-[9px] text-slate-400 mt-0.5">Tersimpan otomatis ke database browser (IndexedDB).</div>
+        </div>
+        <button onclick="toggleSettingsModal()" class="text-slate-400 hover:text-white font-bold px-2 py-1 text-base">✕</button>
+      </div>
+
+      <!-- Scrollable Area Slot 10 Gambar & Profil -->
+      <div class="overflow-y-auto pr-1 space-y-2.5 flex-1">
+        <div class="bg-slate-900/70 p-3 rounded-2xl border border-slate-800 space-y-2.5">
+          <b class="text-cyan-300 block text-xs uppercase tracking-wide">10 SLOT UPLOAD GAMBAR LENGKAP</b>
+
+          <div>
+            <span class="text-slate-200 block font-bold text-[10px]">1. Skybox Panorama 360° (Langit Venon/Orbit) [.jpg/.png]:</span>
+            <input type="file" accept="image/*" data-slot="sky" class="h1-asset-input w-full mt-0.5 text-[9px] text-slate-400">
+          </div>
+
+          <div>
+            <span class="text-slate-200 block font-bold text-[10px]">2. Tekstur Lantai / Parit Basal (Tileable / Seamless):</span>
+            <input type="file" accept="image/*" data-slot="floor" class="h1-asset-input w-full mt-0.5 text-[9px] text-slate-400">
+          </div>
+
+          <div>
+            <span class="text-slate-200 block font-bold text-[10px]">3. Tekstur Dinding Parit / Bunker Baja (Tileable):</span>
+            <input type="file" accept="image/*" data-slot="wall" class="h1-asset-input w-full mt-0.5 text-[9px] text-slate-400">
+          </div>
+
+          <div>
+            <span class="text-slate-200 block font-bold text-[10px]">4. Pintu Gerbang / Airlock Bulkhead Decal:</span>
+            <input type="file" accept="image/*" data-slot="door" class="h1-asset-input w-full mt-0.5 text-[9px] text-slate-400">
+          </div>
+
+          <div>
+            <span class="text-slate-200 block font-bold text-[10px]">5. Pipa Reaktor / Fluida Neon (Emissive / Glow):</span>
+            <input type="file" accept="image/*" data-slot="pipe" class="h1-asset-input w-full mt-0.5 text-[9px] text-slate-400">
+          </div>
+
+          <div>
+            <span class="text-slate-200 block font-bold text-[10px]">6. Reruntuhan Pilar / Bangkai Titan Kawah:</span>
+            <input type="file" accept="image/*" data-slot="pillar" class="h1-asset-input w-full mt-0.5 text-[9px] text-slate-400">
+          </div>
+
+          <div>
+            <span class="text-slate-200 block font-bold text-[10px]">7. Normal Map Permukaan Logam (Relief Ungu-Kebiruan):</span>
+            <input type="file" accept="image/*" data-slot="normal_map" class="h1-asset-input w-full mt-0.5 text-[9px] text-slate-400">
+          </div>
+
+          <div>
+            <span class="text-amber-300 block font-bold text-[10px]">8. Sprite Musuh 2.5D Sintetis Lachores (.PNG Transparan):</span>
+            <input type="file" accept="image/png" data-slot="enemy_sprite" class="h1-asset-input w-full mt-0.5 text-[9px] text-slate-400">
+          </div>
+
+          <div>
+            <span class="text-slate-200 block font-bold text-[10px]">9. Menara Megakota Thalakor (Spire Facade):</span>
+            <input type="file" accept="image/*" data-slot="city_tower" class="h1-asset-input w-full mt-0.5 text-[9px] text-slate-400">
+          </div>
+
+          <div>
+            <span class="text-slate-200 block font-bold text-[10px]">10. Kristal / Formasi Gletser Morgath-Sul:</span>
+            <input type="file" accept="image/*" data-slot="ice_glacier" class="h1-asset-input w-full mt-0.5 text-[9px] text-slate-400">
+          </div>
+        </div>
+
+        <button id="btn-clear-all-h1-assets" class="w-full py-2 bg-rose-950/70 border border-rose-800 rounded-xl text-rose-300 font-bold hover:bg-rose-900 text-[10px] transition">
+          🗑 Reset Semua Aset Gambar ke Bawaan
+        </button>
+      </div>
+
+      <button onclick="toggleSettingsModal()" class="w-full py-2.5 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider mt-2 transition">
+        TUTUP & TERAPKAN
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== LOGIKA JAVASCRIPT & THREE.JS ==================== -->
+  <script>
+    // -------------------------------------------------------------
+    // 1. DATA SKEMA 30 LEVEL KAMPANYE (HARVEAN UNIVERSE)
+    // -------------------------------------------------------------
+    const CAMPAIGN_LEVELS = [
+      { id: 1, act: "ACT I // LITOSFER K-19", title: "Koridor Pipa K-19", biome: "TRENCH", enemies: 3, fogColor: 0x0a1118, ambientColor: 0x00f0ff, desc: "Tutup katup uap dan basmi patroli sintetis perintis." },
+      { id: 2, act: "ACT I // LITOSFER K-19", title: "Ruang Resonansi Seismik", biome: "TRENCH", enemies: 4, fogColor: 0x120804, ambientColor: 0xf59e0b, desc: "Aktifkan Monolit Tier 8 di rekahan basal." },
+      { id: 3, act: "ACT I // LITOSFER K-19", title: "Sumur Elevator Magma", biome: "TRENCH", enemies: 5, fogColor: 0x1a0604, ambientColor: 0xef4444, desc: "Amankan platform angkat dari serbuan skuad android." },
+      { id: 4, act: "ACT I // LITOSFER K-19", title: "Labirin Gas Amonia", biome: "TRENCH", enemies: 5, fogColor: 0x041812, ambientColor: 0x10b981, desc: "Menembus koridor dengan visibilitas rendah dan ranjau." },
+      { id: 5, act: "ACT I // LITOSFER K-19", title: "Sub-Stasiun Reaktor Fusi", biome: "TRENCH", enemies: 6, fogColor: 0x08101a, ambientColor: 0x38bdf8, desc: "Pulihkan daya darurat untuk membuka gerbang airlock." },
+      { id: 6, act: "ACT I // LITOSFER K-19", title: "Gerbang Permukaan Kerak", biome: "TRENCH", enemies: 7, fogColor: 0x140e06, ambientColor: 0xfbbf24, desc: "Hancurkan pasukan pengawal gerbang sebelum keluar." },
+      { id: 7, act: "ACT II // KARVON-MAGNA", title: "Kawah Tumbukan Pertama", biome: "CRATER", enemies: 5, fogColor: 0x221308, ambientColor: 0xf97316, desc: "Menembus perimeter kawah terbuka di bawah debu silikat." },
+      { id: 8, act: "ACT II // KARVON-MAGNA", title: "Bangkai Jembatan Maglev", biome: "CRATER", enemies: 6, fogColor: 0x1a120b, ambientColor: 0xf59e0b, desc: "Bersihkan sisa rel magnetik dari serbuan drone pengintai." },
+      { id: 9, act: "ACT II // KARVON-MAGNA", title: "Pabrik Fabrikasi Baja", biome: "CRATER", enemies: 7, fogColor: 0x1c1a17, ambientColor: 0x94a3b8, desc: "Rebut kembali aula perakitan mesin tempur otonom." },
+      { id: 10, act: "ACT II // KARVON-MAGNA", title: "Saluran Terak Besi Cair", biome: "CRATER", enemies: 7, fogColor: 0x260d05, ambientColor: 0xf87171, desc: "Bermanuver di tepi kolam peleburan logam cair." },
+      { id: 11, act: "ACT II // KARVON-MAGNA", title: "Parit Pertahanan Zeni", biome: "CRATER", enemies: 8, fogColor: 0x1e150d, ambientColor: 0xd97706, desc: "Bantu skuad infanteri Venuza menahan laju musuh." },
+      { id: 12, act: "ACT II // KARVON-MAGNA", title: "Baterai Artileri Darat", biome: "CRATER", enemies: 9, fogColor: 0x20140c, ambientColor: 0xeab308, desc: "Kuasai meriam akselerator darat penghalau pendarat." },
+      { id: 13, act: "ACT III // GURUN OROXIA", title: "Lautan Silikat Meleleh", biome: "GLASS", enemies: 6, fogColor: 0x161324, ambientColor: 0xa855f7, desc: "Lintasi kaca fotovoltaik di bawah radiasi Sabizer." },
+      { id: 14, act: "ACT III // GURUN OROXIA", title: "Ladang Turbin Badai", biome: "GLASS", enemies: 7, fogColor: 0x1e182e, ambientColor: 0xc084fc, desc: "Hancurkan menara pengacau sinyal di tengah badai pasir." },
+      { id: 15, act: "ACT III // GURUN OROXIA", title: "Depo Bahan Bakar Terbakar", biome: "GLASS", enemies: 8, fogColor: 0x24111d, ambientColor: 0xf43f5e, desc: "Amankan tangki deuterium sebelum diledakkan musuh." },
+      { id: 16, act: "ACT III // GURUN OROXIA", title: "Zona Jatuhan Kapsul", biome: "GLASS", enemies: 8, fogColor: 0x1a1626, ambientColor: 0x818cf8, desc: "Lumpuhkan infanteri biologis Lachores ber-eksoskeleton." },
+      { id: 17, act: "ACT III // GURUN OROXIA", title: "Kaki Drop-Citadel", biome: "GLASS", enemies: 9, fogColor: 0x120e20, ambientColor: 0x6366f1, desc: "Sabotase konverter daya penopang medan perisai benteng." },
+      { id: 18, act: "ACT III // GURUN OROXIA", title: "Breach Inti Benteng Lachores", biome: "GLASS", enemies: 10, fogColor: 0x210c1e, ambientColor: 0xec4899, desc: "Hancurkan inti piramida drop-citadel sebelum berakar." },
+      { id: 19, act: "ACT IV // MEGAKOTA THALAKOR", title: "Pelataran Kubah Bawah", biome: "CITY", enemies: 7, fogColor: 0x0b1320, ambientColor: 0x38bdf8, desc: "Buka rute evakuasi warga dari kepungan drone patroli." },
+      { id: 20, act: "ACT IV // MEGAKOTA THALAKOR", title: "Rel Levitasi Bertingkat", biome: "CITY", enemies: 8, fogColor: 0x091424, ambientColor: 0x0ea5e9, desc: "Pertarungan cepat di atas koridor kargo gantung." },
+      { id: 21, act: "ACT IV // MEGAKOTA THALAKOR", title: "Plaza Sentral Thalakor", biome: "CITY", enemies: 8, fogColor: 0x081a2e, ambientColor: 0x0284c7, desc: "Baku tembak multi-lantai melawan infanteri elit." },
+      { id: 22, act: "ACT IV // MEGAKOTA THALAKOR", title: "Gerbang Perisai Valdris", biome: "CITY", enemies: 9, fogColor: 0x051b1f, ambientColor: 0x14b8a6, desc: "Dekripsi kunci Tier-8 untuk menembus cagar benua." },
+      { id: 23, act: "ACT IV // MEGAKOTA THALAKOR", title: "Cagar Hutan Basaltik", biome: "CITY", enemies: 9, fogColor: 0x06201b, ambientColor: 0x10b981, desc: "Sergap unit siluman berpelindung optik di hutan kabut." },
+      { id: 24, act: "ACT IV // MEGAKOTA THALAKOR", title: "Puncak Menara Spira", biome: "CITY", enemies: 10, fogColor: 0x0f172a, ambientColor: 0x38bdf8, desc: "Kuasai uplink transmisi untuk menyinkronkan radar." },
+      { id: 25, act: "ACT V // MORGATH-SUL & ORBIT", title: "Tundra Es Permafrost", biome: "ICE", enemies: 8, fogColor: 0x081d2e, ambientColor: 0x7dd3fc, desc: "Lintasi danau beku metana di suhu -62 derajat celcius." },
+      { id: 26, act: "ACT V // MORGATH-SUL & ORBIT", title: "Ngarai Gletser Patahan", biome: "ICE", enemies: 9, fogColor: 0x061828, ambientColor: 0x38bdf8, desc: "Pertempuran jarak dekat di celah tebing es terjal." },
+      { id: 27, act: "ACT V // MORGATH-SUL & ORBIT", title: "Kilang Pemurnian Deuterium", biome: "ICE", enemies: 9, fogColor: 0x041320, ambientColor: 0x0284c7, desc: "Salurkan bahan bakar cair ke meriam peluncur massa." },
+      { id: 28, act: "ACT V // MORGATH-SUL & ORBIT", title: "Landasan Pelabuhan Antariksa", biome: "ICE", enemies: 10, fogColor: 0x020c18, ambientColor: 0x0369a1, desc: "Pertahankan pesawat ulang-alik sebelum peluncuran sub-orbital." },
+      { id: 29, act: "ACT V // MORGATH-SUL & ORBIT", title: "Tabung Akselerator Massa", biome: "ICE", enemies: 10, fogColor: 0x030712, ambientColor: 0x60a5fa, desc: "Bersihkan sabotase rel peluncur menuju stratosfer." },
+      { id: 30, act: "ACT V // MORGATH-SUL & ORBIT", title: "Anjungan Defleksi Orbit Tinggi", biome: "ICE", enemies: 12, fogColor: 0x020617, ambientColor: 0x00f0ff, desc: "Klimaks: Aktifkan jangkar Tier-8 lumpuhkan kapal 30 km!" }
+    ];
+
+    // -------------------------------------------------------------
+    // 2. SISTEM 10 ASSET GAMBAR & PERSISTENSI INDEXEDDB
+    // -------------------------------------------------------------
+    const H1_TEXTURES = {
+      sky: null,
+      floor: null,
+      wall: null,
+      door: null,
+      pipe: null,
+      pillar: null,
+      normalMap: null,
+      enemySprite: null,
+      cityTower: null,
+      iceGlacier: null
+    };
+
+    const H1AssetDB = {
+      dbName: 'Harvean1AssetDB',
+      storeName: 'assets_h1',
+      open() {
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open(this.dbName, 1);
+          req.onupgradeneeded = e => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(this.storeName)) {
+              db.createObjectStore(this.storeName, { keyPath: 'slot' });
+            }
+          };
+          req.onsuccess = e => resolve(e.target.result);
+          req.onerror = e => reject(e.target.error);
+        });
+      },
+      async save(slot, dataUrl) {
+        try {
+          const db = await this.open();
+          return new Promise((res, rej) => {
+            const tx = db.transaction(this.storeName, 'readwrite');
+            tx.objectStore(this.storeName).put({ slot, dataUrl });
+            tx.oncomplete = () => res(true);
+            tx.onerror = e => rej(e);
+          });
+        } catch(e) {}
+      },
+      async loadAll() {
+        try {
+          const db = await this.open();
+          return new Promise((res, rej) => {
+            const tx = db.transaction(this.storeName, 'readonly');
+            const req = tx.objectStore(this.storeName).getAll();
+            req.onsuccess = () => res(req.result || []);
+            req.onerror = () => res([]);
+          });
+        } catch(e) { return []; }
+      },
+      async clearAll() {
+        try {
+          const db = await this.open();
+          return new Promise((res, rej) => {
+            const tx = db.transaction(this.storeName, 'readwrite');
+            tx.objectStore(this.storeName).clear();
+            tx.oncomplete = () => res(true);
+            tx.onerror = () => res(false);
+          });
+        } catch(e) {}
+      }
+    };
+
+    function applyH1TextureToSlot(slot, img) {
+      const t = new THREE.Texture(img);
+      t.needsUpdate = true;
+
+      if (slot === 'floor') {
+        t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        t.repeat.set(16, 16);
+        H1_TEXTURES.floor = t;
+      } else if (slot === 'wall') {
+        t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        t.repeat.set(2, 4);
+        H1_TEXTURES.wall = t;
+      } else if (slot === 'normal_map') {
+        t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        t.repeat.set(8, 8);
+        H1_TEXTURES.normalMap = t;
+      } else if (slot === 'sky') {
+        t.mapping = THREE.EquirectangularReflectionMapping;
+        t.encoding = THREE.sRGBEncoding;
+        H1_TEXTURES.sky = t;
+        if (typeof scene !== 'undefined' && scene) scene.background = t;
+      } else if (slot === 'door') {
+        H1_TEXTURES.door = t;
+      } else if (slot === 'pipe') {
+        t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        t.repeat.set(1, 4);
+        H1_TEXTURES.pipe = t;
+      } else if (slot === 'pillar') {
+        t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        t.repeat.set(2, 2);
+        H1_TEXTURES.pillar = t;
+      } else if (slot === 'enemy_sprite') {
+        H1_TEXTURES.enemySprite = t;
+      } else if (slot === 'city_tower') {
+        t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        t.repeat.set(2, 8);
+        H1_TEXTURES.cityTower = t;
+      } else if (slot === 'ice_glacier') {
+        t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        t.repeat.set(2, 4);
+        H1_TEXTURES.iceGlacier = t;
+      }
+
+      if (typeof levelMeshes !== 'undefined' && levelMeshes.length) {
+        loadCampaignLevel(currentLevelNumber);
+      }
+    }
+
+    async function restoreAllH1SavedAssets() {
+      const records = await H1AssetDB.loadAll();
+      for (const rec of records) {
+        const img = new Image();
+        img.onload = () => applyH1TextureToSlot(rec.slot, img);
+        img.src = rec.dataUrl;
+      }
+    }
+
+    function toggleSettingsModal() {
+      const modal = document.getElementById("modal-settings");
+      if (!modal) return;
+      const isHidden = modal.classList.contains("hidden");
+      if (isHidden) {
+        if (window.controls && controls.isLocked) controls.unlock();
+        modal.classList.remove("hidden");
+      } else {
+        modal.classList.add("hidden");
+        if (window.controls && !controls.isLocked) controls.lock();
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 3. AUDIO SYNTHESIZER (WEB AUDIO API)
+    // -------------------------------------------------------------
+    const SoundEngine = {
+      ctx: null,
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+      },
+      playRailgunShot() {
+        try {
+          this.init();
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(380, now);
+          osc.frequency.exponentialRampToValueAtTime(45, now + 0.16);
+          gain.gain.setValueAtTime(0.4, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.18);
+        } catch(e){}
+      },
+      playEnemyHit() {
+        try {
+          this.init();
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = "square";
+          osc.frequency.setValueAtTime(140, now);
+          osc.frequency.exponentialRampToValueAtTime(30, now + 0.12);
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.12);
+        } catch(e){}
+      },
+      playLevelComplete() {
+        try {
+          this.init();
+          const now = this.ctx.currentTime;
+          [330, 440, 554, 659].forEach((freq, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(freq, now + i * 0.1);
+            gain.gain.setValueAtTime(0.2, now + i * 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.35);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now + i * 0.1);
+            osc.stop(now + i * 0.1 + 0.4);
+          });
+        } catch(e){}
+      }
+    };
+
+    // -------------------------------------------------------------
+    // 4. THREE.JS ENGINE CORE & LEVEL DISPOSAL MANAGEMENT
+    // -------------------------------------------------------------
+    let scene, camera, renderer, controls;
+    let currentLevelNumber = 1;
+    let levelMeshes = [];
+    let enemies = [];
+    let extractionBeacon = null;
+    let weaponMesh = null;
+    let muzzleLight = null;
+
+    let playerHP = 100;
+    let playerAmmo = 180;
+    let killedEnemiesCount = 0;
+    let isAimingADS = false;
+
+    let moveF = false, moveB = false, moveL = false, moveR = false, isSprinting = false;
+    let prevTime = performance.now();
+    const velocity = new THREE.Vector3();
+    const direction = new THREE.Vector3();
+
+    function initEngine() {
+      const container = document.getElementById("canvas-container");
+      container.innerHTML = "";
+
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1200);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.2;
+      container.appendChild(renderer.domElement);
+
+      controls = new THREE.PointerLockControls(camera, document.body);
+
+      document.body.addEventListener('click', (e) => {
+        if (e.target.closest('#modal-main-menu') || e.target.closest('#modal-debriefing') || e.target.closest('#modal-orbital') || e.target.closest('#modal-settings')) return;
+        if (!controls.isLocked) {
+          controls.lock();
+        } else {
+          shootRailgun();
+        }
+      });
+
+      window.addEventListener('mousedown', (e) => {
+        if (e.button === 2 && controls.isLocked) setAimDownSights(true);
+      });
+      window.addEventListener('mouseup', (e) => {
+        if (e.button === 2) setAimDownSights(false);
+      });
+      window.addEventListener('contextmenu', e => e.preventDefault());
+
+      controls.addEventListener('lock', () => {
+        document.getElementById("crosshair").classList.remove("hidden");
+        document.getElementById("hud-top").classList.remove("hidden");
+        document.getElementById("hud-bottom").classList.remove("hidden");
+      });
+      controls.addEventListener('unlock', () => {
+        document.getElementById("crosshair").classList.add("hidden");
+        setAimDownSights(false);
+      });
+
+      window.addEventListener('keydown', onKeyDown);
+      window.addEventListener('keyup', onKeyUp);
+      window.addEventListener('resize', onWindowResize);
+
+      buildFPSWeaponModel();
+      buildOrbitalLevelGrid();
+      setupH1AssetInputs();
+      restoreAllH1SavedAssets();
+      animateLoop();
+    }
+
+    function setAimDownSights(aiming) {
+      isAimingADS = aiming;
+      const crosshair = document.getElementById("crosshair");
+      if (aiming) {
+        camera.fov = 38;
+        crosshair.classList.add("ads-aim");
+        if (weaponMesh) weaponMesh.position.set(0, -0.22, -0.45);
+      } else {
+        camera.fov = 75;
+        crosshair.classList.remove("ads-aim");
+        if (weaponMesh) weaponMesh.position.set(0.24, -0.26, -0.5);
+      }
+      camera.updateProjectionMatrix();
+    }
+
+    function buildFPSWeaponModel() {
+      weaponMesh = new THREE.Group();
+
+      const bodyGeo = new THREE.BoxGeometry(0.08, 0.12, 0.65);
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.3 });
+      const body = new THREE.Mesh(bodyGeo, bodyMat);
+      weaponMesh.add(body);
+
+      const railGeo = new THREE.BoxGeometry(0.015, 0.04, 0.7);
+      const railMat = new THREE.MeshStandardMaterial({ color: 0x00f0ff, emissive: 0x00f0ff, emissiveIntensity: 0.6 });
+      const railL = new THREE.Mesh(railGeo, railMat);
+      railL.position.set(-0.045, 0.02, -0.05);
+      const railR = railL.clone();
+      railR.position.x = 0.045;
+      weaponMesh.add(railL, railR);
+
+      const sightGeo = new THREE.BoxGeometry(0.03, 0.04, 0.08);
+      const sightMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, wireframe: true });
+      const sight = new THREE.Mesh(sightGeo, sightMat);
+      sight.position.set(0, 0.08, -0.1);
+      weaponMesh.add(sight);
+
+      muzzleLight = new THREE.PointLight(0x00f0ff, 0, 8);
+      muzzleLight.position.set(0, 0.02, -0.42);
+      weaponMesh.add(muzzleLight);
+
+      weaponMesh.position.set(0.24, -0.26, -0.5);
+      camera.add(weaponMesh);
+      scene.add(camera);
+    }
+
+    // -------------------------------------------------------------
+    // 5. SISTEM LEVEL DISPOSAL & PROCEDURAL MAP BUILDER
+    // -------------------------------------------------------------
+    function loadCampaignLevel(lvlNumber) {
+      currentLevelNumber = lvlNumber;
+      const levelData = CAMPAIGN_LEVELS[lvlNumber - 1];
+      if (!levelData) return;
+
+      disposeCurrentLevel();
+
+      killedEnemiesCount = 0;
+      camera.position.set(0, 1.7, 10);
+      velocity.set(0, 0, 0);
+
+      if (H1_TEXTURES.sky) {
+        scene.background = H1_TEXTURES.sky;
+        scene.fog = null;
+      } else {
+        scene.background = new THREE.Color(levelData.fogColor);
+        scene.fog = new THREE.FogExp2(levelData.fogColor, 0.022);
+      }
+      renderer.setClearColor(levelData.fogColor);
+
+      const ambLight = new THREE.AmbientLight(levelData.ambientColor, 0.65);
+      scene.add(ambLight);
+      levelMeshes.push(ambLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.95);
+      dirLight.position.set(30, 60, 20);
+      scene.add(dirLight);
+      levelMeshes.push(dirLight);
+
+      buildProceduralLevelGeometry(levelData);
+      spawnLevelEnemies(levelData.enemies);
+
+      document.getElementById("hud-act-title").textContent = levelData.act;
+      document.getElementById("hud-level-title").textContent = `LVL ${String(lvlNumber).padStart(2, '0')}: ${levelData.title}`;
+      updateHUDStats();
+      document.getElementById("orbital-liberation-pct").textContent = `${((lvlNumber / 30) * 100).toFixed(1)}% (${lvlNumber}/30)`;
+    }
+
+    function disposeCurrentLevel() {
+      for (let i = levelMeshes.length - 1; i >= 0; i--) {
+        const obj = levelMeshes[i];
+        scene.remove(obj);
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) {
+          if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+          else obj.material.dispose();
+        }
+      }
+      levelMeshes = [];
+
+      enemies.forEach(e => {
+        scene.remove(e.group);
+        e.group.traverse(child => {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) child.material.dispose();
+        });
+      });
+      enemies = [];
+
+      if (extractionBeacon) {
+        scene.remove(extractionBeacon);
+        extractionBeacon = null;
+      }
+    }
+
+    function buildProceduralLevelGeometry(levelData) {
+      const biome = levelData.biome;
+
+      let floorColor = 0x0f172a;
+      if (biome === "CRATER") floorColor = 0x1f140e;
+      else if (biome === "GLASS") floorColor = 0x2e1028;
+      else if (biome === "CITY") floorColor = 0x111827;
+      else if (biome === "ICE") floorColor = 0x0f2d42;
+
+      const floorGeo = new THREE.PlaneGeometry(160, 160);
+      floorGeo.rotateX(-Math.PI / 2);
+      const floorMat = new THREE.MeshStandardMaterial({
+        map: H1_TEXTURES.floor || null,
+        normalMap: H1_TEXTURES.normalMap || null,
+        normalScale: new THREE.Vector2(1.2, 1.2),
+        color: H1_TEXTURES.floor ? 0xffffff : floorColor,
+        roughness: 0.85,
+        metalness: 0.2
+      });
+      const floor = new THREE.Mesh(floorGeo, floorMat);
+      scene.add(floor);
+      levelMeshes.push(floor);
+
+      const wallMat = new THREE.MeshStandardMaterial({
+        map: H1_TEXTURES.wall || null,
+        normalMap: H1_TEXTURES.normalMap || null,
+        color: H1_TEXTURES.wall ? 0xffffff : 0x020617,
+        roughness: 0.9,
+        metalness: 0.3
+      });
+
+      const pipeMat = new THREE.MeshStandardMaterial({
+        map: H1_TEXTURES.pipe || null,
+        color: H1_TEXTURES.pipe ? 0xffffff : 0x00f0ff,
+        emissive: 0x00f0ff,
+        emissiveIntensity: 0.6
+      });
+
+      if (biome === "TRENCH") {
+        for (let i = 0; i < 14; i++) {
+          const wallGeo = new THREE.BoxGeometry(4, 8, 12);
+          const wallL = new THREE.Mesh(wallGeo, wallMat);
+          wallL.position.set(-8, 4, -i * 12 + 20);
+          const wallR = wallL.clone();
+          wallR.position.x = 8;
+          scene.add(wallL, wallR);
+          levelMeshes.push(wallL, wallR);
+
+          const pipeGeo = new THREE.CylinderGeometry(0.25, 0.25, 12, 8);
+          pipeGeo.rotateX(Math.PI / 2);
+          const pipe = new THREE.Mesh(pipeGeo, pipeMat);
+          pipe.position.set(0, 7.5, -i * 12 + 20);
+          scene.add(pipe);
+          levelMeshes.push(pipe);
+        }
+      } else if (biome === "CRATER" || biome === "GLASS") {
+        const pillarMat = new THREE.MeshStandardMaterial({
+          map: H1_TEXTURES.pillar || null,
+          color: H1_TEXTURES.pillar ? 0xffffff : 0x1e293b,
+          roughness: 0.85
+        });
+
+        for (let i = 0; i < 20; i++) {
+          const rx = (Math.random() - 0.5) * 90;
+          const rz = -Math.random() * 90 - 5;
+          const pilarGeo = new THREE.CylinderGeometry(1.2, 1.8, Math.random() * 8 + 4, 6);
+          const pilar = new THREE.Mesh(pilarGeo, pillarMat);
+          pilar.position.set(rx, pilarGeo.parameters.height / 2, rz);
+          scene.add(pilar);
+          levelMeshes.push(pilar);
+        }
+      } else if (biome === "CITY") {
+        const towerMat = new THREE.MeshStandardMaterial({
+          map: H1_TEXTURES.cityTower || null,
+          color: H1_TEXTURES.cityTower ? 0xffffff : 0x0f172a,
+          roughness: 0.6,
+          metalness: 0.4
+        });
+
+        for (let i = 0; i < 16; i++) {
+          const sx = (i % 2 === 0 ? -1 : 1) * (Math.random() * 25 + 18);
+          const sz = -Math.random() * 110 - 10;
+          const bHeight = Math.random() * 50 + 30;
+          const bldgGeo = new THREE.BoxGeometry(10, bHeight, 10);
+          const bldg = new THREE.Mesh(bldgGeo, towerMat);
+          bldg.position.set(sx, bHeight / 2, sz);
+          scene.add(bldg);
+          levelMeshes.push(bldg);
+        }
+      } else if (biome === "ICE") {
+        const iceMat = new THREE.MeshStandardMaterial({
+          map: H1_TEXTURES.iceGlacier || null,
+          color: H1_TEXTURES.iceGlacier ? 0xffffff : 0x38bdf8,
+          roughness: 0.25,
+          metalness: 0.3
+        });
+
+        for (let i = 0; i < 22; i++) {
+          const px = (Math.random() - 0.5) * 100;
+          const pz = -Math.random() * 100 - 10;
+          const iceGeo = new THREE.ConeGeometry(Math.random() * 4 + 2, Math.random() * 12 + 6, 5);
+          const icePillar = new THREE.Mesh(iceGeo, iceMat);
+          icePillar.position.set(px, iceGeo.parameters.height / 2, pz);
+          scene.add(icePillar);
+          levelMeshes.push(icePillar);
+        }
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 6. SPAWN MUSUH (3D MODEL ATAU 2.5D SPRITE KUSTOM)
+    // -------------------------------------------------------------
+    function spawnLevelEnemies(count) {
+      for (let i = 0; i < count; i++) {
+        let group;
+
+        if (H1_TEXTURES.enemySprite) {
+          const spriteMat = new THREE.SpriteMaterial({
+            map: H1_TEXTURES.enemySprite,
+            transparent: true
+          });
+          const sprite = new THREE.Sprite(spriteMat);
+          sprite.scale.set(3.2, 3.2, 1.0);
+          sprite.position.y = 1.6;
+
+          group = new THREE.Group();
+          group.add(sprite);
+        } else {
+          group = new THREE.Group();
+
+          const torso = new THREE.Mesh(
+            new THREE.BoxGeometry(0.7, 0.9, 0.45),
+            new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5 })
+          );
+          torso.position.y = 1.35;
+          group.add(torso);
+
+          const core = new THREE.Mesh(
+            new THREE.SphereGeometry(0.16, 8, 8),
+            new THREE.MeshBasicMaterial({ color: 0xf97316 })
+          );
+          core.position.set(0, 1.4, 0.25);
+          group.add(core);
+
+          const head = new THREE.Mesh(
+            new THREE.BoxGeometry(0.35, 0.35, 0.35),
+            new THREE.MeshStandardMaterial({ color: 0x1e293b, emissive: 0xef4444, emissiveIntensity: 0.5 })
+          );
+          head.position.y = 2.0;
+          group.add(head);
+
+          const legGeo = new THREE.BoxGeometry(0.2, 0.9, 0.25);
+          const legMat = new THREE.MeshStandardMaterial({ color: 0x020617 });
+          const legL = new THREE.Mesh(legGeo, legMat);
+          legL.position.set(-0.22, 0.45, 0);
+          const legR = legL.clone();
+          legR.position.x = 0.22;
+          group.add(legL, legR);
+        }
+
+        const ex = (Math.random() - 0.5) * 18;
+        const ez = -Math.random() * 60 - 15;
+        group.position.set(ex, 0, ez);
+
+        scene.add(group);
+        enemies.push({
+          group: group,
+          hp: 100,
+          speed: 2.4 + Math.random() * 1.2,
+          isAlive: true
+        });
+      }
+    }
+
+    function spawnExtractionBeacon() {
+      extractionBeacon = new THREE.Group();
+      extractionBeacon.position.set(0, 0, -80);
+
+      const ringGeo = new THREE.CylinderGeometry(2.5, 2.5, 0.3, 16);
+      const ringMat = new THREE.MeshStandardMaterial({ color: 0x10b981, emissive: 0x10b981, emissiveIntensity: 0.8 });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.position.y = 0.15;
+      extractionBeacon.add(ring);
+
+      const light = new THREE.PointLight(0x10b981, 2.5, 20);
+      light.position.y = 2;
+      extractionBeacon.add(light);
+
+      scene.add(extractionBeacon);
+      document.getElementById("hud-objective-text").textContent = "CAPAI SUAR EKSTRAKSI EMAS/HIJAU!";
+    }
+
+    // -------------------------------------------------------------
+    // 7. COMBAT & WEAPON SYSTEM
+    // -------------------------------------------------------------
+    function shootRailgun() {
+      if (playerAmmo <= 0) return;
+      playerAmmo--;
+      SoundEngine.playRailgunShot();
+
+      muzzleLight.intensity = 4.0;
+      setTimeout(() => { muzzleLight.intensity = 0; }, 60);
+
+      if (weaponMesh) {
+        weaponMesh.position.z += 0.08;
+        setTimeout(() => { weaponMesh.position.z -= 0.08; }, 90);
+      }
+
+      const ray = new THREE.Raycaster();
+      ray.setFromCamera(new THREE.Vector2(0, 0), camera);
+
+      const hitTargets = [];
+      enemies.forEach(e => {
+        if (e.isAlive) {
+          e.group.traverse(c => { if (c.isMesh || c.isSprite) hitTargets.push(c); });
+        }
+      });
+
+      const hits = ray.intersectObjects(hitTargets, false);
+      if (hits.length > 0 && hits[0].distance < 80) {
+        let root = hits[0].object;
+        while (root.parent && root.parent !== scene) root = root.parent;
+
+        const targetEnemy = enemies.find(e => e.group === root);
+        if (targetEnemy && targetEnemy.isAlive) {
+          targetEnemy.hp -= 55;
+          SoundEngine.playEnemyHit();
+
+          if (targetEnemy.hp <= 0) {
+            targetEnemy.isAlive = false;
+            scene.remove(targetEnemy.group);
+            killedEnemiesCount++;
+
+            const currentLvl = CAMPAIGN_LEVELS[currentLevelNumber - 1];
+            document.getElementById("hud-objective-text").textContent = `Musnahkan Unit Sintetis Lachores [${killedEnemiesCount}/${currentLvl.enemies}]`;
+
+            if (killedEnemiesCount >= currentLvl.enemies && !extractionBeacon) {
+              spawnExtractionBeacon();
+            }
+          }
+        }
+      }
+
+      updateHUDStats();
+    }
+
+    function updateHUDStats() {
+      document.getElementById("hud-ammo-stat").textContent = `${playerAmmo} / 180`;
+      document.getElementById("hud-hp-stat").textContent = `${Math.ceil(playerHP)}% // NORM`;
+    }
+
+    // -------------------------------------------------------------
+    // 8. ANIMASI & SIKLUS GAMEPLAY (ANIMATE LOOP)
+    // -------------------------------------------------------------
+    function animateLoop() {
+      requestAnimationFrame(animateLoop);
+      const time = performance.now();
+      const delta = (time - prevTime) / 1000;
+
+      if (controls.isLocked) {
+        velocity.x -= velocity.x * 10.0 * delta;
+        velocity.z -= velocity.z * 10.0 * delta;
+
+        direction.z = Number(moveF) - Number(moveB);
+        direction.x = Number(moveR) - Number(moveL);
+        direction.normalize();
+
+        const speed = isSprinting ? 90.0 : 50.0;
+        if (moveF || moveB) velocity.z -= direction.z * speed * delta;
+        if (moveL || moveR) velocity.x -= direction.x * speed * delta;
+
+        controls.moveRight(-velocity.x * delta);
+        controls.moveForward(-velocity.z * delta);
+
+        camera.position.y = 1.7;
+
+        enemies.forEach(e => {
+          if (e.isAlive) {
+            const dirToPlayer = new THREE.Vector3().subVectors(camera.position, e.group.position);
+            const dist = dirToPlayer.length();
+
+            if (dist < 35 && dist > 1.8) {
+              dirToPlayer.y = 0;
+              dirToPlayer.normalize();
+              e.group.position.addScaledVector(dirToPlayer, e.speed * delta);
+              e.group.lookAt(camera.position.x, 0, camera.position.z);
+            } else if (dist <= 1.8) {
+              playerHP = Math.max(0, playerHP - 0.25);
+              updateHUDStats();
+            }
+          }
+        });
+
+        if (extractionBeacon) {
+          const distToBeacon = camera.position.distanceTo(extractionBeacon.position);
+          if (distToBeacon < 3.2) {
+            triggerLevelCompleteDebrief();
+          }
+        }
+
+        updateRadarCanvas();
+      }
+
+      prevTime = time;
+      renderer.render(scene, camera);
+    }
+
+    function triggerLevelCompleteDebrief() {
+      controls.unlock();
+      SoundEngine.playLevelComplete();
+
+      const modal = document.getElementById("modal-debriefing");
+      const debriefTitle = document.getElementById("debrief-title");
+      const currentLvl = CAMPAIGN_LEVELS[currentLevelNumber - 1];
+
+      debriefTitle.textContent = `SEKTOR ${String(currentLevelNumber).padStart(2, '0')} DIKUASAI: ${currentLvl.title}`;
+      modal.classList.remove("hidden");
+
+      document.getElementById("btn-next-level").onclick = () => {
+        modal.classList.add("hidden");
+        if (currentLevelNumber < 30) {
+          startCampaignLevel(currentLevelNumber + 1);
+        } else {
+          alert("SELAMAT! KAMPANYE 30 LEVEL SELESAI. PLANET VENON BEBAS DARI BLOKADE TIER 2 LACHORES!");
+          document.getElementById("modal-main-menu").classList.remove("hidden");
+        }
+      };
+    }
+
+    function updateRadarCanvas() {
+      const canvas = document.getElementById("radar-canvas");
+      if (!canvas || !camera) return;
+      const ctx = canvas.getContext("2d");
+      const w = canvas.width, h = canvas.height, center = w / 2;
+
+      ctx.clearRect(0, 0, w, h);
+      ctx.strokeStyle = "rgba(0, 240, 255, 0.25)";
+      ctx.strokeRect(0, 0, w, h);
+
+      enemies.forEach(e => {
+        if (e.isAlive) {
+          const dx = (e.group.position.x - camera.position.x) * 1.5;
+          const dz = (e.group.position.z - camera.position.z) * 1.5;
+          ctx.fillStyle = "#ef4444";
+          ctx.fillRect(center + dx - 2, center + dz - 2, 4, 4);
+        }
+      });
+
+      ctx.fillStyle = "#00f0ff";
+      ctx.beginPath();
+      ctx.arc(center, center, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // -------------------------------------------------------------
+    // 9. ORBITAL MAP & UI NAVIGATION
+    // -------------------------------------------------------------
+    function buildOrbitalLevelGrid() {
+      const container = document.getElementById("orbital-level-grid");
+      container.innerHTML = "";
+
+      CAMPAIGN_LEVELS.forEach(lvl => {
+        const btn = document.createElement("button");
+        btn.className = `p-2.5 rounded-xl border text-left transition flex flex-col justify-between ${
+          lvl.id <= currentLevelNumber ? "bg-cyan-950/40 border-cyan-500/60 text-white" : "bg-slate-900/60 border-slate-800 text-slate-500"
+        }`;
+        btn.innerHTML = `
+          <div class="flex justify-between items-center w-full">
+            <span class="text-[9px] font-bold text-cyan-400">LVL ${String(lvl.id).padStart(2, '0')}</span>
+            <span class="text-[8px] px-1.5 py-0.5 rounded bg-slate-950 font-mono">${lvl.biome}</span>
+          </div>
+          <div class="text-[10px] font-black truncate mt-1">${lvl.title}</div>
+        `;
+        btn.onclick = () => {
+          toggleOrbitalSandbox();
+          startCampaignLevel(lvl.id);
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    function toggleOrbitalSandbox() {
+      const modal = document.getElementById("modal-orbital");
+      if (modal.classList.contains("hidden")) {
+        controls.unlock();
+        modal.classList.remove("hidden");
+      } else {
+        modal.classList.add("hidden");
+        controls.lock();
+      }
+    }
+
+    function startCampaignLevel(lvlNum) {
+      document.getElementById("modal-main-menu").classList.add("hidden");
+      loadCampaignLevel(lvlNum);
+      setTimeout(() => { controls.lock(); }, 150);
+    }
+
+    // -------------------------------------------------------------
+    // 10. SETUP 10 SLOT INPUT GAMBAR
+    // -------------------------------------------------------------
+    function setupH1AssetInputs() {
+      const inputs = document.querySelectorAll('.h1-asset-input');
+      inputs.forEach(inp => {
+        inp.onchange = e => {
+          const file = e.target.files[0];
+          const slot = inp.getAttribute('data-slot');
+          if (!file || !slot) return;
+
+          const reader = new FileReader();
+          reader.onload = ev => {
+            const dataUrl = ev.target.result;
+            const img = new Image();
+            img.onload = () => {
+              applyH1TextureToSlot(slot, img);
+              H1AssetDB.save(slot, dataUrl);
+            };
+            img.src = dataUrl;
+          };
+          reader.readAsDataURL(file);
+        };
+      });
+
+      const clearBtn = document.getElementById("btn-clear-all-h1-assets");
+      if (clearBtn) {
+        clearBtn.onclick = async () => {
+          await H1AssetDB.clearAll();
+          for (const k in H1_TEXTURES) H1_TEXTURES[k] = null;
+          loadCampaignLevel(currentLevelNumber);
+          alert("Semua aset gambar kustom telah direset ke setelan awal.");
+        };
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 11. INPUT KEYBOARD & TOUCH MOBILE
+    // -------------------------------------------------------------
+    function onKeyDown(e) {
+      switch (e.code) {
+        case 'KeyW': moveF = true; break;
+        case 'KeyS': moveB = true; break;
+        case 'KeyA': moveL = true; break;
+        case 'KeyD': moveR = true; break;
+        case 'ShiftLeft':
+        case 'ShiftRight': isSprinting = true; break;
+        case 'KeyO':
+        case 'Tab':
+          e.preventDefault();
+          toggleOrbitalSandbox();
+          break;
+        case 'F2':
+          e.preventDefault();
+          toggleSettingsModal();
+          break;
+      }
+    }
+
+    function onKeyUp(e) {
+      switch (e.code) {
+        case 'KeyW': moveF = false; break;
+        case 'KeyS': moveB = false; break;
+        case 'KeyA': moveL = false; break;
+        case 'KeyD': moveR = false; break;
+        case 'ShiftLeft':
+        case 'ShiftRight': isSprinting = false; break;
+      }
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // Inisialisasi Engine Saat Dokumen Siap
+    window.addEventListener('DOMContentLoaded', () => {
+      initEngine();
+    });
+  </script>
+</body>
+</html>
