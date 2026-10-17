@@ -1,0 +1,3521 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Wimbledon Heritage — Advanced Pyramid, Cups (Home & Away) & Career Simulator (370 Clubs)</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Cinzel:wght@700;900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-main: #060911;
+    --bg-card: #0d1322;
+    --bg-hover: #152037;
+    --accent: #38bdf8;
+    --accent-gold: #f59e0b;
+    --accent-bright: #fde047;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --border: #1e293b;
+    --danger: #ef4444;
+    --success: #10b981;
+    --purple: #a855f7;
+    --badge-bg: #1e293b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body { background-color: var(--bg-main); color: var(--text-main); padding: 14px; font-size: 13px; background-image: radial-gradient(#1e293b 1px, transparent 1px); background-size: 24px 24px; }
+
+  header {
+    background: var(--bg-card); padding: 14px 18px; border-radius: 8px; border: 1px solid var(--border);
+    margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px; border-top: 3px double var(--accent-gold);
+  }
+  .header-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; }
+  .header-titles h1 { font-family: 'Cinzel', serif; font-size: 20px; color: var(--accent-bright); font-weight: 900; letter-spacing: 1px; text-shadow: 0 2px 10px rgba(245,158,11,0.25); }
+  .header-titles p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .header-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+  .root-nav-bar { display: flex; gap: 8px; background: #080c18; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 12px; }
+  .btn-root { font-size: 13px; font-weight: 800; padding: 8px 18px; border-radius: 6px; border: 1px solid transparent; background: transparent; color: var(--text-muted); cursor: pointer; transition: 0.2s; }
+  .btn-root:hover { color: #fff; border-color: #334155; }
+  .btn-root.active { background: linear-gradient(135deg, #d97706, #f59e0b); color: #060911; border-color: var(--accent-gold); box-shadow: 0 2px 10px rgba(245,158,11,0.3); }
+
+  .global-simulation-bar {
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;
+    background: rgba(21, 32, 55, 0.5); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);
+  }
+  .sim-controls-group { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+
+  .week-navigator-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: rgba(13, 19, 34, 0.95); padding: 8px 14px; border-radius: 6px; border: 1px solid var(--accent);
+    margin-bottom: 12px; flex-wrap: wrap;
+  }
+
+  button {
+    background: var(--bg-hover); color: var(--text-main); border: 1px solid var(--border);
+    padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; display: inline-flex;
+    align-items: center; gap: 6px; transition: all 0.2s; user-select: none; font-weight: 600;
+  }
+  button:hover:not(:disabled) { background: var(--accent); color: #000; border-color: var(--accent); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.primary { background: var(--accent); color: #000; font-weight: 700; border-color: var(--accent); }
+  button.warning { background: var(--accent-gold); color: #000; font-weight: 700; border-color: var(--accent-gold); }
+  button.danger { background: var(--danger); color: #fff; font-weight: 700; border-color: var(--danger); }
+  button.excel { background: #107c41; color: #fff; font-weight: 700; border-color: #0c5e31; }
+  button.excel:hover:not(:disabled) { background: #15944f; color: #fff; }
+  button.html-btn { background: #059669; color: #fff; font-weight: 700; border-color: #047857; }
+  button.html-btn:hover:not(:disabled) { background: #10b981; color: #000; }
+  button.btn-sm { padding: 4px 8px; font-size: 11px; }
+
+  .hyperlink { color: var(--text-main); text-decoration: none; cursor: pointer; border-bottom: 1px dashed rgba(56, 189, 248, 0.5); transition: 0.15s; }
+  .hyperlink:hover { color: var(--accent-bright); border-bottom-color: var(--accent-bright); }
+
+  .tier-container { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .btn-tier { font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 6px; }
+  .btn-tier.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+  .zona-container {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 12px;
+    background: rgba(13, 19, 34, 0.7); padding: 8px 12px; border-radius: 6px; border: 1px dashed var(--border);
+  }
+  .btn-zona { padding: 4px 10px; font-size: 11px; }
+  .btn-zona.active { background: var(--accent-gold); color: #000; font-weight: 700; border-color: var(--accent-gold); }
+
+  .subtabs-container {
+    display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; background: var(--bg-card);
+    padding: 6px; border-radius: 6px; border: 1px solid var(--border);
+  }
+  .btn-subtab { padding: 6px 12px; font-size: 12px; border-radius: 4px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; }
+  .btn-subtab.active { background: var(--bg-hover); color: var(--accent); font-weight: 700; }
+
+  .content-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; min-height: 520px; overflow-x: auto; }
+
+  table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; margin-top: 6px; }
+  th, td { padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th { background: rgba(8, 12, 24, 0.9); color: var(--text-muted); font-weight: 600; position: sticky; top: 0; z-index: 10; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  tr:hover { background: var(--bg-hover); }
+  tr.mgr-club-row td { background: rgba(168, 85, 247, 0.15) !important; font-weight: 700; }
+  .badge-mgr { background: rgba(168, 85, 247, 0.25); color: #c084fc; border: 1px solid var(--purple); padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 800; }
+  .pos-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--badge-bg); border: 1px solid var(--accent-gold); color: var(--accent-gold); font-weight: 700; display: inline-block; font-family: 'JetBrains Mono'; }
+  .number-badge { font-size: 10px; font-weight: 800; padding: 1px 5px; border-radius: 4px; background: rgba(56, 189, 248, 0.15); border: 1px solid var(--accent); color: var(--accent); display: inline-block; min-width: 22px; text-align: center; font-family: 'JetBrains Mono'; }
+
+  .ovr-pill { font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 4px; display: inline-block; font-family: 'JetBrains Mono'; }
+  .ovr-elite { background: rgba(168, 85, 247, 0.25); color: #c084fc; border: 1px solid #a855f7; }
+  .ovr-high { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; }
+  .ovr-mid { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid #f59e0b; }
+  .ovr-low { background: rgba(148, 163, 184, 0.2); color: #94a3b8; border: 1px solid #94a3b8; }
+
+  .badge-trait { background: rgba(56, 189, 248, 0.15); border: 1px solid var(--accent); color: var(--accent); padding: 1px 5px; border-radius: 3px; font-size: 10px; font-weight: 700; font-family: 'Inter'; }
+  .badge-mvp { background: rgba(245, 158, 11, 0.2); border: 1px solid var(--accent-gold); color: var(--accent-bright); padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 800; font-family: 'JetBrains Mono'; }
+
+  .fixtures-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: 12px; }
+  .fixture-card { background: rgba(13, 19, 34, 0.9); border: 1px solid var(--border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .fixture-header { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 5px; }
+  .fixture-scoreboard { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; background: rgba(21, 32, 55, 0.45); padding: 8px 12px; border-radius: 6px; }
+  .fixture-score-num { font-size: 20px; font-weight: 900; color: var(--accent-bright); letter-spacing: 2px; font-family: 'JetBrains Mono'; }
+  .fixture-goals-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11px; background: rgba(6, 9, 17, 0.6); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); min-height: 40px; }
+  .fixture-goals-col { display: flex; flex-direction: column; gap: 3px; }
+  .goal-entry { padding: 2px 0; border-bottom: 1px dashed rgba(255,255,255,0.05); line-height: 1.4; }
+
+  .career-dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .career-stat-card { background: rgba(21, 32, 55, 0.45); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: left; }
+  .career-stat-card span { font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; font-family: 'JetBrains Mono'; }
+  .career-stat-card b { display: block; font-size: 22px; font-family: 'JetBrains Mono'; margin-top: 4px; }
+
+  .cup-bracket-container { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 14px; margin-top: 10px; }
+  .cup-bracket-col { min-width: 270px; background: #0b1120; border: 1px solid var(--border); border-radius: 6px; padding: 10px; flex-shrink: 0; }
+  .cup-match-box { background: #080c18; border: 1px solid var(--border); border-radius: 5px; padding: 8px; margin-bottom: 8px; font-size: 11px; }
+  .cup-match-leg { display: flex; justify-content: space-between; padding: 2px 0; color: var(--text-muted); }
+  .cup-match-agg { font-family: 'JetBrains Mono'; font-weight: 800; color: var(--accent-bright); text-align: center; border-top: 1px dashed var(--border); margin-top: 4px; padding-top: 4px; font-size: 12px; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 999; padding: 16px; backdrop-filter: blur(4px); }
+  .modal-overlay.open { display: flex; }
+  .modal-box { background: var(--bg-card); border: 1px solid var(--accent); border-radius: 8px; width: 100%; max-width: 820px; max-height: 90vh; overflow-y: auto; padding: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.95); }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+  .modal-header h2 { font-size: 16px; color: var(--accent-bright); font-weight: 800; font-family: 'Chakra Petch'; }
+  .modal-close { background: transparent; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer; }
+  .modal-close:hover { color: var(--danger); }
+  .form-group { margin-bottom: 10px; }
+  .form-group label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+  .form-group input, .form-group select { width: 100%; background: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); padding: 7px 10px; border-radius: 5px; font-size: 12px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+  #status-bar { margin-top: 12px; font-size: 11px; color: var(--accent); display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono'; }
+  .spinner { width: 12px; height: 12px; border: 2px solid var(--accent); border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="header-titles">
+      <h1>THE WIMBLEDON HERITAGE &mdash; ADVANCED PYRAMID, CUPS &amp; CAREER SIMULATOR</h1>
+      <p id="header-sub">Musim: <span id="current-season-display">1</span> &bull; Pekan Liga: <span id="global-week-display" style="color:var(--accent-gold); font-weight:700;">0</span> &bull; 370 Klub Sepak Bola &bull; Home &amp; Away National Cups</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="primary" onclick="generateMassiveDatabase()">⚡ Bangun Semesta (370 Klub)</button>
+      <button type="button" class="excel" onclick="exportMultiSheetExcel()">📊 Multi-Sheet Excel</button>
+      <button type="button" class="warning" onclick="exportStandingsOnlyExcel()">📋 Klasemen Saja</button>
+      <button type="button" class="html-btn" onclick="exportSeasonArchiveHTML()">🌐 Ekspor HTML Offline</button>
+      <button type="button" style="background:#0284c7; color:#fff;" onclick="exportDatabaseJSON()">📦 Ekspor JSON</button>
+      <button type="button" id="btn-advance-season" style="background:#8b5cf6; color:#fff;" onclick="advanceSeasonWithAutoArchive()">🏆 Tutup Musim &amp; Musim Baru</button>
+      <button type="button" class="danger" onclick="resetEntireUniverse()">🗑 Reset Semesta</button>
+    </div>
+  </div>
+
+  <div class="global-simulation-bar">
+    <div class="sim-controls-group">
+      <span style="font-size:11px; color:var(--text-muted); font-weight:700; margin-right:4px;">SIMULASI PEKAN LIGA:</span>
+      <button type="button" class="btn-sm" onclick="triggerGlobalBatchSimulation(1)">+1 Pekan</button>
+      <button type="button" class="btn-sm" onclick="triggerGlobalBatchSimulation(5)">+5 Pekan</button>
+      <button type="button" class="btn-sm" onclick="triggerGlobalBatchSimulation(10)">+10 Pekan</button>
+      <button type="button" class="btn-sm" onclick="triggerGlobalBatchSimulation(30)">+30 Pekan</button>
+      <button type="button" class="btn-sm primary" onclick="triggerGlobalBatchSimulation(66)">⚡ Tuntaskan Musim</button>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span id="cup-status-pill" style="font-size:11px; font-weight:700; color:var(--accent-gold); background:rgba(245,158,11,0.15); border:1px solid var(--accent-gold); padding:3px 8px; border-radius:4px;">🟡 Piala: Sedang Berlangsung</span>
+      <span id="mgr-badge-display" style="font-size:11px; font-weight:700; color:var(--purple); background:rgba(168,85,247,0.15); border:1px solid var(--purple); padding:3px 8px; border-radius:4px;">👔 Manajer: Pengangguran</span>
+    </div>
+  </div>
+</header>
+
+<!-- ROOT NAVIGATION (MODE SELECTOR) -->
+<div class="root-nav-bar">
+  <button type="button" class="btn-root active" id="btn-root-sim" onclick="switchRootMode('sim')">🌐 Simulator Liga &amp; Piala Nasional (370 Klub)</button>
+  <button type="button" class="btn-root" id="btn-root-career" onclick="switchRootMode('career')">👔 Mode Karier Manajer</button>
+</div>
+
+<!-- SUB-BARS FOR SIMULATOR MODE -->
+<div id="sim-controls-wrapper">
+  <div class="week-navigator-bar">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <button type="button" class="btn-sm" onclick="navigateWeek(-10)">&laquo; -10</button>
+      <button type="button" class="btn-sm" onclick="navigateWeek(-1)">&lsaquo; -1</button>
+      <span>Melihat Pekan: <strong id="browsing-week-display" style="color:var(--accent-bright); font-size:14px; font-family:'JetBrains Mono';">0</strong></span>
+      <button type="button" class="btn-sm" onclick="navigateWeek(1)">+1 &rsaquo;</button>
+      <button type="button" class="btn-sm" onclick="navigateWeek(10)">+10 &raquo;</button>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <button type="button" class="btn-sm primary" onclick="jumpToCurrentSimulatedWeek()">Lompat ke Pekan Berjalan</button>
+    </div>
+  </div>
+
+  <div class="tier-container" id="tier-nav"></div>
+  <div class="zona-container" id="zona-nav" style="display: none;"></div>
+
+  <div class="subtabs-container" id="sim-subtabs">
+    <button type="button" class="btn-subtab active" onclick="switchSubTab(1)">1. Klasemen</button>
+    <button type="button" class="btn-subtab" onclick="switchSubTab(2)">2. Statistik Pemain</button>
+    <button type="button" class="btn-subtab" onclick="switchSubTab(3)">3. Jadwal &amp; Skor</button>
+    <button type="button" class="btn-subtab" onclick="switchSubTab(4)">4. Skuad Klub</button>
+    <button type="button" class="btn-subtab" onclick="switchSubTab(5)">5. Keuangan &amp; Stadion</button>
+    <button type="button" class="btn-subtab" onclick="switchSubTab(6)">6. Panduan Form</button>
+    <button type="button" class="btn-subtab" onclick="switchSubTab(7)">7. Buletin Mingguan</button>
+    <button type="button" class="btn-subtab" onclick="switchSubTab(8)">8. Ruang Medis</button>
+    <button type="button" class="btn-subtab" onclick="switchSubTab(9)">9. Nilai Pasar</button>
+    <button type="button" class="btn-subtab" onclick="switchSubTab(10)">10. Turnamen Piala (Home &amp; Away)</button>
+    <button type="button" class="btn-subtab" onclick="switchSubTab(11)" style="color:var(--accent-bright); font-weight:800;">11. Rekapitulasi &amp; MVP</button>
+  </div>
+</div>
+
+<!-- SUB-BARS FOR CAREER MODE -->
+<div id="career-controls-wrapper" style="display:none;">
+  <div class="subtabs-container" id="career-subtabs">
+    <button type="button" class="btn-subtab active" onclick="switchCareerSubTab(1)">1. Kantor Klub &amp; Direksi</button>
+    <button type="button" class="btn-subtab" onclick="switchCareerSubTab(2)">2. Papan Taktik &amp; Formasi</button>
+    <button type="button" class="btn-subtab" onclick="switchCareerSubTab(3)">3. Ruang Pertandingan</button>
+    <button type="button" class="btn-subtab" onclick="switchCareerSubTab(4)">4. Bursa &amp; Pemandu Bakat</button>
+  </div>
+</div>
+
+<div class="content-panel" id="view-panel"></div>
+
+<div id="status-bar">
+  <div class="spinner" id="loading-spinner"></div>
+  <span id="status-text">Siap.</span>
+</div>
+
+<!-- Modal Pop-up Club -->
+<div class="modal-overlay" id="club-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="modal-club-title">Berkas Profil Klub</h2>
+      <button type="button" class="modal-close" onclick="closeClubModal()">&times;</button>
+    </div>
+    <div id="modal-club-details" style="margin-bottom:14px;"></div>
+    <h3 style="color:var(--accent); font-size:13px; margin-bottom:8px; border-top:1px solid rgba(255,255,255,0.08); padding-top:10px;">Sunting Profil &amp; Stadion Kandang</h3>
+    <form id="club-form" onsubmit="saveClubChanges(event)">
+      <input type="hidden" id="edit-club-id">
+      <div class="form-group">
+        <label>Nama Klub</label>
+        <input type="text" id="edit-club-name" required>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Stadion Kandang</label>
+          <input type="text" id="edit-club-stadium" required>
+        </div>
+        <div class="form-group">
+          <label>Kapasitas Kursi</label>
+          <input type="number" id="edit-club-capacity" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Harga Tiket (£)</label>
+          <input type="number" id="edit-club-ticket" required>
+        </div>
+        <div class="form-group">
+          <label>Anggaran Kas &amp; Gaji (£)</label>
+          <input type="number" id="edit-club-budget" required>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px;">
+        <button type="button" class="btn-sm primary" onclick="takeManagerPostFromModal()">👔 Latih Klub Ini</button>
+        <div style="display:flex; gap:8px;">
+          <button type="button" onclick="closeClubModal()">Tutup</button>
+          <button type="submit" class="warning">Simpan Profil</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Pop-up Player (Editable & Synced to IndexedDB) -->
+<div class="modal-overlay" id="player-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="modal-player-title">Dossier &amp; Profil Pemain</h2>
+      <button type="button" class="modal-close" onclick="closePlayerModal()">&times;</button>
+    </div>
+    <div id="modal-player-content"></div>
+    <h3 style="color:var(--accent); font-size:13px; margin-bottom:8px; border-top:1px solid rgba(255,255,255,0.08); padding-top:10px;">Sunting Atribut Pemain (Tersimpan ke IndexedDB)</h3>
+    <form id="player-form" onsubmit="savePlayerChanges(event)">
+      <input type="hidden" id="edit-player-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nama Lengkap (Editable)</label>
+          <input type="text" id="edit-player-name" required>
+        </div>
+        <div class="form-group">
+          <label>Nomor Punggung</label>
+          <input type="number" id="edit-player-number" min="1" max="99" required>
+        </div>
+      </div>
+      <div class="form-row-3">
+        <div class="form-group">
+          <label>Posisi</label>
+          <select id="edit-player-role">
+            <option value="GK">GK (Kiper)</option>
+            <option value="CB">CB (Bek Tengah)</option>
+            <option value="LB">LB (Bek Kiri)</option>
+            <option value="RB">RB (Bek Kanan)</option>
+            <option value="DMF">DMF (Gelandang Bertahan)</option>
+            <option value="CMF">CMF (Gelandang Tengah)</option>
+            <option value="AMF">AMF (Gelandang Serang)</option>
+            <option value="LWF">LWF (Penyerang Sayap Kiri)</option>
+            <option value="RWF">RWF (Penyerang Sayap Kanan)</option>
+            <option value="CF">CF (Penyerang Tengah)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Rating OVR (35 - 99)</label>
+          <input type="number" id="edit-player-ovr" min="35" max="99" required>
+        </div>
+        <div class="form-group">
+          <label>Usia</label>
+          <input type="number" id="edit-player-age" min="16" max="42" required>
+        </div>
+      </div>
+      <div class="form-row-3">
+        <div class="form-group">
+          <label>Kebugaran Fisik (%)</label>
+          <input type="number" id="edit-player-fitness" min="10" max="100" required>
+        </div>
+        <div class="form-group">
+          <label>Moril (0 - 100)</label>
+          <input type="number" id="edit-player-morale" min="0" max="100" required>
+        </div>
+        <div class="form-group">
+          <label>Kepemimpinan (1 - 20)</label>
+          <input type="number" id="edit-player-leadership" min="1" max="20" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Karakter Spesialis (Player Trait)</label>
+        <select id="edit-player-trait">
+          <option value="Standard">Standard</option>
+          <option value="Clutch Finisher">Clutch Finisher (Pencetak Gol Menit Akhir)</option>
+          <option value="Set-Piece Specialist">Set-Piece Specialist (Spesialis Bola Mati)</option>
+          <option value="Big Game Player">Big Game Player (Kuat di Laga Krusial &amp; Derby)</option>
+          <option value="Workhorse">Workhorse (Tahan Lelah &amp; Stamina Tinggi)</option>
+        </select>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:14px;">
+        <button type="button" onclick="closePlayerModal()">Batal</button>
+        <button type="submit" class="primary">Simpan ke IndexedDB</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// ==============================================================
+// 1. DATASET RESMI 370 KLUB WIMBLEDON & STRUKTUR 5 TIER
+// ==============================================================
+var TIER_CONFIG = {
+  'T1': { name: 'Tier 1: Premier League', short: 'PL', zones: 0, clubsPerZone: 32, ovrMin: 76, ovrMax: 92, capBase: 52000, tktPrice: 50 },
+  'T2': { name: 'Tier 2: The Championship', short: 'CH', zones: 0, clubsPerZone: 32, ovrMin: 65, ovrMax: 76, capBase: 28000, tktPrice: 32 },
+  'T3': { name: 'Tier 3: National League', short: 'NL', zones: 2, clubsPerZone: 34, ovrMin: 55, ovrMax: 65, capBase: 14000, tktPrice: 22 },
+  'T4': { name: 'Tier 4: Regional League', short: 'RL', zones: 3, clubsPerZone: 34, ovrMin: 45, ovrMax: 55, capBase: 6500,  tktPrice: 15 },
+  'T5': { name: 'Tier 5: District Conf', short: 'DC', zones: 4, clubsPerZone: 34, ovrMin: 36, ovrMax: 46, capBase: 2500,  tktPrice: 10 }
+};
+
+var WIMBLEDON_RAW_DATA = {
+  T1: [
+    "Aberwick United","Ashford Athletic","Barrowfield Town","Bramblesea City","Brannock Rovers",
+    "Calderbridge FC","Carrmoor Wednesday","Chelmsford Gate","Coldstream Villa","Corbridge Rangers",
+    "Cromarty Orient","Cumbria Harriers","Danelaw Celtic","Dunsmere Albion","Eastfield Thursday",
+    "Elmwood Forest","Falmouth Guild","Gallowgate Victoria","Greystoke Wanderers","Hadrian Wall FC",
+    "Harthaven City","Hawthorn County","Highland Heath","Holtby Academicals","Ironstone Town",
+    "Kielder Foresters","Kingsbury Athletic","Kirkfall Argyle","Lindisfell City","Lockwood Strollers",
+    "Marlowe Alexandra","Midsomer Corinthians"
+  ],
+  T2: [
+    "Millwall Docks","Northwyck Town","Oakhampton United","Pennine Rovers","Pendlebury Thistle",
+    "Redgrave Athletic","Rookery Park","Severnside Mariners","Silverdale Borough","Southwark Royals",
+    "Stanhope Rangers","Stonehaven FC","Teesmouth Celtic","Valeside Albion","Wealdstone Villa",
+    "Wessex Centurions","Whitehaven Harriers","Yorbury Central","Alnwick Town","Amberley United",
+    "Appledore FC","Arundel Castle","Aylesbury Albion","Bampton United","Beckenham City",
+    "Berkhamsted Town","Beverley Minster","Bideford United","Blackwood Forest","Bodmin Moor",
+    "Bosworth Field","Bridport Harbour"
+  ],
+  T3: [
+    // Zone 1: North
+    [
+      "Aberwick Town","Barrowfield Albion","Brannock Athletic","Calderbridge Town","Carrmoor United",
+      "Coldstream Town","Corbridge United","Cromarty Celtic","Cumbria United","Danelaw Athletic",
+      "Dunsmere United","Eastfield United","Gallowgate Athletic","Greystoke United","Hadrian Wall Rangers",
+      "Highland United","Holtby Town","Ironstone Works","Kielder United","Kirkfall Celtic",
+      "Lindisfell United","Northwyck United","Pennine Athletic","Pendlebury United","Redgrave Town",
+      "Stanhope United","Stonehaven Harriers","Teesmouth Ironworks","Whitehaven Town","Yorbury Minster",
+      "Alnwick Rovers","Beverley Athletic","Clitheroe Castle","Cockermouth United"
+    ],
+    // Zone 2: South
+    [
+      "Ashford Town","Bramblesea United","Chelmsford City","Elmwood Athletic","Falmouth Town",
+      "Harthaven Rovers","Hawthorn Town","Kingsbury Town","Lockwood Town","Marlowe United",
+      "Midsomer Town","Millwall Town","Oakhampton Town","Rookery Town","Severnside City",
+      "Silverdale Athletic","Southwark Bridge","Valeside Town","Wealdstone United","Wessex Wanderers",
+      "Amberley Athletic","Appledore Rangers","Arundel Town","Aylesbury Villa","Bampton Town",
+      "Beckenham Celtic","Berkhamsted Rovers","Bideford Albion","Blackwood Town","Bodmin Athletic",
+      "Bosworth Rangers","Bridport Town","Brockenhurst United","Buckfast Abbey"
+    ]
+  ],
+  T4: [
+    // Zone 1: North & Scotland
+    [
+      "Aberwick Celtic","Barrowfield Rovers","Brannock Thistle","Calderbridge Albion","Carrmoor Miners",
+      "Coldstream Thistle","Corbridge Town","Cromarty Port","Cumbria Wanderers","Danelaw Town",
+      "Dunsmere Town","Gallowgate Rovers","Hadrian Wall Centurions","Highland Thistle","Holtby United",
+      "Ironstone Athletic","Kirkfall Wednesday","Lindisfell Wanderers","Pennine Albion","Redgrave Miners",
+      "Stanhope Quarry","Stonehaven Bay","Teesmouth United","Yorbury Athletic","Caistor Romans",
+      "Castleford Town","Clitheroe Rovers","Cockermouth Town","Glossop North End","Helmsley Castle",
+      "Hexham Priory","Ilkley Moor","Jedburgh Borderers","Kendal Town"
+    ],
+    // Zone 2: Midlands & Wales
+    [
+      "Eastfield Rovers","Elmwood Villa","Hawthorn United","Lockwood Villa","Marlowe Docks",
+      "Midsomer Athletic","Northwyck Albion","Oakhampton Rangers","Pendlebury Old Pendlebury","Silverdale Town",
+      "Valeside Athletic","Wealdstone Borough","Wessex Royal","Buxton Spa","Daventry United",
+      "Faringdon Folly","Gainsborough Trinity","Grantham United","Halesowen Town","Knighton Town",
+      "Ledbury Town","Leek Moorlands","Ludlow Castle","Lutterworth United","Malmesbury Abbey",
+      "Matlock Town","Melksham United","Nantwich Town","Newent Town","Oakham Castle",
+      "Oswestry Borderers","Otley Chevin","Oundle Town","Pershore Abbey"
+    ],
+    // Zone 3: South & Coast
+    [
+      "Ashford Rangers","Bramblesea Marine","Chelmsford Rovers","Falmouth United","Harthaven Port",
+      "Kingsbury Royal","Millwall Rovers","Rookery Manor","Severnside United","Southwark Athletic",
+      "Whitehaven Port","Brockenhurst Rovers","Buckfast Celtic","Burnham On Sea","Cirencester Gate",
+      "Colyton Athletic","Corfe Castle","Cranborne Chase","Dartford Bridge","Denbigh Rovers",
+      "Dorking Wanderers","Dulverton Town","Dunwich Coast","Egham Runnymede","Ellesmere Port FC",
+      "Evershot Athletic","Faversham Creek","Framlingham Castle","Glastonbury Tor","Godalming Town",
+      "Harlech Castle","Hartland Point","Ilfracombe Bay","Winchester City"
+    ]
+  ],
+  T5: [
+    // Zone 1: North West
+    [
+      "West Cumbria","Greystoke Castle","South Kielder","North Kirkfall","High Pennine",
+      "Keswick Wanderers","Keswick Celtic","Penrith Castle","Penrith United","Sedbergh Fells",
+      "Sedbergh Town","Skipton Castle","Skipton United","Kendal United","Jedburgh Abbey",
+      "Denbigh Athletic","Ellesmere Rangers","Harlech Athletic","Knighton Albion","Oswestry Town",
+      "Ludlow Town","Ledbury Rovers","Nantwich Albion","Leek United","Matlock Bath",
+      "Buxton Town","Glossop Athletic","Castleford Albion","Pontefract Collieries","Pontefract Albion",
+      "Otley Athletic","Ilkley Athletic","Pickering Town","Pickering Vale"
+    ],
+    // Zone 2: North East
+    [
+      "Port Aberwick","West Carrmoor","North Cromarty","Red Star Danelaw","Danelaw Vikings",
+      "Eastfield Town","Gallowgate City","Old Gallowgate","Wallsend Hadrian","North Highland",
+      "North Ironstone","Holy Isle Lindisfell","Pennine Thistle","Redgrave Bridge","East Teesmouth",
+      "Old Yorbury","Yorbury Gate","Caistor United","Gainsborough Town","Grantham Villa",
+      "Helmsley Town","Hexham Rovers","Morpeth Town","Morpeth Harriers","Richmond Castle",
+      "Richmond Town","Whitby Abbey","Whitby Town","Saffron Walden Town","Saffron Walden Albion",
+      "Dunwich United","Framlingham Albion","Oundle Rovers","Halesowen Albion"
+    ],
+    // Zone 3: South West
+    [
+      "South Brannock","East Coldstream","High Elmwood","West Oakhampton","Severnside Bridge",
+      "West Silverdale","West Wessex","Burnham Athletic","Cirencester City","Colyton Wanderers",
+      "Corfe Villa","Cranborne Town","Dulverton Harriers","Evershot Rovers","Glastonbury Celtic",
+      "Hartland United","Ilfracombe Town","Liskeard Town","Liskeard Harriers","Malmesbury Rovers",
+      "Melksham Town","Newent Athletic","Pershore Town","Shaftesbury Abbey","Shaftesbury Rovers",
+      "Tavistock Town","Tavistock Harriers","Tewkesbury Abbey","Tewkesbury Rovers","Winchester Royals",
+      "Winchester Castle","Romsey Abbey","Romsey Town","Ringwood Forest"
+    ],
+    // Zone 4: South East
+    [
+      "North Barrowfield","St. Jude’s Barrowfield","Chelmsford Athletic","Kingsbury Orient","South Marlowe",
+      "South Millwall","Wharf Millwall","Borough of Southwark","Southwark Rangers","High Wealdstone",
+      "Dartford Albion","Dorking FC","Egham Town","Faringdon United","Faversham Town",
+      "Godalming Rovers","Lewes Priory","Lewes Athletic","Lutterworth Athletic","Lymington Pier",
+      "Lymington Town","Midhurst Town","Midhurst Rangers","Ramsgate Port","Ramsgate Athletic",
+      "Ringwood United","Rye Bay","Rye United","Sandwich Bay","Sandwich Athletic",
+      "St. Albans City","St. Albans Celtic","Liskeard Harriers Res.","Eastbourne Port"
+    ]
+  ]
+};
+
+var FIRST_NAMES_EN = [
+  "Adam","David","John","Darren","Oliver","George","Harry","Jack","Noah","Leo",
+  "Arthur","Oscar","Charlie","Freddie","Alfie","Henry","Archie","Theo","Thomas","James",
+  "Joshua","Alexander","William","Edward","Isaac","Lucas","Ethan","Max","Daniel","Jacob",
+  "Samuel","Joseph","Benjamin","Mason","Harrison","Finlay","Logan","Dylan","Caleb","Sebastian",
+  "Zachary","Toby","Luke","Liam","Matthew","Ryan","Lewis","Nathan","Callum","Connor",
+  "Kieran","Declan","Harvey","Ellis","Owen","Rhys","Cameron","Jamie","Bradley","Jordan",
+  "Scott","Ross","Craig","Stuart","Mitchell","Kyle","Travis","Brandon","Bailey","Tyler",
+  "Hayden","Ashton","Reece","Taylor","Morgan","Corey","Elliot","Finnegan","Jude","Jasper",
+  "Felix","Miles","Hugo","Gabriel","Louis","Ronnie","Reggie","Frankie","Bobby","Tommy",
+  "Sonny","Teddy","Stanley","Albert","Chester","Walter","Rupert","Monty","Barnaby","Otis",
+  "Albie","Rory","Brodie","Fraser","Hamish","Angus","Ewan","Iain","Alistair","Lachlan",
+  "Douglas","Duncan","Malcolm","Murray","Niall","Gareth","Rhodri","Ieuan","Owain","Gethin",
+  "Dafydd","Llewelyn","Sion","Bryn","Caelan","Tristan","Rowan","Dexter","Fletcher","Spencer",
+  "Carter","Cooper","Hunter","Hudson","Parker","Wyatt","Jaxon","Brody","Riley","Harley",
+  "Blake","Leon","Gavin","Callan","Keir","Brogan","Euan","Torin","Colm","Blair"
+];
+
+var LAST_NAMES_EN = [
+  "Smith","Jones","Taylor","Brown","Williams","Wilson","Johnson","Davies","Robinson","Wright",
+  "Thompson","Evans","Walker","White","Roberts","Green","Hall","Thomas","Clarke","Jackson",
+  "Wood","Harris","Edwards","Turner","Martin","Cooper","Hill","Ward","Hughes","Moore",
+  "King","Harrison","Baker","Patel","Young","Allen","Anderson","Phillips","Lee","Bell",
+  "Parker","Davis","Miller","Watson","Bennett","Shaw","Reynolds","Price","Morgan","Bailey",
+  "Carter","Kelly","Richardson","Cox","Howard","Wardle","Mitchell","James","Ellis","Campbell",
+  "Stewart","Morrison","Murray","McIntyre","Fraser","Robertson","Ross","Henderson","Graham","Johnston",
+  "Hamilton","Kerr","Ferguson","Cameron","Duncan","Armstrong","Hunter","Crawford","Reid","Burns",
+  "Gibson","Wallace","Simpson","Boyd","Fleming","Cunningham","Montgomery","Douglas","Macleod","Sinclair",
+  "Ritchie","McLean","Christie","Sutherland","Macfarlane","Buchanan","Forsyth","Griffiths","Powell","Jenkins",
+  "Owen","Vaughan","Pugh","Bevan","Lloyd","Parry","Rees","Howell","Llewellyn","Pritchard",
+  "Bowen","Meredith","Hopkins","Prosser","Watkins","Morris","Lewis","Gough","Cadwallader","Kendrick",
+  "Mostyn","Trevor","Wynn","Maddox","Gethin","Conway","Blayney","Tudor","Kyffin","Hanmer",
+  "Pennant","Salusbury","Glynne","Meyrick","Anwyl","Nannau","Fletcher","Mason","Weaver","Mercer",
+  "Skinner","Sadler","Cartwright","Wainwright","Fowler","Chandler","Glover","Potter","Webster","Baxter",
+  "Chapman","Collier","Sawyer","Barker","Coleman","Thatcher","Brewster","Spicer","Naylor","Hooper",
+  "Fuller","Dyer","Shearer","Forester","Woodward","Hayward","Horner","Roper","Wheeler","Bridger",
+  "Palmer","Atwell","Underhill","Woodhouse","Greenhalgh","Holroyd","Boothroyd","Ramsbottom","Shuttleworth","Butterworth",
+  "Higginbottom","Featherstonehaugh","Broadbent","Heginbotham","Longbottom","Sidebottom","Winterbottom","Netherwood","Higham","Clough",
+  "Bardsley","Clegg","Entwistle","Kenyon","Crompton","Hesketh","Pickup","Rawsthorne","Wigglesworth","Fairclough",
+  "Ashurst","Billington","Duckworth","Charnley","Grimshaw","Walmsley","Whalley","Eccleston","Standish","Pilkington",
+  "Atherton","Culcheth","Pemberton","Ince","Bradshaw","Tyldesley","Worsley","Risley","Holcroft","Bold",
+  "Halsall","Scarisbrick","Lathom","Tarleton","Formby","Crosby","Maghull","Melling","Altcar","Aughton",
+  "Bickerstaffe","Rainford","Windle","Parr","Haydock","Ashton","Golborne","Lowton","Rixton","Glazebrook",
+  "Croft","Middleton","Chadderton","Royton","Oldham","Lees","Saddleworth","Quick","Mossley","Stalybridge",
+  "Dukinfield","Hyde","Newton","Godley","Mottram","Hollingworth","Tintwistle","Hadfield","Padfield","Glossop",
+  "Charlesworth","Chisworth","Ludworth","Marple","Mellor","Disley","Poynton","Adlington","Bollington","Rainow",
+  "Kettleshulme","Taxal","Whaley","Yeardsley","Buxworth","Chinley","Bugsworth","Brownside","Chapel","Fernilee",
+  "Hartington","Fairfield","Buxton","Burbage","Unsworth","Horrocks","Wolstenholme","Fitton","Hardman","Schofield",
+  "Kershaw","Stott","Bamford","Ashworth","Heywood","Healey","Whitworth","Littlewood","Hamer","Buckley",
+  "Ogden","Scholes","Travis","Gartside","Wrigley","Kenworthy","Radclyffe","Rylands","Partington","Warburton",
+  "Leigh","Astley","Hulton","Harwood","Sharples","Turton","Edgworth","Quarlton","Topping","Haslam",
+  "Horwich","Anderton","Rivington","Heath","Charnock","Duxbury","Coppull","Langtree","Shevington","Wrightington",
+  "Parbold","Dalton","Upholland","Orrell","Billinge","Winstanley","Abram","Hindley","Haigh","Aspull",
+  "Blackrod","Westhoughton","Lostock","Heaton","Rumworth","Halliwell","Tonge","Breightmet","Darcy","Lever",
+  "Farnworth","Kearsley","Clifton","Pendlebury","Prestwich","Broughton","Cheetham","Crumpsall","Blackley","Harpurhey",
+  "Moston","Failsworth","Droylsden","Gorton","Openshaw","Bradford","Beswick","Ardwick","Chorlton","Hulme",
+  "Moss","Rusholme","Fallowfield","Withington","Didsbury","Burnage","Levenshulme","Reddish","Norris","Cheadle",
+  "Gatley","Stockport","Brinnington","Bredbury","Romiley","Offerton","Torkington","Norbury","Bramhall","Woodford",
+  "Handforth","Styal","Wilmslow","Morley","Pownall","Chorley","Alderley","Nether","Over","Chelford",
+  "Warford","Marthall","Ollerton","Toft","Bexton","Knutsford","Tabley","Rostherne","Tatton","Mere",
+  "Millington","Legh","Agden","Dunham","Massey","Carrington","Sale","Mersey","Timperley","Altrincham",
+  "Bowdon","Hale","Ashley","Ringway","Mobberley","Peover","Superior","Inferior","Plumley","Pickmere",
+  "Wincham","Marston","Gralam","Northwich","Witton","Leftwich","Davenham","Bostock","Wharton","Winsford",
+  "Weaverham","Acton","Cliff","Crowton","Norley","Kingsley","Frodsham","Helsby","Alvanley","Manley",
+  "Hapsford","Elton","Thornton","Moors","Stanlow","Ellesmere","Port","Whitby","Sutton","Childer",
+  "Hooton","Willaston","Ness","Neston","Parkgate","Burton","Puddington","Shotwick","Capenhurst","Ledsham",
+  "Lea","Mollington","Backford","Upton","Chester","Blacon","Saughall","Hoole","Boughton","Christleton",
+  "Littleton","Waverton","Saighton","Aldford","Churton","Farndon","Shocklach","Tilston","Malpas","Cholmondeley",
+  "Bickerton","Bulkeley","Peckforton","Beeston","Tarporley","Bunbury","Alpraham","Calveley","Barbridge","Wettenhall",
+  "Cholmondeston","Minshull","Vernon","Church","Coppenhall","Monks","Crewe","Haslington","Barthomley","Weston",
+  "Basford","Shavington","Gresty","Wistaston","Nantwich","Woolstanwood","Leighton","Worleston","Poole","Aston",
+  "Juxta","Mondrum","Baddiley","Brindley","Burland","Faddiley","Hurleston","Edleston","Henhull","Sound",
+  "Austerson","Baddington","Broomhall","Coole","Pilate","Hankelow","Hatherton","Walgherton","Doddington","Blakenhall",
+  "Checkley","Wrinehill","Betley","Madeley","Woore","Pipe","Gate","Knighton","Onneley","Gravenhunger",
+  "Dorrington","Mucklestone","Oakley","Winnington","Bearstone"
+];
+
+var IDB_NAME = "WimbledonUltimatePyramidDB";
+var IDB_VERSION = 1;
+
+var isBusy = false;
+var seasonNumber = 1;
+var currentGlobalMatchday = 0;
+var browsingMatchday = 0;
+var currentRootMode = 'sim';
+var activeTier = 'T1';
+var activeZona = 1;
+var activeSubTab = 1;
+var activeCareerSubTab = 1;
+var selectedClubId = null;
+
+var DB = {
+  season: 1,
+  globalMatchday: 0,
+  clubs: [],
+  clubById: {},
+  rostersByClubId: {},
+  players: [],
+  playerById: {},
+  standings: {},
+  stats: {},
+  cupStats: {},
+  matchStore: {},
+  faCup: null,
+  leagueCup: null,
+  career: {
+    clubId: null,
+    rating: 80,
+    balance: 5000000,
+    weeklyWage: 65000,
+    tactics: { formation: "4-3-3", mentality: "Balanced", tempo: "Direct", familiarity: 85 }
+  }
+};
+
+var clubsByZoneCache = {};
+
+function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function pseudoRandom(seed) {
+  var s = Math.floor(Math.abs(seed)) % 2147483647;
+  if (s <= 0) s += 2147483646;
+  var f = function() { return (s = s * 16807 % 2147483647) / 2147483647; };
+  f(); f(); f(); f();
+  return f;
+}
+
+function nameFromId(n) {
+  var F = FIRST_NAMES_EN.length, L = LAST_NAMES_EN.length, pairs = F * L;
+  if (n < pairs) {
+    var k = (n * 7919) % pairs;
+    return FIRST_NAMES_EN[k % F] + ' ' + LAST_NAMES_EN[Math.floor(k / F)];
+  }
+  var m = n - pairs, total = pairs * L, k2 = (m * 104729) % total;
+  return FIRST_NAMES_EN[k2 % F] + ' ' + LAST_NAMES_EN[Math.floor(k2 / F) % L];
+}
+
+/* === [AKHIR PART 1 - SAMBUNG KE PART 2] === */
+
+// ==============================================================
+// 2. PEMBANGKIT DATABASE LENGKAP DENGAN MODUL PERFORMA & PIALA
+// ==============================================================
+var ROSTER_ROLES = [
+  "GK", "GK",
+  "CB", "CB", "CB", "CB", "LB", "LB", "RB", "RB",
+  "DMF", "DMF", "CMF", "CMF", "CMF", "AMF", "AMF",
+  "LWF", "RWF", "CF"
+];
+
+function assignSquadNumbers(roster) {
+  var poolByRole = {
+    "GK": [1, 13, 22],
+    "RB": [2, 12, 20],
+    "LB": [3, 14, 21],
+    "CB": [4, 5, 6, 15, 16],
+    "DMF": [4, 6, 8, 18],
+    "CMF": [8, 10, 17, 24],
+    "AMF": [10, 23, 27],
+    "LWF": [11, 19, 29],
+    "RWF": [7, 18, 28],
+    "CF": [9, 11, 25, 99]
+  };
+  var used = new Set();
+  roster.forEach(function(p) {
+    var pool = poolByRole[p.Ruolo] || [10, 20, 30];
+    var assigned = null;
+    for (var i = 0; i < pool.length; i++) {
+      if (!used.has(pool[i])) { assigned = pool[i]; break; }
+    }
+    if (!assigned) {
+      for (var n = 1; n <= 99; n++) {
+        if (!used.has(n)) { assigned = n; break; }
+      }
+    }
+    used.add(assigned);
+    p.Numero = assigned;
+  });
+}
+
+function refreshZoneCache() {
+  clubsByZoneCache = {};
+  Object.keys(TIER_CONFIG).forEach(function(tKey) {
+    var cfg = TIER_CONFIG[tKey];
+    var totalZ = cfg.zones === 0 ? 1 : cfg.zones;
+    for (var z = 1; z <= totalZ; z++) {
+      var zVal = cfg.zones === 0 ? 0 : z;
+      var key = cfg.zones === 0 ? tKey : (tKey + "_" + z);
+      clubsByZoneCache[key] = DB.clubs.filter(function(c) { return c.Tier === tKey && c.Zona === zVal; });
+    }
+  });
+}
+
+function buildPyramidClubs() {
+  var cList = [];
+  var cIdCounter = 1;
+  var pIdCounter = 1001;
+
+  Object.keys(TIER_CONFIG).forEach(function(tKey) {
+    var cfg = TIER_CONFIG[tKey];
+    var raw = WIMBLEDON_RAW_DATA[tKey];
+    var totalZ = cfg.zones === 0 ? 1 : cfg.zones;
+
+    for (var z = 1; z <= totalZ; z++) {
+      var zVal = cfg.zones === 0 ? 0 : z;
+      var clubNames = cfg.zones === 0 ? raw : raw[z - 1];
+      var standKey = cfg.zones === 0 ? tKey : (tKey + "_" + z);
+      DB.standings[standKey] = [];
+
+      clubNames.forEach(function(cName) {
+        var cid = "WMB-" + String(cIdCounter).padStart(4, '0');
+        var ovr = Math.round(cfg.ovrMin + Math.random() * (cfg.ovrMax - cfg.ovrMin));
+        var stadiumName = cName.indexOf("City") !== -1 ? (cName + " Stadium") : ("St. " + cName.split(" ")[0] + " Ground");
+        var capacity = Math.round(cfg.capBase * (0.85 + Math.random() * 0.35));
+        var budget = Math.round((ovr * ovr) * 3500);
+
+        var clubObj = {
+          ID_Club: cid,
+          Nome: cName,
+          Tier: tKey,
+          Zona: zVal,
+          Stadio: stadiumName,
+          Capienza: capacity,
+          PrezzoBiglietto: cfg.tktPrice,
+          MatchdayRevenue: 0,
+          Budget: budget,
+          OVR_Tim: ovr,
+          MoraleTeam: 75,
+          Chemistry: 80,
+          recentMatches: []
+        };
+
+        cList.push(clubObj);
+        DB.clubById[cid] = clubObj;
+        DB.rostersByClubId[cid] = [];
+
+        DB.standings[standKey].push({
+          ID_Club: cid,
+          Nome: cName,
+          OVR_Tim: ovr,
+          P: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, Pts: 0, Form: []
+        });
+
+        var squad = [];
+        for (var i = 0; i < ROSTER_ROLES.length; i++) {
+          var pid = "PLY-" + String(pIdCounter).padStart(6, '0');
+          var role = ROSTER_ROLES[i];
+          var age = 18 + Math.floor(Math.random() * 15);
+          var potDelta = Math.round((Math.random() + Math.random() - 1) * 8);
+          var pOvr = Math.max(35, Math.min(99, Math.round(ovr + potDelta)));
+          var pName = nameFromId(pIdCounter);
+
+          var leadershipVal = Math.min(20, Math.max(1, Math.round((age - 18) * 1.1 + Math.random() * 5)));
+          var traitRoll = Math.random();
+          var trait = traitRoll < 0.15 ? "Clutch Finisher" : (traitRoll < 0.28 ? "Set-Piece Specialist" : (traitRoll < 0.40 ? "Big Game Player" : (traitRoll < 0.55 ? "Workhorse" : "Standard")));
+
+          var pObj = {
+            ID_Giocatore: pid,
+            Nome_Completo: pName,
+            Numero: null,
+            ID_Club: cid,
+            Squadra: cName,
+            Ruolo: role,
+            OVR: pOvr,
+            Eta: age,
+            Fitness: 100,
+            Morale: 75 + Math.floor(Math.random() * 20),
+            Leadership: leadershipVal,
+            Trait: trait,
+            Piede_Preferito: Math.random() < 0.78 ? "Right" : "Left",
+            Infortunato: 0,
+            InjuryDesc: "",
+            eventLogs: []
+          };
+
+          DB.players.push(pObj);
+          DB.playerById[pid] = pObj;
+          squad.push(pObj);
+          DB.stats[pid] = { goals: 0, assists: 0, matches: 0, cleanSheets: 0, mvp: 0 };
+          DB.cupStats[pid] = { goals: 0, assists: 0, matches: 0, cleanSheets: 0, mvp: 0 };
+          pIdCounter++;
+        }
+
+        assignSquadNumbers(squad);
+        DB.rostersByClubId[cid] = squad;
+        cIdCounter++;
+      });
+    }
+  });
+
+  DB.clubs = cList;
+}
+
+function shuffleArr(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+
+// Inisialisasi format piala 370 klub inklusif dengan bagan Home & Away
+function initFullPyramidFACup() {
+  var t5Clubs = shuffleArr(DB.clubs.filter(function(c){ return c.Tier === 'T5'; }).map(function(c){ return c.ID_Club; }));
+  var t4Clubs = shuffleArr(DB.clubs.filter(function(c){ return c.Tier === 'T4'; }).map(function(c){ return c.ID_Club; }));
+  var t3Clubs = shuffleArr(DB.clubs.filter(function(c){ return c.Tier === 'T3'; }).map(function(c){ return c.ID_Club; }));
+  var t2Clubs = shuffleArr(DB.clubs.filter(function(c){ return c.Tier === 'T2'; }).map(function(c){ return c.ID_Club; }));
+  var t1Clubs = shuffleArr(DB.clubs.filter(function(c){ return c.Tier === 'T1'; }).map(function(c){ return c.ID_Club; }));
+
+  var makeEmptyMatches = function(count) {
+    var arr = [];
+    for (var k = 0; k < count; k++) {
+      arr.push({ h: null, a: null, leg1: null, leg2: null, aggH: 0, aggA: 0, pso: null, winner: null, loser: null });
+    }
+    return arr;
+  };
+
+  // Babak Kualifikasi 1: 136 Klub Tier 5 bertanding (68 partai)
+  var qual1 = [];
+  for (var i = 0; i < t5Clubs.length; i += 2) {
+    qual1.push({ h: t5Clubs[i], a: t5Clubs[i+1], leg1: null, leg2: null, aggH: 0, aggA: 0, pso: null, winner: null, loser: null });
+  }
+
+  return {
+    qual1: qual1,                                 // 68 laga (136 klub T5)
+    qual2: makeEmptyMatches(88),                  // 68 pemenang Q1 + 102 T4 + 6 T3 terendah = 176 klub
+    qual3: makeEmptyMatches(44),                  // 88 pemenang Q2 -> 44 pemenang kualifikasi
+    r128: makeEmptyMatches(64),                   // 44 lolos Q3 + 62 T3 + 22 T2 = 128 klub
+    r64: makeEmptyMatches(32),                    // 64 klub
+    r32: makeEmptyMatches(32),                    // 32 pemenang r64 + 32 klub Premier League T1!
+    r16: makeEmptyMatches(16),
+    qf: makeEmptyMatches(8),
+    sf: makeEmptyMatches(4),
+    final: makeEmptyMatches(1),
+    currentStage: "qual1",
+    completed: false,
+    winner: null,
+    runner: null,
+    unentered: { t4: t4Clubs, t3: t3Clubs, t2: t2Clubs, t1: t1Clubs }
+  };
+}
+
+function initFullPyramidLeagueCup() {
+  // Turnamen Piala Liga untuk seluruh klub profesional kasta atas (Tier 1, Tier 2, dan 64 Klub Terpilih Tier 3) = 128 Klub
+  var t1Clubs = DB.clubs.filter(function(c){ return c.Tier === 'T1'; }).map(function(c){ return c.ID_Club; });
+  var t2Clubs = DB.clubs.filter(function(c){ return c.Tier === 'T2'; }).map(function(c){ return c.ID_Club; });
+  var t3Clubs = DB.clubs.filter(function(c){ return c.Tier === 'T3'; }).map(function(c){ return c.ID_Club; }).slice(0, 64);
+
+  var entrants = shuffleArr(t1Clubs.concat(t2Clubs).concat(t3Clubs));
+  var makeEmptyMatches = function(count) {
+    var arr = [];
+    for (var k = 0; k < count; k++) {
+      arr.push({ h: null, a: null, leg1: null, leg2: null, aggH: 0, aggA: 0, pso: null, winner: null, loser: null });
+    }
+    return arr;
+  };
+
+  var r128 = [];
+  for (var i = 0; i < entrants.length; i += 2) {
+    r128.push({ h: entrants[i], a: entrants[i+1], leg1: null, leg2: null, aggH: 0, aggA: 0, pso: null, winner: null, loser: null });
+  }
+
+  return {
+    r128: r128,
+    r64: makeEmptyMatches(32),
+    r32: makeEmptyMatches(16),
+    r16: makeEmptyMatches(8),
+    qf: makeEmptyMatches(4),
+    sf: makeEmptyMatches(2),
+    final: makeEmptyMatches(1),
+    currentStage: "r128",
+    completed: false,
+    winner: null,
+    runner: null
+  };
+}
+
+function generateMassiveDatabase() {
+  if (isBusy) return;
+  setAppBusy(true, "Membangun 370 Klub Piramida & Menyiapkan Format Piala...");
+
+  setTimeout(function() {
+    DB.season = seasonNumber;
+    DB.globalMatchday = 0;
+    currentGlobalMatchday = 0;
+    browsingMatchday = 0;
+    DB.clubs = [];
+    DB.clubById = {};
+    DB.rostersByClubId = {};
+    DB.players = [];
+    DB.playerById = {};
+    DB.standings = {};
+    DB.stats = {};
+    DB.cupStats = {};
+    DB.matchStore = {};
+
+    buildPyramidClubs();
+    refreshZoneCache();
+
+    DB.faCup = initFullPyramidFACup();
+    DB.leagueCup = initFullPyramidLeagueCup();
+
+    selectedClubId = DB.standings['T1'][0].ID_Club;
+    saveLocalState();
+    setAppBusy(false, "370 Klub & Bagan Piala Nasional Home-Away Siap!");
+    document.getElementById("global-week-display").innerText = "0";
+    document.getElementById("browsing-week-display").innerText = "0";
+    updateCupStatusHeaderBadge();
+    renderTierNavigation();
+    renderZonaNavigation();
+    renderCurrentView();
+  }, 40);
+}
+
+// ==============================================================
+// 3. ENGINE MATCHDAY & SISTEM FORMULA RATING MVP
+// ==============================================================
+function calculatePlayerEffectiveOVR(p) {
+  var eff = p.OVR;
+  if (p.Fitness < 80) eff -= Math.round((80 - p.Fitness) * 0.25);
+  if (p.Morale >= 85) eff += 2;
+  else if (p.Morale < 45) eff -= 3;
+  return Math.max(25, eff);
+}
+
+function selectStartingLineup(squad) {
+  var avail = squad.filter(function(p){ return p.Infortunato === 0; });
+  var gks = avail.filter(function(p){ return p.Ruolo === "GK"; }).sort(function(a,b){ return calculatePlayerEffectiveOVR(b) - calculatePlayerEffectiveOVR(a); });
+  var outfields = avail.filter(function(p){ return p.Ruolo !== "GK"; }).sort(function(a,b){ return calculatePlayerEffectiveOVR(b) - calculatePlayerEffectiveOVR(a); });
+
+  var starting = [];
+  var used = new Set();
+  if (gks.length > 0) { starting.push(gks[0]); used.add(gks[0].ID_Giocatore); }
+
+  function pickRoles(roles, count) {
+    var c = 0;
+    for (var i = 0; i < outfields.length && c < count; i++) {
+      var p = outfields[i];
+      if (!used.has(p.ID_Giocatore) && roles.indexOf(p.Ruolo) !== -1) {
+        used.add(p.ID_Giocatore); starting.push(p); c++;
+      }
+    }
+  }
+
+  pickRoles(["CB", "LB", "RB"], 4);
+  pickRoles(["DMF", "CMF", "AMF"], 3);
+  pickRoles(["CF", "LWF", "RWF"], 3);
+
+  for (var j = 0; j < outfields.length && starting.length < 11; j++) {
+    if (!used.has(outfields[j].ID_Giocatore)) { used.add(outfields[j].ID_Giocatore); starting.push(outfields[j]); }
+  }
+
+  var subs = outfields.filter(function(p){ return !used.has(p.ID_Giocatore); }).slice(0, 5);
+  return { starting: starting, subs: subs };
+}
+
+function calculateTeamDynamicPower(club, lineup, isHome) {
+  var xi = lineup.starting;
+  if (!xi.length) return club.OVR_Tim || 50;
+
+  var sumOvr = 0;
+  var maxLeadership = 0;
+  var traitBoost = 0;
+
+  xi.forEach(function(p) {
+    sumOvr += calculatePlayerEffectiveOVR(p);
+    if (p.Leadership > maxLeadership) maxLeadership = p.Leadership;
+    if (p.Trait === "Big Game Player" && (club.Tier === "T1" || club.Tier === "T2")) traitBoost += 0.3;
+    if (p.Trait === "Workhorse") traitBoost += 0.2;
+  });
+
+  var avgOvr = sumOvr / xi.length;
+  var captaincyBuff = (maxLeadership - 10) * 0.15;
+  var chemistryFactor = ((club.Chemistry || 80) - 75) * 0.08;
+  var moraleFactor = ((club.MoraleTeam || 75) - 70) * 0.1;
+
+  var crowdAtmosphere = 0;
+  if (isHome) {
+    var occupancy = Math.min(1.0, Math.max(0.4, (club.MatchdayRevenue || 10000) / (club.Capienza * club.PrezzoBiglietto + 1)));
+    crowdAtmosphere = 2.0 + (occupancy * 1.5);
+  }
+
+  return avgOvr + captaincyBuff + chemistryFactor + moraleFactor + crowdAtmosphere + traitBoost;
+}
+
+// Simulasi Pertandingan Tunggal dengan Rekapitulasi Lengkap Caps, Gol, Assist, Clean Sheet & MVP
+function executeCoreMatch(homeClub, awayClub, isCupMatch) {
+  var hRoster = DB.rostersByClubId[homeClub.ID_Club] || [];
+  var aRoster = DB.rostersByClubId[awayClub.ID_Club] || [];
+
+  var hL = selectStartingLineup(hRoster);
+  var aL = selectStartingLineup(aRoster);
+  var hActive = hL.starting.concat(hL.subs.slice(0, 3));
+  var aActive = aL.starting.concat(aL.subs.slice(0, 3));
+
+  var targetStatTable = isCupMatch ? DB.cupStats : DB.stats;
+
+  // Catat Caps (Penampilan)
+  hActive.forEach(function(p){ if (!targetStatTable[p.ID_Giocatore]) targetStatTable[p.ID_Giocatore] = { goals: 0, assists: 0, matches: 0, cleanSheets: 0, mvp: 0 }; targetStatTable[p.ID_Giocatore].matches++; });
+  aActive.forEach(function(p){ if (!targetStatTable[p.ID_Giocatore]) targetStatTable[p.ID_Giocatore] = { goals: 0, assists: 0, matches: 0, cleanSheets: 0, mvp: 0 }; targetStatTable[p.ID_Giocatore].matches++; });
+
+  var powerH = calculateTeamDynamicPower(homeClub, hL, true);
+  var powerA = calculateTeamDynamicPower(awayClub, aL, false);
+
+  if (DB.career.clubId === homeClub.ID_Club) {
+    if (DB.career.tactics.mentality === "Attacking") powerH += 3.5;
+    else if (DB.career.tactics.mentality === "Defensive") powerH -= 2.0;
+  }
+  if (DB.career.clubId === awayClub.ID_Club) {
+    if (DB.career.tactics.mentality === "Attacking") powerA += 3.5;
+    else if (DB.career.tactics.mentality === "Defensive") powerA -= 2.0;
+  }
+
+  var diff = powerH - powerA;
+  var lh = Math.max(0.35, 1.4 + diff * 0.08);
+  var la = Math.max(0.20, 1.1 - diff * 0.08);
+
+  var hScore = 0, aScore = 0;
+  for (var k = 0; k < 5; k++) {
+    if (Math.random() < (lh / 3.4)) hScore++;
+    if (Math.random() < (la / 3.4)) aScore++;
+  }
+
+  // Rekapitulasi Clean Sheets
+  if (aScore === 0) {
+    hL.starting.forEach(function(p){ if (p.Ruolo === "GK" || ["CB","LB","RB"].indexOf(p.Ruolo)!==-1) targetStatTable[p.ID_Giocatore].cleanSheets++; });
+  }
+  if (hScore === 0) {
+    aL.starting.forEach(function(p){ if (p.Ruolo === "GK" || ["CB","LB","RB"].indexOf(p.Ruolo)!==-1) targetStatTable[p.ID_Giocatore].cleanSheets++; });
+  }
+
+  var matchEvents = [];
+  var playerRatings = {};
+
+  hActive.concat(aActive).forEach(function(p){ playerRatings[p.ID_Giocatore] = 6.0 + (p.OVR / 50) + (Math.random() * 0.8); });
+
+  function distributeGoals(count, squad, ownC, oppC, side) {
+    var outfield = squad.filter(function(p){ return p.Ruolo !== "GK"; });
+    for (var g = 0; g < count; g++) {
+      var min = Math.floor(Math.random() * 85) + 5;
+      var fwd = outfield.filter(function(p){ return ["CF","LWF","RWF"].indexOf(p.Ruolo)!==-1; });
+      var scorer = (Math.random() < 0.75 && fwd.length > 0) ? pickRandom(fwd) : pickRandom(outfield);
+      var assister = Math.random() < 0.75 ? pickRandom(outfield.filter(function(p){ return p.ID_Giocatore !== scorer.ID_Giocatore; })) : null;
+
+      targetStatTable[scorer.ID_Giocatore].goals++;
+      playerRatings[scorer.ID_Giocatore] += 1.4;
+      scorer.Morale = Math.min(100, scorer.Morale + 4);
+
+      if (assister) {
+        targetStatTable[assister.ID_Giocatore].assists++;
+        playerRatings[assister.ID_Giocatore] += 0.8;
+      }
+
+      matchEvents.push({
+        minute: min, team: side, player: scorer.Nome_Completo,
+        playerId: scorer.ID_Giocatore, playerNumber: scorer.Numero,
+        assister: assister ? assister.Nome_Completo : null
+      });
+    }
+  }
+
+  distributeGoals(hScore, hActive, homeClub, awayClub, "home");
+  distributeGoals(aScore, aActive, awayClub, homeClub, "away");
+
+  // Penentuan MVP (Man of the Match)
+  var bestPlayerId = null;
+  var topRating = -1;
+  Object.keys(playerRatings).forEach(function(pid){
+    if (playerRatings[pid] > topRating) {
+      topRating = playerRatings[pid];
+      bestPlayerId = pid;
+    }
+  });
+
+  if (bestPlayerId && targetStatTable[bestPlayerId]) {
+    targetStatTable[bestPlayerId].mvp++;
+  }
+
+  // Pengurangan Kebugaran Stamina
+  hActive.forEach(function(p){ p.Fitness = Math.max(20, p.Fitness - (p.Trait === "Workhorse" ? 4 : 7)); });
+  aActive.forEach(function(p){ p.Fitness = Math.max(20, p.Fitness - (p.Trait === "Workhorse" ? 4 : 7)); });
+  hRoster.forEach(function(p){ if (hActive.indexOf(p) === -1) p.Fitness = Math.min(100, p.Fitness + 12); });
+  aRoster.forEach(function(p){ if (aActive.indexOf(p) === -1) p.Fitness = Math.min(100, p.Fitness + 12); });
+
+  return {
+    homeScore: hScore,
+    awayScore: aScore,
+    events: matchEvents,
+    mvpId: bestPlayerId,
+    mvpName: bestPlayerId && DB.playerById[bestPlayerId] ? DB.playerById[bestPlayerId].Nome_Completo : "N/A"
+  };
+}
+
+function simulateSingleMatch(homeClub, awayClub, matchday) {
+  var matchId = "WMB-M-" + DB.season + "-" + matchday + "-" + homeClub.ID_Club + "-" + awayClub.ID_Club;
+  if (DB.matchStore[matchId] && DB.matchStore[matchId].Played) return DB.matchStore[matchId];
+
+  var res = executeCoreMatch(homeClub, awayClub, false);
+
+  var standKey = homeClub.Tier === 'T1' || homeClub.Tier === 'T2' ? homeClub.Tier : (homeClub.Tier + "_" + homeClub.Zona);
+  var tab = DB.standings[standKey];
+  if (tab) {
+    var hRow = tab.find(function(t){ return t.ID_Club === homeClub.ID_Club; });
+    var aRow = tab.find(function(t){ return t.ID_Club === awayClub.ID_Club; });
+    if (hRow && aRow) {
+      hRow.P++; aRow.P++;
+      hRow.GF += res.homeScore; hRow.GA += res.awayScore; hRow.GD = hRow.GF - hRow.GA;
+      aRow.GF += res.awayScore; aRow.GA += res.homeScore; aRow.GD = aRow.GF - aRow.GA;
+      if (res.homeScore > res.awayScore) {
+        hRow.W++; hRow.Pts += 3; hRow.Form.unshift('W'); aRow.L++; aRow.Form.unshift('L');
+        homeClub.MoraleTeam = Math.min(100, (homeClub.MoraleTeam || 75) + 4);
+        awayClub.MoraleTeam = Math.max(30, (awayClub.MoraleTeam || 75) - 3);
+      } else if (res.homeScore < res.awayScore) {
+        aRow.W++; aRow.Pts += 3; aRow.Form.unshift('W'); hRow.L++; hRow.Form.unshift('L');
+        awayClub.MoraleTeam = Math.min(100, (awayClub.MoraleTeam || 75) + 5);
+        homeClub.MoraleTeam = Math.max(30, (homeClub.MoraleTeam || 75) - 4);
+      } else {
+        hRow.D++; aRow.D++; hRow.Pts += 1; aRow.Pts += 1;
+        hRow.Form.unshift('D'); aRow.Form.unshift('D');
+      }
+      if (hRow.Form.length > 10) hRow.Form.pop();
+      if (aRow.Form.length > 10) aRow.Form.pop();
+    }
+  }
+
+  var matchRecord = {
+    ID_Partita: matchId,
+    Giornata: matchday,
+    Played: true,
+    HomeID: homeClub.ID_Club,
+    AwayID: awayClub.ID_Club,
+    HomeScore: res.homeScore,
+    AwayScore: res.awayScore,
+    Events: res.events,
+    MVP: res.mvpName
+  };
+
+  DB.matchStore[matchId] = matchRecord;
+  return matchRecord;
+}
+
+function simulateManualSingleMatch(homeClubId, awayClubId, matchday, btnEl) {
+  var hC = DB.clubById[homeClubId];
+  var aC = DB.clubById[awayClubId];
+  if (!hC || !aC) return;
+
+  var matchId = "WMB-M-" + DB.season + "-" + matchday + "-" + homeClubId + "-" + awayClubId;
+  if (DB.matchStore[matchId] && DB.matchStore[matchId].Played) {
+    alert("Laga ini telah selesai!");
+    return;
+  }
+
+  var res = simulateSingleMatch(hC, aC, matchday);
+
+  if (btnEl) {
+    var card = btnEl.closest('.fixture-card');
+    if (card) {
+      var scoreBox = card.querySelector('.fixture-score-num');
+      if (scoreBox) scoreBox.innerText = res.HomeScore + " - " + res.AwayScore;
+      btnEl.disabled = true;
+      btnEl.innerText = "✓ Selesai";
+      btnEl.classList.remove('primary');
+    }
+  }
+
+  saveLocalState();
+  renderCurrentView();
+}
+
+function getPairingForMatchday(zoneClubs, matchday) {
+  if (!zoneClubs || zoneClubs.length === 0) return [];
+  var n = zoneClubs.length;
+  var isSecondHalf = matchday > (n - 1);
+  var roundIdx = (matchday - 1) % (n - 1);
+  var pairs = [];
+
+  for (var i = 0; i < n / 2; i++) {
+    var t1 = (roundIdx + i) % (n - 1);
+    var t2 = (n - 1 - i + roundIdx) % (n - 1);
+    if (i === 0) t2 = n - 1;
+
+    var h = isSecondHalf ? zoneClubs[t2] : zoneClubs[t1];
+    var a = isSecondHalf ? zoneClubs[t1] : zoneClubs[t2];
+    pairs.push({ home: h, away: a });
+  }
+  return pairs;
+}
+
+// ==============================================================
+// 4. ENGINE TURNAMEN PIALA HOME & AWAY (AGREGAT 2 LEG)
+// ==============================================================
+function simulateCupRound(cupObj, stageKey, nextStageKey, callbackToFillNext) {
+  var matches = cupObj[stageKey];
+  if (!matches || !matches.length) return;
+
+  matches.forEach(function(m) {
+    if (m.winner) return; // sudah selesai
+    var hC = DB.clubById[m.h];
+    var aC = DB.clubById[m.a];
+    if (!hC || !aC) return;
+
+    // Simulasi Leg 1 (Kandang Tim A)
+    var resLeg1 = executeCoreMatch(hC, aC, true);
+    m.leg1 = { hG: resLeg1.homeScore, aG: resLeg1.awayScore, mvp: resLeg1.mvpName };
+
+    // Simulasi Leg 2 (Kandang Tim B)
+    var resLeg2 = executeCoreMatch(aC, hC, true);
+    m.leg2 = { hG: resLeg2.homeScore, aG: resLeg2.awayScore, mvp: resLeg2.mvpName };
+
+    // Kalkulasi Agregat
+    m.aggH = m.leg1.hG + m.leg2.aG;
+    m.aggA = m.leg1.aG + m.leg2.hG;
+
+    if (m.aggH > m.aggA) {
+      m.winner = m.h; m.loser = m.a;
+    } else if (m.aggA > m.aggH) {
+      m.winner = m.a; m.loser = m.h;
+    } else {
+      // Adu Penalti jika agregat sama kuat
+      var psoH = 4 + Math.floor(Math.random() * 2);
+      var psoA = 4 + Math.floor(Math.random() * 2);
+      if (psoH === psoA) psoH++;
+      m.pso = { h: psoH, a: psoA };
+      m.winner = psoH > psoA ? m.h : m.a;
+      m.loser = psoH > psoA ? m.a : m.h;
+    }
+  });
+
+  // Isi babak berikutnya
+  if (callbackToFillNext) {
+    callbackToFillNext(cupObj);
+  } else if (nextStageKey && cupObj[nextStageKey]) {
+    var winners = matches.map(function(m){ return m.winner; });
+    var nextM = cupObj[nextStageKey];
+    for (var i = 0; i < winners.length; i += 2) {
+      if (nextM[i / 2]) {
+        nextM[i / 2].h = winners[i];
+        nextM[i / 2].a = winners[i + 1];
+      }
+    }
+  }
+
+  if (stageKey === 'final') {
+    cupObj.completed = true;
+    cupObj.winner = matches[0].winner;
+    cupObj.runner = matches[0].loser;
+  }
+}
+
+function advanceFACupNextStage() {
+  var cup = DB.faCup;
+  if (!cup || cup.completed) return;
+
+  var stages = ["qual1", "qual2", "qual3", "r128", "r64", "r32", "r16", "qf", "sf", "final"];
+  var curIdx = stages.indexOf(cup.currentStage);
+  var curStage = stages[curIdx];
+
+  setAppBusy(true, "Memainkan Turnamen Wimbledon FA Cup: " + curStage.toUpperCase() + " (Home & Away)...");
+
+  setTimeout(function() {
+    if (curStage === "qual1") {
+      simulateCupRound(cup, "qual1", "qual2", function(c) {
+        var q1Win = c.qual1.map(function(m){ return m.winner; });
+        var poolQ2 = shuffleArr(q1Win.concat(c.unentered.t4).concat(c.unentered.t3.slice(0, 6)));
+        for (var k = 0; k < poolQ2.length; k += 2) {
+          c.qual2[k / 2].h = poolQ2[k];
+          c.qual2[k / 2].a = poolQ2[k + 1];
+        }
+      });
+      cup.currentStage = "qual2";
+    } else if (curStage === "qual2") {
+      simulateCupRound(cup, "qual2", "qual3");
+      cup.currentStage = "qual3";
+    } else if (curStage === "qual3") {
+      simulateCupRound(cup, "qual3", "r128", function(c) {
+        var q3Win = c.qual3.map(function(m){ return m.winner; });
+        var pool128 = shuffleArr(q3Win.concat(c.unentered.t3.slice(6)).concat(c.unentered.t2.slice(0, 22)));
+        for (var k = 0; k < pool128.length; k += 2) {
+          c.r128[k / 2].h = pool128[k];
+          c.r128[k / 2].a = pool128[k + 1];
+        }
+      });
+      cup.currentStage = "r128";
+    } else if (curStage === "r128") {
+      simulateCupRound(cup, "r128", "r64");
+      cup.currentStage = "r64";
+    } else if (curStage === "r64") {
+      simulateCupRound(cup, "r64", "r32", function(c) {
+        var r64Win = c.r64.map(function(m){ return m.winner; });
+        var t1Pool = shuffleArr(c.unentered.t1);
+        for (var k = 0; k < 32; k++) {
+          c.r32[k].h = r64Win[k];
+          c.r32[k].a = t1Pool[k];
+        }
+      });
+      cup.currentStage = "r32";
+    } else {
+      var nextSt = stages[curIdx + 1];
+      simulateCupRound(cup, curStage, nextSt);
+      if (nextSt) cup.currentStage = nextSt;
+    }
+
+    updateCupStatusHeaderBadge();
+    saveLocalState();
+    setAppBusy(false, "Putaran Piala Selesai dimainkan.");
+    renderCurrentView();
+  }, 40);
+}
+
+function advanceLeagueCupNextStage() {
+  var cup = DB.leagueCup;
+  if (!cup || cup.completed) return;
+
+  var stages = ["r128", "r64", "r32", "r16", "qf", "sf", "final"];
+  var curIdx = stages.indexOf(cup.currentStage);
+  var curStage = stages[curIdx];
+  var nextStage = stages[curIdx + 1] || null;
+
+  setAppBusy(true, "Memainkan Wimbledon League Cup: " + curStage.toUpperCase() + " (Home & Away)...");
+
+  setTimeout(function() {
+    simulateCupRound(cup, curStage, nextStage);
+    if (nextStage) cup.currentStage = nextStage;
+
+    updateCupStatusHeaderBadge();
+    saveLocalState();
+    setAppBusy(false, "Putaran League Cup selesai.");
+    renderCurrentView();
+  }, 40);
+}
+
+// Simulasi mandiri per partai piala (Home & Away) langsung dari kartu bagan
+function simulateSingleCupMatchItem(cupType, stageKey, matchIndex) {
+  var cup = cupType === 'fa' ? DB.faCup : DB.leagueCup;
+  if (!cup || !cup[stageKey] || !cup[stageKey][matchIndex]) return;
+
+  var m = cup[stageKey][matchIndex];
+  if (m.winner) {
+    alert("Partai piala ini sudah selesai dimainkan!");
+    return;
+  }
+  if (!m.h || !m.a) {
+    alert("Lawan belum ditentukan (masih menunggu babak sebelumnya tuntas)!");
+    return;
+  }
+
+  var hC = DB.clubById[m.h];
+  var aC = DB.clubById[m.a];
+  if (!hC || !aC) return;
+
+  // 1. Eksekusi Leg 1 (Kandang Tim A)
+  var resLeg1 = executeCoreMatch(hC, aC, true);
+  m.leg1 = { hG: resLeg1.homeScore, aG: resLeg1.awayScore, mvp: resLeg1.mvpName };
+
+  // 2. Eksekusi Leg 2 (Kandang Tim B)
+  var resLeg2 = executeCoreMatch(aC, hC, true);
+  m.leg2 = { hG: resLeg2.homeScore, aG: resLeg2.awayScore, mvp: resLeg2.mvpName };
+
+  // 3. Hitung Agregat
+  m.aggH = m.leg1.hG + m.leg2.aG;
+  m.aggA = m.leg1.aG + m.leg2.hG;
+
+  if (m.aggH > m.aggA) {
+    m.winner = m.h; m.loser = m.a;
+  } else if (m.aggA > m.aggH) {
+    m.winner = m.a; m.loser = m.h;
+  } else {
+    var psoH = 4 + Math.floor(Math.random() * 2);
+    var psoA = 4 + Math.floor(Math.random() * 2);
+    if (psoH === psoA) psoH++;
+    m.pso = { h: psoH, a: psoA };
+    m.winner = psoH > psoA ? m.h : m.a;
+    m.loser = psoH > psoA ? m.a : m.h;
+  }
+
+  // Jika ini partai Final
+  if (stageKey === 'final') {
+    cup.completed = true;
+    cup.winner = m.winner;
+    cup.runner = m.loser;
+  }
+
+  // Periksa apakah seluruh partai di babak ini sudah tuntas, lalu buka babak berikutnya
+  var allFinished = cup[stageKey].every(function(matchItem) { return matchItem.winner !== null; });
+  if (allFinished) {
+    autoAdvanceCupAfterAllSingleMatchesDone(cup, stageKey);
+  }
+
+  updateCupStatusHeaderBadge();
+  saveLocalState();
+  renderCurrentView();
+}
+
+// Fungsi otomatis untuk mengalirkan pemenang ke babak selanjutnya saat seluruh laga tunggal selesai
+function autoAdvanceCupAfterAllSingleMatchesDone(cup, curStage) {
+  var stages = cup === DB.faCup ? 
+    ["qual1", "qual2", "qual3", "r128", "r64", "r32", "r16", "qf", "sf", "final"] :
+    ["r128", "r64", "r32", "r16", "qf", "sf", "final"];
+  var curIdx = stages.indexOf(curStage);
+  if (curIdx === -1 || curIdx === stages.length - 1) return;
+
+  var nextStage = stages[curIdx + 1];
+  var winners = cup[curStage].map(function(m) { return m.winner; });
+
+  if (cup === DB.faCup) {
+    if (curStage === "qual1") {
+      var poolQ2 = shuffleArr(winners.concat(cup.unentered.t4).concat(cup.unentered.t3.slice(0, 6)));
+      for (var k = 0; k < poolQ2.length; k += 2) {
+        cup.qual2[k / 2].h = poolQ2[k];
+        cup.qual2[k / 2].a = poolQ2[k + 1];
+      }
+    } else if (curStage === "qual3") {
+      var pool128 = shuffleArr(winners.concat(cup.unentered.t3.slice(6)).concat(cup.unentered.t2.slice(0, 22)));
+      for (var k = 0; k < pool128.length; k += 2) {
+        cup.r128[k / 2].h = pool128[k];
+        cup.r128[k / 2].a = pool128[k + 1];
+      }
+    } else if (curStage === "r64") {
+      var t1Pool = shuffleArr(cup.unentered.t1);
+      for (var k = 0; k < 32; k++) {
+        cup.r32[k].h = winners[k];
+        cup.r32[k].a = t1Pool[k];
+      }
+    } else {
+      var nextMatches = cup[nextStage];
+      for (var i = 0; i < winners.length; i += 2) {
+        if (nextMatches[i / 2]) {
+          nextMatches[i / 2].h = winners[i];
+          nextMatches[i / 2].a = winners[i + 1];
+        }
+      }
+    }
+  } else {
+    var nextMatches = cup[nextStage];
+    for (var i = 0; i < winners.length; i += 2) {
+      if (nextMatches[i / 2]) {
+        nextMatches[i / 2].h = winners[i];
+        nextMatches[i / 2].a = winners[i + 1];
+      }
+    }
+  }
+  cup.currentStage = nextStage;
+}
+
+
+
+function updateCupStatusHeaderBadge() {
+  var badge = document.getElementById("cup-status-pill");
+  var btnAdv = document.getElementById("btn-advance-season");
+  var faDone = DB.faCup && DB.faCup.completed;
+  var lcDone = DB.leagueCup && DB.leagueCup.completed;
+
+  if (faDone && lcDone) {
+    if (badge) {
+      badge.style.background = "rgba(16,185,129,0.2)";
+      badge.style.color = "var(--success)";
+      badge.style.borderColor = "var(--success)";
+      badge.innerText = "🟢 Semua Piala Selesai: Musim Siap Ditutup";
+    }
+    if (btnAdv) { btnAdv.disabled = false; btnAdv.style.opacity = "1"; }
+  } else {
+    if (badge) {
+      badge.style.background = "rgba(245,158,11,0.15)";
+      badge.style.color = "var(--accent-gold)";
+      badge.style.borderColor = "var(--accent-gold)";
+      badge.innerText = "🟡 Piala Berlangsung (Musim Terkunci)";
+    }
+    if (btnAdv) { btnAdv.disabled = true; btnAdv.style.opacity = "0.45"; }
+  }
+}
+
+// ==============================================================
+// 5. JENDELA TRANSFER, PERSISTENSI & EKSPOR
+// ==============================================================
+function runRealisticSeasonTransferWindow() {
+  setAppBusy(true, "Bursa Transfer: Menjalankan 8 mutasi per klub...");
+
+  setTimeout(function() {
+    var freeAgentPool = [];
+
+    DB.clubs.forEach(function(c) {
+      var squad = DB.rostersByClubId[c.ID_Club] || [];
+      if (squad.length < 18) return;
+
+      squad.sort(function(a, b) { return (a.OVR - b.OVR) || (b.Eta - a.Eta); });
+
+      var released = squad.splice(0, 4);
+      released.forEach(function(p) {
+        p.ID_Club = null;
+        p.Squadra = "Free Agent";
+        p.Morale = 60;
+        freeAgentPool.push(p);
+      });
+    });
+
+    var nextPId = DB.players.length + 10000;
+    DB.clubs.forEach(function(c) {
+      var squad = DB.rostersByClubId[c.ID_Club];
+      for (var y = 0; y < 2; y++) {
+        var pid = "PLY-ACAD-" + (nextPId++);
+        var role = ROSTER_ROLES[Math.floor(Math.random() * ROSTER_ROLES.length)];
+        var baseOvr = Math.max(35, Math.min(85, Math.round(c.OVR_Tim + (Math.random() * 8 - 4))));
+        var pName = nameFromId(Math.floor(Math.random() * 50000) + 1);
+
+        var youthPlayer = {
+          ID_Giocatore: pid,
+          Nome_Completo: pName + " (Acad)",
+          Numero: Math.floor(Math.random() * 50) + 40,
+          ID_Club: c.ID_Club,
+          Squadra: c.Nome,
+          Ruolo: role,
+          OVR: baseOvr,
+          Eta: 17 + Math.floor(Math.random() * 2),
+          Fitness: 100,
+          Morale: 85,
+          Leadership: Math.floor(Math.random() * 10) + 1,
+          Trait: Math.random() < 0.25 ? "Clutch Finisher" : "Standard",
+          Piede_Preferito: Math.random() < 0.75 ? "Right" : "Left",
+          Infortunato: 0,
+          InjuryDesc: "",
+          eventLogs: []
+        };
+
+        DB.players.push(youthPlayer);
+        DB.playerById[pid] = youthPlayer;
+        DB.stats[pid] = { goals: 0, assists: 0, matches: 0, cleanSheets: 0, mvp: 0 };
+        DB.cupStats[pid] = { goals: 0, assists: 0, matches: 0, cleanSheets: 0, mvp: 0 };
+        squad.push(youthPlayer);
+      }
+    });
+
+    DB.clubs.forEach(function(c) {
+      var squad = DB.rostersByClubId[c.ID_Club];
+      for (var b = 0; b < 2; b++) {
+        if (!freeAgentPool.length) break;
+
+        var candidateIdx = freeAgentPool.findIndex(function(p) { return Math.abs(p.OVR - c.OVR_Tim) <= 6; });
+        if (candidateIdx === -1) candidateIdx = Math.floor(Math.random() * freeAgentPool.length);
+        var signed = freeAgentPool.splice(candidateIdx, 1)[0];
+
+        signed.ID_Club = c.ID_Club;
+        signed.Squadra = c.Nome;
+        signed.Morale = 80;
+        squad.push(signed);
+
+        var fee = Math.round(Math.pow(signed.OVR / 10, 3.5) * 5000);
+        c.Budget = Math.max(50000, c.Budget - fee);
+      }
+      assignSquadNumbers(squad);
+    });
+
+    setAppBusy(false, "Bursa transfer selesai: 8 transaksi per klub berhasil diproses.");
+    saveLocalState();
+    renderCurrentView();
+  }, 40);
+}
+
+function triggerGlobalBatchSimulation(rounds) {
+  if (isBusy || !DB.clubs || DB.clubs.length === 0) return;
+  var startRound = currentGlobalMatchday + 1;
+  var targetEnd = currentGlobalMatchday + rounds;
+  var cur = startRound;
+
+  if (Object.keys(clubsByZoneCache).length === 0) refreshZoneCache();
+  var zKeys = Object.keys(clubsByZoneCache);
+
+  setAppBusy(true, "Mensimulasikan " + rounds + " pekan liga...");
+
+  function stepSim() {
+    if (cur <= targetEnd) {
+      setAppBusy(true, "Memproses Pekan " + cur + " di seluruh 5 Divisi...");
+
+      for (var z = 0; z < zKeys.length; z++) {
+        var clubs = clubsByZoneCache[zKeys[z]];
+        var totalJornadas = (clubs.length - 1) * 2;
+        if (cur > totalJornadas) continue;
+
+        var pairings = getPairingForMatchday(clubs, cur);
+        for (var p = 0; p < pairings.length; p++) {
+          simulateSingleMatch(pairings[p].home, pairings[p].away, cur);
+        }
+      }
+
+      cur++;
+      setTimeout(stepSim, 10);
+    } else {
+      currentGlobalMatchday = targetEnd;
+      DB.globalMatchday = targetEnd;
+      browsingMatchday = targetEnd;
+
+      Object.keys(DB.standings).forEach(function(k){
+        if (DB.standings[k]) {
+          DB.standings[k].sort(function(a,b){ return (b.Pts - a.Pts) || (b.GD - a.GD) || (b.GF - a.GF); });
+        }
+      });
+
+      saveLocalState();
+      setAppBusy(false, "Simulasi pekan " + currentGlobalMatchday + " tuntas.");
+      document.getElementById("global-week-display").innerText = currentGlobalMatchday;
+      document.getElementById("browsing-week-display").innerText = browsingMatchday;
+      renderCurrentView();
+    }
+  }
+
+  stepSim();
+}
+
+function navigateWeek(delta) {
+  var maxMatchdays = (TIER_CONFIG[activeTier].clubsPerZone - 1) * 2;
+  var target = browsingMatchday + delta;
+  if (target < 1) target = 1;
+  if (target > maxMatchdays) target = maxMatchdays;
+  browsingMatchday = target;
+  document.getElementById("browsing-week-display").innerText = browsingMatchday;
+  renderCurrentView();
+}
+
+function jumpToCurrentSimulatedWeek() {
+  browsingMatchday = currentGlobalMatchday > 0 ? currentGlobalMatchday : 1;
+  document.getElementById("browsing-week-display").innerText = browsingMatchday;
+  renderCurrentView();
+}
+
+function setAppBusy(busy, msg) {
+  isBusy = busy;
+  var sp = document.getElementById("loading-spinner");
+  var txt = document.getElementById("status-text");
+  var btns = document.querySelectorAll("button");
+  if (busy) {
+    if (sp) sp.style.display = "inline-block";
+    if (txt) txt.innerText = msg || "Memproses...";
+    btns.forEach(function(b){ b.disabled = true; });
+  } else {
+    if (sp) sp.style.display = "none";
+    if (txt) txt.innerText = msg || "Siap.";
+    btns.forEach(function(b){ b.disabled = false; });
+    updateCupStatusHeaderBadge();
+  }
+}
+
+function saveLocalState() {
+  try {
+    if (!window.indexedDB) return;
+    var req = window.indexedDB.open(IDB_NAME, IDB_VERSION);
+    req.onupgradeneeded = function(e){ var db = e.target.result; if (!db.objectStoreNames.contains("k")) db.createObjectStore("k"); };
+    req.onsuccess = function(e){
+      var db = e.target.result;
+      var tx = db.transaction("k", "readwrite");
+      tx.objectStore("k").put({
+        season: DB.season, globalMatchday: DB.globalMatchday,
+        clubs: DB.clubs, players: DB.players, standings: DB.standings,
+        stats: DB.stats, cupStats: DB.cupStats, career: DB.career,
+        faCup: DB.faCup, leagueCup: DB.leagueCup
+      }, "root");
+    };
+  } catch(e){}
+}
+
+function loadLocalState() {
+  return new Promise(function(resolve){
+    try {
+      if (!window.indexedDB) return resolve(false);
+      var req = window.indexedDB.open(IDB_NAME, IDB_VERSION);
+      req.onupgradeneeded = function(e){ var db = e.target.result; if (!db.objectStoreNames.contains("k")) db.createObjectStore("k"); };
+      req.onsuccess = function(e){
+        var db = e.target.result;
+        var tx = db.transaction("k", "readonly");
+        var getReq = tx.objectStore("k").get("root");
+        getReq.onsuccess = function(){
+          if (getReq.result && getReq.result.clubs && getReq.result.clubs.length > 0) {
+            var r = getReq.result;
+            DB.season = r.season || 1;
+            DB.globalMatchday = r.globalMatchday || 0;
+            DB.clubs = r.clubs || [];
+            DB.players = r.players || [];
+            DB.standings = r.standings || {};
+            DB.stats = r.stats || {};
+            DB.cupStats = r.cupStats || {};
+            DB.career = r.career || DB.career;
+            DB.faCup = r.faCup || null;
+            DB.leagueCup = r.leagueCup || null;
+
+            DB.clubById = {};
+            DB.rostersByClubId = {};
+            DB.clubs.forEach(function(c){ DB.clubById[c.ID_Club] = c; DB.rostersByClubId[c.ID_Club] = []; });
+            DB.playerById = {};
+            DB.players.forEach(function(p){
+              DB.playerById[p.ID_Giocatore] = p;
+              if (DB.rostersByClubId[p.ID_Club]) DB.rostersByClubId[p.ID_Club].push(p);
+            });
+            refreshZoneCache();
+            resolve(true);
+          } else resolve(false);
+        };
+        getReq.onerror = function(){ resolve(false); };
+      };
+      req.onerror = function(){ resolve(false); };
+    } catch(err){ resolve(false); }
+  });
+}
+
+function advanceSeasonWithAutoArchive() {
+  if (!DB.faCup.completed || !DB.leagueCup.completed) {
+    alert("PERINGATAN KUNCI MUSIM: Anda belum bisa menutup musim!\nTurnamen Wimbledon FA Cup dan League Cup belum menuntaskan babak Grand Final. Selesaikan turnamen piala terlebih dahulu di Tab 10.");
+    return;
+  }
+
+  if (!confirm("Tutup Musim " + seasonNumber + " dan lanjut ke Musim " + (seasonNumber + 1) + "? Promosi, degradasi, dan 8 transaksi bursa transfer akan dieksekusi.")) return;
+
+  runRealisticSeasonTransferWindow();
+
+  seasonNumber++;
+  DB.season = seasonNumber;
+  DB.globalMatchday = 0;
+  currentGlobalMatchday = 0;
+  browsingMatchday = 0;
+
+  var t1Tab = DB.standings['T1'];
+  var t2Tab = DB.standings['T2'];
+  if (t1Tab && t2Tab) {
+    var downT1 = t1Tab.slice(-6).map(function(x){ return x.ID_Club; });
+    var upT2 = t2Tab.slice(0, 6).map(function(x){ return x.ID_Club; });
+
+    downT1.forEach(function(id){ DB.clubById[id].Tier = 'T2'; });
+    upT2.forEach(function(id){ DB.clubById[id].Tier = 'T1'; });
+  }
+
+  Object.keys(DB.standings).forEach(function(k){
+    (DB.standings[k] || []).forEach(function(t){
+      t.P = 0; t.W = 0; t.D = 0; t.L = 0; t.GF = 0; t.GA = 0; t.GD = 0; t.Pts = 0; t.Form = [];
+    });
+  });
+
+  DB.matchStore = {};
+  DB.faCup = initFullPyramidFACup();
+  DB.leagueCup = initFullPyramidLeagueCup();
+
+  // Reset metrik musiman
+  DB.players.forEach(function(p){
+    p.Fitness = 100; p.Morale = 80;
+    DB.stats[p.ID_Giocatore] = { goals: 0, assists: 0, matches: 0, cleanSheets: 0, mvp: 0 };
+    DB.cupStats[p.ID_Giocatore] = { goals: 0, assists: 0, matches: 0, cleanSheets: 0, mvp: 0 };
+  });
+
+  refreshZoneCache();
+  saveLocalState();
+  document.getElementById("current-season-display").innerText = seasonNumber;
+  document.getElementById("global-week-display").innerText = "0";
+  document.getElementById("browsing-week-display").innerText = "0";
+  updateCupStatusHeaderBadge();
+  renderCurrentView();
+}
+
+function exportSeasonArchiveHTML() {
+  if (isBusy || !DB.clubs || !DB.clubs.length) {
+    alert("Database belum dibangun!");
+    return;
+  }
+
+  setAppBusy(true, "Menyusun arsip HTML offline interaktif Musim " + DB.season + "...");
+
+  setTimeout(function() {
+    var se = DB.season;
+    var tablesHtml = "";
+    ['T1', 'T2', 'T3', 'T4', 'T5'].forEach(function(tKey) {
+      var cfg = TIER_CONFIG[tKey];
+      var totalZ = cfg.zones === 0 ? 1 : cfg.zones;
+
+      for (var z = 1; z <= totalZ; z++) {
+        var key = cfg.zones === 0 ? tKey : (tKey + "_" + z);
+        var tab = DB.standings[key] || [];
+
+        var rows = tab.map(function(t, idx) {
+          return "<tr>" +
+            "<td><b>#" + (idx + 1) + "</b></td>" +
+            "<td><b>" + t.Nome + "</b></td>" +
+            "<td>" + t.OVR_Tim + "</td>" +
+            "<td>" + t.P + "</td><td>" + t.W + "</td><td>" + t.D + "</td><td>" + t.L + "</td>" +
+            "<td>" + t.GF + "</td><td>" + t.GA + "</td><td>" + t.GD + "</td>" +
+            "<td style='color:#fde047;font-weight:bold;'>" + t.Pts + "</td>" +
+          "</tr>";
+        }).join("");
+
+        tablesHtml += "<div class='card'>" +
+          "<h3>" + cfg.name + (cfg.zones > 0 ? " (Zona " + z + ")" : "") + "</h3>" +
+          "<table><thead><tr><th>Pos</th><th>Klub</th><th>OVR</th><th>Main</th><th>M</th><th>S</th><th>K</th><th>GM</th><th>GK</th><th>SG</th><th>Poin</th></tr></thead><tbody>" + rows + "</tbody></table>" +
+        "</div>";
+      }
+    });
+
+    var fullHtml = "<!DOCTYPE html>\n<html lang='id'>\n<head>\n" +
+      "<meta charset='utf-8'>\n<title>Wimbledon Heritage — Laporan Musim " + se + "</title>\n" +
+      "<style>\n" +
+        "body{background:#060911;color:#f8fafc;font-family:sans-serif;padding:20px;font-size:12px;}\n" +
+        "header{background:#0d1322;border:1px solid #1e293b;padding:16px;border-radius:8px;margin-bottom:20px;text-align:center;}\n" +
+        ".card{background:#0d1322;border:1px solid #1e293b;border-radius:8px;padding:14px;margin-bottom:14px;overflow-x:auto;}\n" +
+        "table{width:100%;border-collapse:collapse;text-align:left;}\n" +
+        "th,td{padding:6px 10px;border-bottom:1px solid #1e293b;}\n" +
+        "th{background:#080c18;color:#94a3b8;}\n" +
+      "</style>\n</head>\n<body>\n" +
+      "<header><h2>THE WIMBLEDON HERITAGE &mdash; ARSIP RESMI MUSIM " + se + "</h2><p>Rekapitulasi 370 Klub Piramida Sepak Bola Inggris</p></header>\n" +
+      tablesHtml + "\n</body>\n</html>";
+
+    var blob = new Blob([fullHtml], { type: "text/html;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "Wimbledon_Heritage_Arsip_Musim_" + se + ".html";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    setAppBusy(false, "Laporan HTML Musim " + se + " berhasil diunduh.");
+  }, 40);
+}
+
+function exportMultiSheetExcel() {
+  if (isBusy || !DB.clubs.length || typeof XLSX === 'undefined') return;
+  setAppBusy(true, "Menyusun berkas Excel piramida...");
+
+  setTimeout(function(){
+    var wb = XLSX.utils.book_new();
+    var clubsSummary = DB.clubs.map(function(c, i){
+      return { "Rank": i+1, "ID": c.ID_Club, "Name": c.Nome, "Tier": c.Tier, "Ground": c.Stadio, "Capacity": c.Capienza, "OVR": c.OVR_Tim, "Morale": c.MoraleTeam, "Chemistry": c.Chemistry, "Budget": c.Budget };
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(clubsSummary), "All 370 Clubs");
+
+    ['T1', 'T2'].forEach(function(tKey){
+      var rows = (DB.standings[tKey] || []).map(function(t, i){
+        return { "Pos": i+1, "Club": t.Nome, "OVR": t.OVR_Tim, "P": t.P, "W": t.W, "D": t.D, "L": t.L, "GF": t.GF, "GA": t.GA, "GD": t.GD, "Pts": t.Pts };
+      });
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), TIER_CONFIG[tKey].short);
+    });
+
+    XLSX.writeFile(wb, "Wimbledon_Pyramid_S" + DB.season + ".xlsx");
+    setAppBusy(false, "Excel berhasil diekspor!");
+  }, 40);
+}
+
+function exportStandingsOnlyExcel() {
+  if (isBusy || !DB.clubs.length || typeof XLSX === 'undefined') return;
+  setAppBusy(true, "Menyusun ringkasan klasemen...");
+
+  setTimeout(function(){
+    var wb = XLSX.utils.book_new();
+    Object.keys(TIER_CONFIG).forEach(function(tKey){
+      var cfg = TIER_CONFIG[tKey];
+      var totalZ = cfg.zones === 0 ? 1 : cfg.zones;
+      var sheetRows = [];
+
+      for (var z = 1; z <= totalZ; z++) {
+        var key = cfg.zones === 0 ? tKey : (tKey + "_" + z);
+        var tab = DB.standings[key] || [];
+        if (cfg.zones > 0) sheetRows.push({ "Pos": "=== ZONA " + z + " ===" });
+        tab.forEach(function(t, i){
+          sheetRows.push({ "Pos": i+1, "Club": t.Nome, "OVR": t.OVR_Tim, "P": t.P, "W": t.W, "D": t.D, "L": t.L, "GF": t.GF, "GA": t.GA, "GD": t.GD, "Pts": t.Pts });
+        });
+      }
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sheetRows), cfg.short);
+    });
+    XLSX.writeFile(wb, "Wimbledon_Klasemen_S" + DB.season + ".xlsx");
+    setAppBusy(false, "Klasemen Excel berhasil diunduh!");
+  }, 40);
+}
+
+function exportDatabaseJSON() {
+  var blob = new Blob([JSON.stringify(DB)], { type: "application/json" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "Wimbledon_Ultimate_S" + DB.season + ".json";
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+function resetEntireUniverse() {
+  if (!confirm("Yakin ingin menghapus seluruh data 370 klub dan membersihkan IndexedDB?")) return;
+  if (window.indexedDB) window.indexedDB.deleteDatabase(IDB_NAME);
+  location.reload();
+}
+
+// ==============================================================
+// 6. PERENDERAN ANTARMUKA: 11 SUB-TAB & MODE KARIER
+// ==============================================================
+function switchRootMode(mode) {
+  currentRootMode = mode;
+  document.getElementById("btn-root-sim").classList.toggle("active", mode === 'sim');
+  document.getElementById("btn-root-career").classList.toggle("active", mode === 'career');
+  document.getElementById("sim-controls-wrapper").style.display = mode === 'sim' ? 'block' : 'none';
+  document.getElementById("career-controls-wrapper").style.display = mode === 'career' ? 'block' : 'none';
+  renderCurrentView();
+}
+
+function switchTier(tKey) {
+  activeTier = tKey; activeZona = 1; selectedClubId = null;
+  renderTierNavigation(); renderZonaNavigation(); renderCurrentView();
+}
+
+function switchZona(z) {
+  activeZona = z; selectedClubId = null;
+  renderZonaNavigation(); renderCurrentView();
+}
+
+function switchSubTab(idx) {
+  activeSubTab = idx;
+  document.querySelectorAll("#sim-subtabs .btn-subtab").forEach(function(b, i){ b.classList.toggle("active", i === (idx - 1)); });
+  renderCurrentView();
+}
+
+function switchCareerSubTab(idx) {
+  activeCareerSubTab = idx;
+  document.querySelectorAll("#career-subtabs .btn-subtab").forEach(function(b, i){ b.classList.toggle("active", i === (idx - 1)); });
+  renderCurrentView();
+}
+
+function renderTierNavigation() {
+  var el = document.getElementById("tier-nav");
+  el.innerHTML = Object.keys(TIER_CONFIG).map(function(t){
+    return '<button type="button" class="btn-tier ' + (t === activeTier ? 'active' : '') + '" onclick="switchTier(\'' + t + '\')">' + TIER_CONFIG[t].name + '</button>';
+  }).join('');
+}
+
+function renderZonaNavigation() {
+  var el = document.getElementById("zona-nav");
+  var cfg = TIER_CONFIG[activeTier];
+  if (cfg.zones === 0) { el.style.display = "none"; return; }
+  el.style.display = "flex";
+  var html = '<span style="font-size:11px; font-weight:700; color:var(--text-muted); margin-right:4px;">ZONA:</span>';
+  for (var z = 1; z <= cfg.zones; z++) {
+    html += '<button type="button" class="btn-zona ' + (z === activeZona ? 'active' : '') + '" onclick="switchZona(' + z + ')">Zona ' + z + '</button>';
+  }
+  el.innerHTML = html;
+}
+
+function getOvrClass(ovr) {
+  var v = Number(ovr) || 50;
+  if (v >= 84) return "ovr-elite";
+  if (v >= 74) return "ovr-high";
+  if (v >= 62) return "ovr-mid";
+  return "ovr-low";
+}
+
+function renderCurrentView() {
+  var panel = document.getElementById("view-panel");
+  if (!DB.clubs || DB.clubs.length === 0) {
+    panel.innerHTML = '<div style="text-align:center; padding: 60px; color:var(--text-muted);">Basis data belum dibuat. Silakan klik tombol <b>"⚡ Bangun Semesta (370 Klub)"</b> di bagian atas.</div>';
+    return;
+  }
+
+  // MODE 1: NATIONAL LEAGUE SIMULATOR (11 SUB-TABS)
+  if (currentRootMode === 'sim') {
+    var zVal = TIER_CONFIG[activeTier].zones === 0 ? 0 : activeZona;
+    var standKey = activeTier === 'T1' || activeTier === 'T2' ? activeTier : (activeTier + "_" + zVal);
+    var table = DB.standings[standKey] || [];
+
+    // SUB-TAB 1: KLASEMEN
+    if (activeSubTab === 1) {
+      var rows = table.map(function(t, idx) {
+        var rNum = idx + 1;
+        var isMgr = DB.career.clubId === t.ID_Club;
+        var clubObj = DB.clubById[t.ID_Club];
+        var badges = (t.Form || []).slice(0, 5).map(function(f) {
+          var col = f === 'W' ? 'background:rgba(16,185,129,0.2); color:#10b981;' : (f === 'D' ? 'background:rgba(245,158,11,0.2); color:#f59e0b;' : 'background:rgba(239,68,68,0.2); color:#f87171;');
+          return '<span style="display:inline-block; width:18px; text-align:center; font-weight:bold; font-size:9px; border-radius:2px; margin-right:2px;' + col + '">' + f + '</span>';
+        }).join('');
+
+        return '<tr class="' + (isMgr ? 'mgr-club-row' : '') + '">' +
+          '<td><strong>#' + rNum + '</strong></td>' +
+          '<td><a class="hyperlink" onclick="openClubModal(\'' + t.ID_Club + '\')"><strong>' + t.Nome + '</strong></a>' + (isMgr ? ' <span class="badge-mgr">👔 ANDA</span>' : '') + '</td>' +
+          '<td><span class="ovr-pill ' + getOvrClass(t.OVR_Tim) + '">' + t.OVR_Tim + '</span></td>' +
+          '<td>' + t.P + '</td><td>' + t.W + '</td><td>' + t.D + '</td><td>' + t.L + '</td>' +
+          '<td>' + t.GF + '</td><td>' + t.GA + '</td><td>' + t.GD + '</td>' +
+          '<td>' + (clubObj ? clubObj.MoraleTeam : 75) + '</td>' +
+          '<td>' + (badges || '-') + '</td>' +
+          '<td style="color:var(--accent-bright); font-weight:800; font-size:13px;">' + t.Pts + '</td>' +
+        '</tr>';
+      }).join('');
+
+      panel.innerHTML = '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">' +
+        '<h3 style="color:var(--accent);">' + TIER_CONFIG[activeTier].name + (zVal > 0 ? (' (Zona ' + zVal + ')') : '') + '</h3>' +
+        '<span style="font-size:12px; color:var(--text-muted);">Pekan: <strong>' + browsingMatchday + '</strong></span>' +
+      '</div><table><thead><tr><th>Pos</th><th>Klub</th><th>OVR</th><th>Main</th><th>M</th><th>S</th><th>K</th><th>GM</th><th>GK</th><th>SG</th><th>Moril</th><th>Tren</th><th>Poin</th></tr></thead><tbody>' + rows + '</tbody></table>';
+      return;
+    }
+
+    // SUB-TAB 2: STATISTIK PEMAIN
+    if (activeSubTab === 2) {
+      var zClubs = clubsByZoneCache[standKey] || [];
+      var players = [];
+      zClubs.forEach(function(c){ players = players.concat(DB.rostersByClubId[c.ID_Club] || []); });
+
+      var topG = players.slice().sort(function(a,b){ return ((DB.stats[b.ID_Giocatore]&&DB.stats[b.ID_Giocatore].goals)||0) - ((DB.stats[a.ID_Giocatore]&&DB.stats[a.ID_Giocatore].goals)||0); }).slice(0, 15);
+      var topA = players.slice().sort(function(a,b){ return ((DB.stats[b.ID_Giocatore]&&DB.stats[b.ID_Giocatore].assists)||0) - ((DB.stats[a.ID_Giocatore]&&DB.stats[a.ID_Giocatore].assists)||0); }).slice(0, 15);
+
+      var gRows = topG.map(function(p, i){
+        var g = (DB.stats[p.ID_Giocatore]&&DB.stats[p.ID_Giocatore].goals)||0;
+        return '<tr><td>#' + (i+1) + '</td><td><span class="number-badge">#' + (p.Numero||10) + '</span></td><td><a class="hyperlink" onclick="openPlayerModal(\'' + p.ID_Giocatore + '\')"><strong>' + p.Nome_Completo + '</strong></a></td><td><span class="pos-badge">' + p.Ruolo + '</span></td><td><span class="ovr-pill ' + getOvrClass(p.OVR) + '">' + p.OVR + '</span></td><td><span class="badge-trait">' + p.Trait + '</span></td><td>' + p.Squadra + '</td><td style="color:var(--accent-bright); font-weight:800;">' + g + '</td></tr>';
+      }).join('');
+
+      var aRows = topA.map(function(p, i){
+        var a = (DB.stats[p.ID_Giocatore]&&DB.stats[p.ID_Giocatore].assists)||0;
+        return '<tr><td>#' + (i+1) + '</td><td><span class="number-badge">#' + (p.Numero||8) + '</span></td><td><a class="hyperlink" onclick="openPlayerModal(\'' + p.ID_Giocatore + '\')"><strong>' + p.Nome_Completo + '</strong></a></td><td><span class="pos-badge">' + p.Ruolo + '</span></td><td><span class="ovr-pill ' + getOvrClass(p.OVR) + '">' + p.OVR + '</span></td><td><span class="badge-trait">' + p.Trait + '</span></td><td>' + p.Squadra + '</td><td style="color:var(--accent); font-weight:800;">' + a + '</td></tr>';
+      }).join('');
+
+      panel.innerHTML = '<div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">' +
+        '<div><h4 style="color:var(--accent-gold); margin-bottom:8px;">⚽ Top Skor Liga</h4><table><thead><tr><th>#</th><th>No</th><th>Pemain</th><th>Pos</th><th>OVR</th><th>Karakter</th><th>Klub</th><th>Gol</th></tr></thead><tbody>' + (gRows || '<tr><td colspan=8>Belum ada gol.</td></tr>') + '</tbody></table></div>' +
+        '<div><h4 style="color:var(--accent); margin-bottom:8px;">🎯 Top Assist Liga</h4><table><thead><tr><th>#</th><th>No</th><th>Pemain</th><th>Pos</th><th>OVR</th><th>Karakter</th><th>Klub</th><th>Assist</th></tr></thead><tbody>' + (aRows || '<tr><td colspan=8>Belum ada assist.</td></tr>') + '</tbody></table></div>' +
+      '</div>';
+      return;
+    }
+
+    // SUB-TAB 3: JADWAL & SKOR
+    if (activeSubTab === 3) {
+      var viewW = browsingMatchday > 0 ? browsingMatchday : 1;
+      var zClubs2 = clubsByZoneCache[standKey] || [];
+      var pairs = getPairingForMatchday(zClubs2, viewW);
+
+      var fBoxes = pairs.map(function(p){
+        var mId = "WMB-M-" + DB.season + "-" + viewW + "-" + p.home.ID_Club + "-" + p.away.ID_Club;
+        var f = DB.matchStore[mId] || { Played: false, HomeScore: 0, AwayScore: 0, Events: [], MVP: null };
+        var hEvs = f.Events.filter(function(e){ return e.team === 'home'; });
+        var aEvs = f.Events.filter(function(e){ return e.team === 'away'; });
+
+        var renderEvs = function(list, isH){
+          if (!f.Played) return '-';
+          return list.map(function(e){
+            return '<div class="goal-entry" style="' + (isH ? 'text-align:left;' : 'text-align:right;') + '">' +
+              '<b style="color:var(--accent-gold);">' + e.minute + '\'</b> ⚽ <a class="hyperlink" onclick="openPlayerModal(\'' + e.playerId + '\')">' + e.player + ' <span class="number-badge">#' + e.playerNumber + '</span></a>' +
+              (e.assister ? ('<div style="font-size:10px; color:var(--text-muted);">ast: ' + e.assister + '</div>') : '') +
+            '</div>';
+          }).join('') || '<span style="color:var(--text-muted); font-size:10px;">(Nirgol)</span>';
+        };
+
+        var matchActionBtn = f.Played ? 
+          ('<span class="badge-mvp">⭐ MVP: ' + (f.MVP || '-') + '</span> <b style="color:var(--success); margin-left:6px;">✓ FT</b>') : 
+          ('<button type="button" class="btn-sm primary" onclick="simulateManualSingleMatch(\'' + p.home.ID_Club + '\',\'' + p.away.ID_Club + '\',' + viewW + ',this)">⚽ Mainkan Laga Ini</button>');
+
+        return '<div class="fixture-card">' +
+          '<div class="fixture-header"><span>Pekan ' + viewW + ' &bull; ' + TIER_CONFIG[activeTier].name + '</span><div>' + matchActionBtn + '</div></div>' +
+          '<div class="fixture-scoreboard">' +
+            '<div><a class="hyperlink" onclick="openClubModal(\'' + p.home.ID_Club + '\')"><b>' + p.home.Nome + '</b></a><br><small style="color:var(--text-muted);">OVR ' + p.home.OVR_Tim + ' &bull; Moril: ' + p.home.MoraleTeam + '</small></div>' +
+            '<div class="fixture-score-num">' + (f.Played ? (f.HomeScore + ' - ' + f.AwayScore) : 'VS') + '</div>' +
+            '<div style="text-align:right;"><a class="hyperlink" onclick="openClubModal(\'' + p.away.ID_Club + '\')"><b>' + p.away.Nome + '</b></a><br><small style="color:var(--text-muted);">OVR ' + p.away.OVR_Tim + ' &bull; Moril: ' + p.away.MoraleTeam + '</small></div>' +
+          '</div>' +
+          '<div class="fixture-goals-container">' +
+            '<div class="fixture-goals-col">' + renderEvs(hEvs, true) + '</div>' +
+            '<div class="fixture-goals-col">' + renderEvs(aEvs, false) + '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      panel.innerHTML = '<div style="margin-bottom:12px;"><h3 style="color:var(--accent);">Jadwal &amp; Hasil Pekan ' + viewW + '</h3></div><div class="fixtures-grid">' + fBoxes + '</div>';
+      return;
+    }
+
+    // SUB-TAB 4: SKUAD KLUB
+    if (activeSubTab === 4) {
+      if (!selectedClubId || !table.some(function(c){ return c.ID_Club === selectedClubId; })) {
+        selectedClubId = table.length > 0 ? table[0].ID_Club : null;
+      }
+      var cListHtml = table.map(function(t, i){
+        return '<div style="padding:6px 10px; cursor:pointer; background:var(--bg-hover); margin-bottom:4px; border-radius:4px;" onclick="showRosterTab(\'' + t.ID_Club + '\')">#' + (i+1) + ' <b>' + t.Nome + '</b></div>';
+      }).join('');
+
+      panel.innerHTML = '<div style="display:flex; gap:16px;"><div style="width:280px; max-height:520px; overflow-y:auto;">' + cListHtml + '</div><div id="roster-view-area" style="flex:1;"></div></div>';
+      if (selectedClubId) showRosterTab(selectedClubId);
+      return;
+    }
+
+    // SUB-TAB 5: KEUANGAN & STADION
+    if (activeSubTab === 5) {
+      var fRows = table.map(function(t, i){
+        var c = DB.clubById[t.ID_Club];
+        return '<tr><td>#' + (i+1) + '</td><td><a class="hyperlink" onclick="openClubModal(\'' + t.ID_Club + '\')"><b>' + t.Nome + '</b></a></td><td>' + c.Stadio + '</td><td>' + c.Capienza.toLocaleString() + '</td><td>£' + c.PrezzoBiglietto + '</td><td style="color:var(--success); font-weight:700;">£' + ((c.MatchdayRevenue||0)/1000).toFixed(0) + 'k</td><td style="color:var(--accent-bright); font-weight:700;">£' + (c.Budget/1000000).toFixed(2) + 'm</td></tr>';
+      }).join('');
+      panel.innerHTML = '<h3 style="color:var(--accent); margin-bottom:12px;">Kapasitas Stadion &amp; Pembukuan Keuangan</h3><table><thead><tr><th>#</th><th>Klub</th><th>Stadion</th><th>Kapasitas</th><th>Tiket</th><th>Pemasukan Laga</th><th>Sisa Anggaran</th></tr></thead><tbody>' + fRows + '</tbody></table>';
+      return;
+    }
+
+    // SUB-TAB 6: PANDUAN FORM
+    if (activeSubTab === 6) {
+      var formRows = table.map(function(t, i){
+        var badges = (t.Form || []).map(function(f){
+          var col = f === 'W' ? 'background:rgba(16,185,129,0.2); color:#10b981;' : (f === 'D' ? 'background:rgba(245,158,11,0.2); color:#f59e0b;' : 'background:rgba(239,68,68,0.2); color:#f87171;');
+          return '<span style="display:inline-block; width:20px; text-align:center; font-weight:bold; font-size:10px; border-radius:3px; margin-right:3px;' + col + '">' + f + '</span>';
+        }).join('') || '-';
+        return '<tr><td>#' + (i+1) + '</td><td><a class="hyperlink" onclick="openClubModal(\'' + t.ID_Club + '\')"><b>' + t.Nome + '</b></a></td><td>' + badges + '</td><td>' + t.P + '</td><td>' + t.W + '</td><td>' + t.D + '</td><td>' + t.L + '</td><td>' + t.GD + '</td><td><b>' + t.Pts + '</b></td></tr>';
+      }).join('');
+      panel.innerHTML = '<h3 style="color:var(--accent); margin-bottom:12px;">Catatan 10 Pertandingan Terakhir</h3><table><thead><tr><th>#</th><th>Klub</th><th>Formasi Laga</th><th>Main</th><th>M</th><th>S</th><th>K</th><th>SG</th><th>Poin</th></tr></thead><tbody>' + formRows + '</tbody></table>';
+      return;
+    }
+
+    // SUB-TAB 7: BULETIN MINGGUAN
+    if (activeSubTab === 7) {
+      var leader = table[0] || { Nome: "TBD", Pts: 0 };
+      var second = table[1] || { Nome: "TBD", Pts: 0 };
+      panel.innerHTML = '<div style="background:linear-gradient(135deg,#152037,#0d1322); padding:18px; border-left:4px solid var(--accent-gold); border-radius:8px; border:1px solid var(--border);">' +
+        '<span style="font-size:11px; color:var(--accent); font-weight:800; text-transform:uppercase;">THE OFFICIAL WIMBLEDON GAZETTE &bull; PEKAN ' + browsingMatchday + '</span>' +
+        '<h2 style="color:#fff; margin:6px 0 10px 0;">' + leader.Nome + ' Kokoh di Puncak Klasemen ' + TIER_CONFIG[activeTier].name + '</h2>' +
+        '<p style="color:#cbd5e1; line-height:1.6;">Memasuki pekan ke-' + browsingMatchday + ', persaingan gelar juara semakin memanas. ' + leader.Nome + ' memimpin dengan ' + leader.Pts + ' poin, dibayangi ketat oleh ' + second.Nome + ' (' + second.Pts + ' poin). Manajemen kebugaran skuad dan rotasi pemain menjadi kunci kelangsungan musim panjang ini.</p>' +
+      '</div>';
+      return;
+    }
+
+    // SUB-TAB 8: RUANG MEDIS
+    if (activeSubTab === 8) {
+      var zClubsMed = clubsByZoneCache[standKey] || [];
+      var fatigued = [];
+      zClubsMed.forEach(function(c){
+        (DB.rostersByClubId[c.ID_Club] || []).forEach(function(p){
+          if (p.Fitness < 75 || p.Infortunato > 0) fatigued.push(p);
+        });
+      });
+      var medRows = fatigued.slice(0, 15).map(function(p){
+        return '<tr><td><span class="number-badge">#' + (p.Numero||'-') + '</span></td><td><a class="hyperlink" onclick="openPlayerModal(\'' + p.ID_Giocatore + '\')"><b>' + p.Nome_Completo + '</b></a></td><td>' + p.Squadra + '</td><td><span style="color:' + (p.Fitness < 60 ? 'var(--danger)' : 'var(--accent-gold)') + '; font-weight:800;">' + p.Fitness + '%</span></td><td>' + (p.Infortunato > 0 ? ('<span style="color:var(--danger);">' + p.InjuryDesc + ' (' + p.Infortunato + ' pekan)</span>') : '<span style="color:var(--success);">Tersedia (Kelelahan)</span>') + '</td></tr>';
+      }).join('');
+      panel.innerHTML = '<h3 style="color:var(--danger); margin-bottom:12px;">Ruang Medis &amp; Pemantauan Kebugaran</h3><table><thead><tr><th>No</th><th>Pemain</th><th>Klub</th><th>Kebugaran Fisik</th><th>Status Medis</th></tr></thead><tbody>' + (medRows || '<tr><td colspan=5>Semua pemain dalam kondisi bugar penuh.</td></tr>') + '</tbody></table>';
+      return;
+    }
+
+    // SUB-TAB 9: NILAI PASAR
+    if (activeSubTab === 9) {
+      var zClubs3 = clubsByZoneCache[standKey] || [];
+      var allP = [];
+      zClubs3.forEach(function(c){ allP = allP.concat(DB.rostersByClubId[c.ID_Club] || []); });
+      allP.sort(function(a,b){ return b.OVR - a.OVR; });
+      var pValRows = allP.slice(0, 15).map(function(p, i){
+        var val = Math.round(Math.pow(p.OVR / 10, 3.8) * 15000);
+        return '<tr><td>#' + (i+1) + '</td><td><span class="number-badge">#' + (p.Numero||10) + '</span></td><td><a class="hyperlink" onclick="openPlayerModal(\'' + p.ID_Giocatore + '\')"><b>' + p.Nome_Completo + '</b></a></td><td><span class="pos-badge">' + p.Ruolo + '</span></td><td><span class="ovr-pill ' + getOvrClass(p.OVR) + '">' + p.OVR + '</span></td><td><span class="badge-trait">' + p.Trait + '</span></td><td>' + p.Squadra + '</td><td style="color:var(--accent-bright); font-weight:700;">£' + (val/1000000).toFixed(2) + 'm</td></tr>';
+      }).join('');
+      panel.innerHTML = '<h3 style="color:var(--accent); margin-bottom:12px;">Bursa Nilai Pasar Pemain Elit</h3><table><thead><tr><th>#</th><th>No</th><th>Pemain</th><th>Pos</th><th>OVR</th><th>Karakter</th><th>Klub</th><th>Taksiran Harga</th></tr></thead><tbody>' + pValRows + '</tbody></table>';
+      return;
+    }
+
+    // SUB-TAB 10: TURNAMEN PIALA HOME & AWAY (370 KLUB)
+    if (activeSubTab === 10) {
+      var fa = DB.faCup;
+      var lc = DB.leagueCup;
+
+      var renderCupBracketHomeAway = function(cup, cupName, advanceFnName) {
+        var stagesOrder = cupName.indexOf("FA") !== -1 ? 
+          ["qual1", "qual2", "qual3", "r128", "r64", "r32", "r16", "qf", "sf", "final"] :
+          ["r128", "r64", "r32", "r16", "qf", "sf", "final"];
+
+        var stageLabels = {
+          qual1: "Kualifikasi 1 (136 Klub)", qual2: "Kualifikasi 2 (176 Klub)", qual3: "Kualifikasi Final (88 Klub)",
+          r128: "128 Besar Proper", r64: "64 Besar Proper", r32: "32 Besar (+Tier 1)",
+          r16: "16 Besar", qf: "Perempat Final", sf: "Semifinal", final: "Grand Final"
+        };
+
+        var cols = stagesOrder.map(function(stKey){
+          var list = cup[stKey] || [];
+          var cupTypeKey = cupName.indexOf("FA") !== -1 ? 'fa' : 'lc';
+
+var matchCards = list.slice(0, 16).map(function(m, mIdx){
+  var hN = m.h ? (DB.clubById[m.h] ? DB.clubById[m.h].Nome : m.h) : 'TBD';
+  var aN = m.a ? (DB.clubById[m.a] ? DB.clubById[m.a].Nome : m.a) : 'TBD';
+  var isWon = m.winner !== null;
+
+  var matchActionFooter = "";
+  if (isWon) {
+    matchActionFooter = 'Agg: ' + m.aggH + ' - ' + m.aggA + 
+      (m.pso ? (' (P:' + m.pso.h + '-' + m.pso.a + ')') : '') + 
+      '<br><span style="color:var(--success);font-size:10px;">Lolos: ' + (DB.clubById[m.winner] ? DB.clubById[m.winner].Nome : m.winner) + '</span>';
+  } else if (m.h && m.a) {
+    // Tombol Mainkan Per Match
+    matchActionFooter = '<button type="button" class="btn-sm primary" style="width:100%; margin-top:4px; font-size:10px; padding:3px 6px;" onclick="simulateSingleCupMatchItem(\'' + cupTypeKey + '\',\'' + stKey + '\',' + mIdx + ')">⚽ Mainkan (2 Leg)</button>';
+  } else {
+    matchActionFooter = '<span style="color:var(--text-muted); font-size:10px;">Menunggu Lawan</span>';
+  }
+
+  return '<div class="cup-match-box">' +
+    '<div class="cup-match-leg"><span>' + hN + '</span><b>' + (m.leg1 ? (m.leg1.hG + ' (L1)') : '-') + '</b></div>' +
+    '<div class="cup-match-leg"><span>' + aN + '</span><b>' + (m.leg2 ? (m.leg2.hG + ' (L2)') : '-') + '</b></div>' +
+    '<div class="cup-match-agg">' + matchActionFooter + '</div>' +
+  '</div>';
+}).join('');
+
+          return '<div class="cup-bracket-col">' +
+            '<h4 style="color:var(--accent-gold); font-size:11.5px; margin-bottom:8px;">' + (stageLabels[stKey]||stKey) + '</h4>' +
+            matchCards +
+            (list.length > 16 ? ('<small style="color:var(--text-muted); display:block; text-align:center;">+ ' + (list.length - 16) + ' partai lainnya</small>') : '') +
+          '</div>';
+        }).join('');
+
+        return '<div style="background:rgba(13,19,34,0.95); padding:16px; border-radius:8px; border:1px solid var(--border); margin-bottom:20px;">' +
+          '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">' +
+            '<div>' +
+              '<h3 style="color:var(--accent-bright);">' + cupName + '</h3>' +
+              '<span style="font-size:11px; color:var(--text-muted);">Babak Aktif: <strong style="color:var(--accent);">' + (stageLabels[cup.currentStage]||cup.currentStage) + '</strong> &bull; ' + (cup.completed ? ('<b style="color:var(--success);">Juara: ' + (DB.clubById[cup.winner]?DB.clubById[cup.winner].Nome:'-') + '</b>') : 'Sedang Berlangsung') + '</span>' +
+            '</div>' +
+            '<div>' + (!cup.completed ? ('<button type="button" class="primary" onclick="' + advanceFnName + '()">⚽ Mainkan Putaran Berikutnya (2 Leg)</button>') : '<span style="color:var(--success); font-weight:800;">🏆 TURNAMEN SELESAI</span>') + '</div>' +
+          '</div>' +
+          '<div class="cup-bracket-container">' + cols + '</div>' +
+        '</div>';
+      };
+
+      panel.innerHTML = renderCupBracketHomeAway(fa, "The Wimbledon FA Cup (370 Klub - Home & Away)", "advanceFACupNextStage") +
+        renderCupBracketHomeAway(lc, "The Wimbledon League Cup (128 Klub Pro - Home & Away)", "advanceLeagueCupNextStage");
+      return;
+    }
+
+    // SUB-TAB 11: REKAPITULASI STATISTIK LENGKAP & PENGHARGAAN MUSIM
+    if (activeSubTab === 11) {
+      var allP = DB.players.slice();
+
+      // Metrik Liga Utama
+      var topScorerL = allP.slice().sort(function(a,b){ return ((DB.stats[b.ID_Giocatore]&&DB.stats[b.ID_Giocatore].goals)||0) - ((DB.stats[a.ID_Giocatore]&&DB.stats[a.ID_Giocatore].goals)||0); })[0];
+      var topAssistL = allP.slice().sort(function(a,b){ return ((DB.stats[b.ID_Giocatore]&&DB.stats[b.ID_Giocatore].assists)||0) - ((DB.stats[a.ID_Giocatore]&&DB.stats[a.ID_Giocatore].assists)||0); })[0];
+      var topGloveL  = allP.slice().sort(function(a,b){ return ((DB.stats[b.ID_Giocatore]&&DB.stats[b.ID_Giocatore].cleanSheets)||0) - ((DB.stats[a.ID_Giocatore]&&DB.stats[a.ID_Giocatore].cleanSheets)||0); })[0];
+      var topMvpL    = allP.slice().sort(function(a,b){ return ((DB.stats[b.ID_Giocatore]&&DB.stats[b.ID_Giocatore].mvp)||0) - ((DB.stats[a.ID_Giocatore]&&DB.stats[a.ID_Giocatore].mvp)||0); })[0];
+
+      // Metrik Piala Nasional
+      var topScorerC = allP.slice().sort(function(a,b){ return ((DB.cupStats[b.ID_Giocatore]&&DB.cupStats[b.ID_Giocatore].goals)||0) - ((DB.cupStats[a.ID_Giocatore]&&DB.cupStats[a.ID_Giocatore].goals)||0); })[0];
+      var topAssistC = allP.slice().sort(function(a,b){ return ((DB.cupStats[b.ID_Giocatore]&&DB.cupStats[b.ID_Giocatore].assists)||0) - ((DB.cupStats[a.ID_Giocatore]&&DB.cupStats[a.ID_Giocatore].assists)||0); })[0];
+      var topGloveC  = allP.slice().sort(function(a,b){ return ((DB.cupStats[b.ID_Giocatore]&&DB.cupStats[b.ID_Giocatore].cleanSheets)||0) - ((DB.cupStats[a.ID_Giocatore]&&DB.cupStats[a.ID_Giocatore].cleanSheets)||0); })[0];
+      var topMvpC    = allP.slice().sort(function(a,b){ return ((DB.cupStats[b.ID_Giocatore]&&DB.cupStats[b.ID_Giocatore].mvp)||0) - ((DB.cupStats[a.ID_Giocatore]&&DB.cupStats[a.ID_Giocatore].mvp)||0); })[0];
+
+      var renderAwardCard = function(title, p, statKey, statLabel, icon, isCup) {
+        var tableSource = isCup ? DB.cupStats : DB.stats;
+        var val = (p && tableSource[p.ID_Giocatore]) ? tableSource[p.ID_Giocatore][statKey] : 0;
+        return '<div class="career-stat-card">' +
+          '<div style="font-size:24px; margin-bottom:4px;">' + icon + '</div>' +
+          '<span>' + title + '</span>' +
+          '<b style="color:var(--accent-bright); font-size:16px; margin:4px 0;">' + (p ? p.Nome_Completo : 'TBD') + '</b>' +
+          '<div style="font-size:11px; color:var(--text-muted);">' + (p ? (p.Squadra + ' &bull; Pos: ' + p.Ruolo) : '-') + '</div>' +
+          '<div style="margin-top:6px; font-weight:800; color:var(--accent-gold); font-family:\'JetBrains Mono\'; font-size:14px;">' + val + ' ' + statLabel + '</div>' +
+        '</div>';
+      };
+
+      // Tabel 20 Besar Akumulasi Lengkap
+      var tableRows = allP.slice().sort(function(a,b){
+        var stB = DB.stats[b.ID_Giocatore] || { goals: 0 };
+        var stA = DB.stats[a.ID_Giocatore] || { goals: 0 };
+        return stB.goals - stA.goals;
+      }).slice(0, 20).map(function(p, i){
+        var lSt = DB.stats[p.ID_Giocatore] || { matches: 0, goals: 0, assists: 0, cleanSheets: 0, mvp: 0 };
+        var cSt = DB.cupStats[p.ID_Giocatore] || { matches: 0, goals: 0, assists: 0, cleanSheets: 0, mvp: 0 };
+        var totalCaps = lSt.matches + cSt.matches;
+        var totalGoals = lSt.goals + cSt.goals;
+        var totalAssists = lSt.assists + cSt.assists;
+        var totalMvp = lSt.mvp + cSt.mvp;
+
+        return '<tr>' +
+          '<td>#' + (i+1) + '</td>' +
+          '<td><span class="number-badge">#' + (p.Numero||'-') + '</span></td>' +
+          '<td><a class="hyperlink" onclick="openPlayerModal(\'' + p.ID_Giocatore + '\')"><b>' + p.Nome_Completo + '</b></a></td>' +
+          '<td><span class="pos-badge">' + p.Ruolo + '</span></td>' +
+          '<td>' + p.Squadra + '</td>' +
+          '<td>' + totalCaps + ' (' + lSt.matches + 'L / ' + cSt.matches + 'C)</td>' +
+          '<td style="color:var(--accent-bright); font-weight:800;">' + totalGoals + ' (' + lSt.goals + '+' + cSt.goals + ')</td>' +
+          '<td style="color:var(--accent); font-weight:700;">' + totalAssists + '</td>' +
+          '<td>' + (lSt.cleanSheets + cSt.cleanSheets) + '</td>' +
+          '<td><span class="badge-mvp">⭐ ' + totalMvp + '</span></td>' +
+        '</tr>';
+      }).join('');
+
+      panel.innerHTML = '<div style="margin-bottom:16px;">' +
+        '<h3 style="color:var(--accent-gold); margin-bottom:10px;">🏆 Gelar Penghargaan Individu — Liga Nasional</h3>' +
+        '<div class="career-dashboard-grid">' +
+          renderAwardCard("Golden Boot (Top Skor Liga)", topScorerL, "goals", "Gol", "👟", false) +
+          renderAwardCard("Playmaker Award (Top Assist)", topAssistL, "assists", "Assist", "🎯", false) +
+          renderAwardCard("Golden Glove (Nirkebobolan)", topGloveL, "cleanSheets", "Clean Sheets", "🧤", false) +
+          renderAwardCard("Player of the Season (MVP)", topMvpL, "mvp", "Gelar MVP", "⭐", false) +
+        '</div>' +
+      '</div>' +
+      '<div style="margin-bottom:20px;">' +
+        '<h3 style="color:var(--accent); margin-bottom:10px;">🛡️ Bintang Turnamen Piala Nasional (FA &amp; League Cup)</h3>' +
+        '<div class="career-dashboard-grid">' +
+          renderAwardCard("Top Skor Turnamen Piala", topScorerC, "goals", "Gol", "⚽", true) +
+          renderAwardCard("Penyedia Assist Terbanyak", topAssistC, "assists", "Assist", "🏹", true) +
+          renderAwardCard("Kiper Nirkebobolan Piala", topGloveC, "cleanSheets", "Clean Sheets", "🧱", true) +
+          renderAwardCard("Bintang Laga Terbaik (MVP)", topMvpC, "mvp", "Gelar MVP", "🌟", true) +
+        '</div>' +
+      '</div>' +
+      '<h3 style="color:#fff; margin-bottom:8px;">Papan Peringkat Akumulasi (Caps, Gol, Assist &amp; MVP)</h3>' +
+      '<table><thead><tr><th>#</th><th>No</th><th>Pemain</th><th>Pos</th><th>Klub</th><th>Total Caps</th><th>Total Gol</th><th>Total Assist</th><th>Clean Sheet</th><th>Penghargaan MVP</th></tr></thead><tbody>' + tableRows + '</tbody></table>';
+      return;
+    }
+  }
+
+  // MODE 2: MANAGER CAREER MODE (4 SUB-TABS)
+  if (currentRootMode === 'career') {
+    if (!DB.career.clubId) {
+      panel.innerHTML = '<div style="text-align:center; padding:50px;">' +
+        '<h2 style="color:var(--accent-bright); margin-bottom:10px;">Pilih Klub untuk Dilatih</h2>' +
+        '<p style="color:var(--text-muted); max-width:540px; margin:0 auto 16px;">Ambil alih kendali salah satu dari 370 klub piramida sepak bola Inggris. Atur strategi, kebugaran skuad, dan anggaran transfer.</p>' +
+        '<button type="button" class="primary" onclick="switchRootMode(\'sim\')">Buka Klasemen &amp; Pilih Klub</button>' +
+      '</div>';
+      return;
+    }
+
+    var myClub = DB.clubById[DB.career.clubId];
+
+    // CAREER SUB-TAB 1: OFFICE & BOARD
+    if (activeCareerSubTab === 1) {
+      panel.innerHTML = '<div class="career-dashboard-grid">' +
+        '<div class="career-stat-card"><span>Kepercayaan Direksi</span><b style="color:var(--accent-bright);">' + DB.career.rating + '%</b></div>' +
+        '<div class="career-stat-card"><span>Kas Transfer</span><b style="color:var(--success);">£' + (DB.career.balance/1000000).toFixed(2) + 'm</b></div>' +
+        '<div class="career-stat-card"><span>Beban Gaji</span><b style="color:var(--accent);">£' + DB.career.weeklyWage.toLocaleString() + '/pekan</b></div>' +
+        '<div class="career-stat-card"><span>Moril Skuad</span><b style="color:var(--accent-gold);">' + (myClub.MoraleTeam || 75) + '/100</b></div>' +
+        '<div class="career-stat-card"><span>Kecocokan Taktik</span><b style="color:var(--purple);">' + (myClub.Chemistry || 80) + '%</b></div>' +
+        '<div class="career-stat-card"><span>Klub Asuhan</span><b style="color:#fff;">' + myClub.Nome + '</b></div>' +
+      '</div>' +
+      '<div style="background:rgba(21,32,55,0.45); padding:16px; border-radius:8px; border:1px solid var(--border);">' +
+        '<h3 style="color:var(--accent-gold); margin-bottom:8px;">Target Manajemen Musim Ini</h3>' +
+        '<p style="color:#cbd5e1; line-height:1.6;">Pertahankan stabilitas posisi liga di ' + TIER_CONFIG[myClub.Tier].name + ', jaga rotasi pemain agar kebugaran tetap di atas 80%, dan raih laju sejauh mungkin di turnamen piala agregat dua leg.</p>' +
+      '</div>';
+      return;
+    }
+
+    // CAREER SUB-TAB 2: TACTICAL BOARD
+    if (activeCareerSubTab === 2) {
+      var sq = DB.rostersByClubId[DB.career.clubId] || [];
+      var sqRows = sq.map(function(p, i){
+        var effOvr = calculatePlayerEffectiveOVR(p);
+        var lSt = DB.stats[p.ID_Giocatore] || { goals: 0, assists: 0, matches: 0, mvp: 0 };
+        return '<tr><td>#' + (p.Numero||i+1) + '</td><td><a class="hyperlink" onclick="openPlayerModal(\'' + p.ID_Giocatore + '\')"><b>' + p.Nome_Completo + '</b></a></td><td><span class="pos-badge">' + p.Ruolo + '</span></td><td><span class="ovr-pill ' + getOvrClass(p.OVR) + '">' + p.OVR + '</span></td><td><b style="color:var(--accent-bright);">' + effOvr + '</b></td><td><span style="color:' + (p.Fitness < 80 ? 'var(--danger)' : 'var(--success)') + '; font-weight:800;">' + p.Fitness + '%</span></td><td>' + p.Morale + '</td><td>' + p.Leadership + '</td><td><span class="badge-trait">' + p.Trait + '</span></td><td>' + lSt.matches + '</td><td style="color:var(--accent-bright); font-weight:700;">' + lSt.goals + '</td><td style="color:var(--accent); font-weight:700;">' + lSt.assists + '</td><td><span class="badge-mvp">⭐ ' + lSt.mvp + '</span></td></tr>';
+      }).join('');
+
+      panel.innerHTML = '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">' +
+        '<h3 style="color:var(--accent-bright);">Papan Taktik &amp; Kedalaman Skuad</h3>' +
+        '<div style="display:flex; gap:8px;">' +
+          '<select onchange="DB.career.tactics.mentality=this.value; saveLocalState();" style="background:#1e293b; color:var(--accent-bright); border:1px solid #334155; padding:5px 8px; border-radius:4px;">' +
+            '<option ' + (DB.career.tactics.mentality==='Balanced'?'selected':'') + '>Balanced</option>' +
+            '<option ' + (DB.career.tactics.mentality==='Attacking'?'selected':'') + '>Attacking (+3.5 OVR)</option>' +
+            '<option ' + (DB.career.tactics.mentality==='Defensive'?'selected':'') + '>Defensive (-2.0 OVR)</option>' +
+          '</select>' +
+        '</div>' +
+      '</div><table><thead><tr><th>No</th><th>Pemain</th><th>Pos</th><th>OVR</th><th>Eff OVR</th><th>Kebugaran</th><th>Moril</th><th>Lead</th><th>Karakter</th><th>Caps</th><th>Gol</th><th>Ast</th><th>MVP</th></tr></thead><tbody>' + sqRows + '</tbody></table>';
+      return;
+    }
+
+    // CAREER SUB-TAB 3: TOUCHLINE MATCHDAY
+    if (activeCareerSubTab === 3) {
+      panel.innerHTML = '<div style="text-align:center; padding:30px; background:rgba(21,32,55,0.45); border-radius:8px; border:1px solid var(--border);">' +
+        '<h3 style="color:#fff; margin-bottom:6px;">Ruang Kendali Pertandingan</h3>' +
+        '<p style="color:var(--text-muted); margin-bottom:14px;">Pekan Berjalan: <b>' + currentGlobalMatchday + '</b> &bull; Klub Asuhan: <b>' + myClub.Nome + '</b></p>' +
+        '<button type="button" class="primary" onclick="triggerGlobalBatchSimulation(1)">⚽ Mainkan Pekan Liga Berikutnya</button>' +
+      '</div>';
+      return;
+    }
+
+    // CAREER SUB-TAB 4: TRANSFER & SCOUTING
+    if (activeCareerSubTab === 4) {
+      panel.innerHTML = '<h3 style="color:var(--accent); margin-bottom:12px;">Pusat Transfer &amp; Pemandu Bakat</h3><p style="color:var(--text-muted);">Gunakan tab Skuad Klub di mode simulator untuk memantau pemain incaran, lalu klik dossier pemain untuk merekrut atau menyunting atribut mereka.</p>';
+      return;
+    }
+  }
+}
+
+function showRosterTab(cId) {
+  selectedClubId = cId;
+  var c = DB.clubById[cId];
+  var r = DB.rostersByClubId[cId] || [];
+  var el = document.getElementById("roster-view-area");
+  if (!el || !c) return;
+
+  var rows = r.map(function(p){
+    var st = DB.stats[p.ID_Giocatore] || { goals: 0, assists: 0, matches: 0, mvp: 0 };
+    var effOvr = calculatePlayerEffectiveOVR(p);
+    return '<tr><td><span class="number-badge">#' + (p.Numero||'-') + '</span></td><td><a class="hyperlink" onclick="openPlayerModal(\'' + p.ID_Giocatore + '\')"><b>' + p.Nome_Completo + '</b></a></td><td><span class="pos-badge">' + p.Ruolo + '</span></td><td><span class="ovr-pill ' + getOvrClass(p.OVR) + '">' + p.OVR + '</span></td><td><b style="color:var(--accent-bright);">' + effOvr + '</b></td><td><span style="color:' + (p.Fitness < 80 ? 'var(--danger)' : 'var(--success)') + '; font-weight:700;">' + p.Fitness + '%</span></td><td>' + p.Morale + '</td><td><span class="badge-trait">' + p.Trait + '</span></td><td>' + st.matches + '</td><td style="color:var(--accent-bright); font-weight:700;">' + st.goals + '</td><td style="color:var(--accent); font-weight:700;">' + st.assists + '</td><td><span class="badge-mvp">⭐ ' + st.mvp + '</span></td></tr>';
+  }).join('');
+
+  el.innerHTML = '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+    '<h4 style="color:var(--accent-gold); font-size:14px;">' + c.Nome + ' (OVR ' + c.OVR_Tim + ' &bull; Moril: ' + c.MoraleTeam + ') - 20 Pemain</h4>' +
+    '<button type="button" class="btn-sm" onclick="openClubModal(\'' + c.ID_Club + '\')">Sunting Profil Klub</button>' +
+  '</div><table><thead><tr><th>No</th><th>Pemain</th><th>Pos</th><th>OVR</th><th>Eff OVR</th><th>Kebugaran</th><th>Moril</th><th>Karakter</th><th>Caps</th><th>G</th><th>A</th><th>MVP</th></tr></thead><tbody>' + rows + '</tbody></table>';
+}
+
+// ==============================================================
+// 7. MODALS KLUB & PENYUNTINGAN PEMAIN DENGAN PERSISTENSI IDB
+// ==============================================================
+function openClubModal(cId) {
+  var c = DB.clubById[cId];
+  if (!c) return;
+  document.getElementById("modal-club-title").innerText = c.Nome + " Dossier";
+  document.getElementById("edit-club-id").value = c.ID_Club;
+  document.getElementById("edit-club-name").value = c.Nome;
+  document.getElementById("edit-club-stadium").value = c.Stadio;
+  document.getElementById("edit-club-capacity").value = c.Capienza;
+  document.getElementById("edit-club-ticket").value = c.PrezzoBiglietto;
+  document.getElementById("edit-club-budget").value = c.Budget;
+
+  var histHtml = (c.recentMatches || []).slice(0, 6).map(function(m){
+    var col = m.status === 'W' ? 'var(--success)' : (m.status === 'D' ? 'var(--accent-gold)' : 'var(--danger)');
+    return '<tr><td>Pekan ' + m.matchday + '</td><td>vs ' + m.opponent + ' (' + (m.isHome?'K':'T') + ')</td><td style="color:' + col + '; font-weight:700;">' + m.scoreText + '</td><td>' + m.status + '</td></tr>';
+  }).join('');
+
+  document.getElementById("modal-club-details").innerHTML = '<div style="background:#060911; padding:10px; border-radius:6px; border:1px solid var(--border); font-size:12px; margin-bottom:10px;">' +
+    'Divisi: <b>' + TIER_CONFIG[c.Tier].name + '</b> &bull; Base OVR: <b>' + c.OVR_Tim + '</b> &bull; Moril Tim: <b>' + c.MoraleTeam + '</b><br>' +
+    'Pertandingan Terakhir:<br><table><thead><tr><th>Pekan</th><th>Lawan</th><th>Skor</th><th>Hasil</th></tr></thead><tbody>' + (histHtml || '<tr><td colspan=4>Belum ada laga.</td></tr>') + '</tbody></table>' +
+  '</div>';
+
+  document.getElementById("club-modal").classList.add("open");
+}
+
+function closeClubModal() { document.getElementById("club-modal").classList.remove("open"); }
+
+function takeManagerPostFromModal() {
+  var cId = document.getElementById("edit-club-id").value;
+  var c = DB.clubById[cId];
+  if (!c) return;
+  DB.career.clubId = cId;
+  DB.career.balance = c.Budget;
+  DB.career.weeklyWage = Math.round(c.Budget * 0.007);
+  DB.career.rating = 80;
+  document.getElementById("mgr-badge-display").innerText = "👔 Manajer: " + c.Nome;
+  saveLocalState();
+  closeClubModal();
+  switchRootMode('career');
+  alert("Selamat! Anda resmi ditunjuk sebagai manajer " + c.Nome + ".");
+}
+
+function saveClubChanges(e) {
+  e.preventDefault();
+  var cId = document.getElementById("edit-club-id").value;
+  var c = DB.clubById[cId];
+  if (!c) return;
+  c.Nome = document.getElementById("edit-club-name").value.trim();
+  c.Stadio = document.getElementById("edit-club-stadium").value.trim();
+  c.Capienza = parseInt(document.getElementById("edit-club-capacity").value) || 20000;
+  c.PrezzoBiglietto = parseInt(document.getElementById("edit-club-ticket").value) || 20;
+  c.Budget = parseInt(document.getElementById("edit-club-budget").value) || 1000000;
+
+  var standKey = c.Tier === 'T1' || c.Tier === 'T2' ? c.Tier : (c.Tier + "_" + c.Zona);
+  var st = (DB.standings[standKey] || []).find(function(t){ return t.ID_Club === cId; });
+  if (st) st.Nome = c.Nome;
+
+  saveLocalState();
+  closeClubModal();
+  renderCurrentView();
+}
+
+function openPlayerModal(pId) {
+  var p = DB.playerById[pId];
+  if (!p) return;
+  var st = DB.stats[pId] || { goals: 0, assists: 0, matches: 0, cleanSheets: 0, mvp: 0 };
+  var cst = DB.cupStats[pId] || { goals: 0, assists: 0, matches: 0, cleanSheets: 0, mvp: 0 };
+  var val = Math.round(Math.pow(p.OVR / 10, 3.8) * 15000);
+  var effOvr = calculatePlayerEffectiveOVR(p);
+
+  document.getElementById("modal-player-title").innerText = p.Nome_Completo + " (#" + (p.Numero||10) + " - " + p.Ruolo + ")";
+  document.getElementById("edit-player-id").value = p.ID_Giocatore;
+  document.getElementById("edit-player-name").value = p.Nome_Completo;
+  document.getElementById("edit-player-number").value = p.Numero || 10;
+  document.getElementById("edit-player-role").value = p.Ruolo;
+  document.getElementById("edit-player-ovr").value = p.OVR;
+  document.getElementById("edit-player-age").value = p.Eta;
+  document.getElementById("edit-player-fitness").value = p.Fitness;
+  document.getElementById("edit-player-morale").value = p.Morale;
+  document.getElementById("edit-player-leadership").value = p.Leadership;
+  document.getElementById("edit-player-trait").value = p.Trait || "Standard";
+
+  document.getElementById("modal-player-content").innerHTML = '<div style="background:#060911; padding:12px; border-radius:6px; border:1px solid var(--border); font-size:12px; margin-bottom:10px;">' +
+    '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">' +
+      '<div>Klub: <b>' + p.Squadra + '</b></div>' +
+      '<div>Base OVR: <b>' + p.OVR + '</b> &bull; Efektif: <b style="color:var(--accent-bright);">' + effOvr + '</b></div>' +
+      '<div>Kebugaran: <b style="color:' + (p.Fitness < 80 ? 'var(--danger)' : 'var(--success)') + ';">' + p.Fitness + '%</b></div>' +
+      '<div>Moril: <b>' + p.Morale + '/100</b> &bull; Kepemimpinan: <b>' + p.Leadership + '/20</b></div>' +
+      '<div>Karakter: <span class="badge-trait">' + p.Trait + '</span></div>' +
+      '<div>Nilai Pasar: <b style="color:var(--accent-bright);">£' + (val/1000000).toFixed(2) + 'm</b></div>' +
+    '</div>' +
+    '<div style="background:#0d1322; padding:8px; border-radius:4px; border:1px solid rgba(255,255,255,0.06);">' +
+      '<b>Statistik Musim:</b><br>' +
+      'Liga: <b>' + st.matches + ' Caps &bull; ' + st.goals + ' Gol &bull; ' + st.assists + ' Assist &bull; ⭐ ' + st.mvp + ' MVP</b><br>' +
+      'Piala: <b>' + cst.matches + ' Caps &bull; ' + cst.goals + ' Gol &bull; ' + cst.assists + ' Assist &bull; ⭐ ' + cst.mvp + ' MVP</b>' +
+    '</div>' +
+  '</div>';
+
+  document.getElementById("player-modal").classList.add("open");
+}
+
+function closePlayerModal() { document.getElementById("player-modal").classList.remove("open"); }
+
+function savePlayerChanges(e) {
+  e.preventDefault();
+  var pId = document.getElementById("edit-player-id").value;
+  var p = DB.playerById[pId];
+  if (!p) return;
+
+  p.Nome_Completo = document.getElementById("edit-player-name").value.trim();
+  p.Numero = parseInt(document.getElementById("edit-player-number").value) || 10;
+  p.Ruolo = document.getElementById("edit-player-role").value;
+  p.OVR = parseInt(document.getElementById("edit-player-ovr").value) || 60;
+  p.Eta = parseInt(document.getElementById("edit-player-age").value) || 24;
+  p.Fitness = parseInt(document.getElementById("edit-player-fitness").value) || 100;
+  p.Morale = parseInt(document.getElementById("edit-player-morale").value) || 75;
+  p.Leadership = parseInt(document.getElementById("edit-player-leadership").value) || 10;
+  p.Trait = document.getElementById("edit-player-trait").value;
+
+  saveLocalState();
+  closePlayerModal();
+  renderCurrentView();
+}
+
+window.addEventListener("DOMContentLoaded", async function() {
+  var loaded = await loadLocalState();
+  if (loaded && DB.clubs && DB.clubs.length > 0) {
+    seasonNumber = DB.season || 1;
+    currentGlobalMatchday = DB.globalMatchday || 0;
+    browsingMatchday = currentGlobalMatchday > 0 ? currentGlobalMatchday : 1;
+    document.getElementById("current-season-display").innerText = seasonNumber;
+    document.getElementById("global-week-display").innerText = currentGlobalMatchday;
+    document.getElementById("browsing-week-display").innerText = browsingMatchday;
+    if (DB.career.clubId && DB.clubById[DB.career.clubId]) {
+      document.getElementById("mgr-badge-display").innerText = "👔 Manajer: " + DB.clubById[DB.career.clubId].Nome;
+    }
+    updateCupStatusHeaderBadge();
+    document.getElementById("status-text").innerText = "Berhasil memuat " + DB.clubs.length + " klub dari IndexedDB.";
+  }
+  renderTierNavigation();
+  renderZonaNavigation();
+  renderCurrentView();
+});
+
+// ==============================================================
+// MODUL TAMBAHAN ENGINE V3: REALISME PEMAIN, AKADEMI, GAZETTE & KRONIK
+// ==============================================================
+
+// 1. Inisialisasi Karakter & Trajektori Pemain (Backward Compatible)
+function ensurePlayerTrajectoryAttributes() {
+  if (!DB.players || !DB.players.length) return;
+  DB.players.forEach(function(p) {
+    if (!p.Archetype) {
+      var rand = Math.random();
+      if (p.Eta <= 21 && p.OVR >= 68) {
+        p.Archetype = rand < 0.65 ? "Wonderkid" : "Flop Risk";
+        p.PotentialPeak = Math.min(99, p.OVR + 12 + Math.floor(Math.random() * 8));
+      } else if (p.Eta >= 24 && p.Eta <= 28 && p.OVR <= 65) {
+        p.Archetype = rand < 0.20 ? "Late Bloomer" : "Steady Pro";
+        p.PotentialPeak = Math.min(88, p.OVR + 8 + Math.floor(Math.random() * 6));
+      } else {
+        p.Archetype = rand < 0.12 ? "Glass Cannon" : "Steady Pro";
+        p.PotentialPeak = Math.min(95, p.OVR + Math.floor(Math.random() * 6));
+      }
+      p.CareerProgressionLog = [];
+      p.CareerPeakOVR = p.OVR;
+    }
+  });
+}
+
+// 2. Evaluasi Akhir Musim Berbasis Pencapaian Nyata
+function processYearEndPlayerDevelopment() {
+  ensurePlayerTrajectoryAttributes();
+  var seasonGazetteHighlights = [];
+
+  DB.players.forEach(function(p) {
+    p.Eta++;
+    var lSt = DB.stats[p.ID_Giocatore] || { matches: 0, goals: 0, assists: 0, cleanSheets: 0, mvp: 0 };
+    var cSt = DB.cupStats[p.ID_Giocatore] || { matches: 0, goals: 0, assists: 0, cleanSheets: 0, mvp: 0 };
+    var totalMatches = lSt.matches + cSt.matches;
+    var totalGoals = lSt.goals + cSt.goals;
+    var deltaOVR = 0;
+    var note = "";
+
+    // Logika Evaluasi Wonderkid & Flop
+    if (p.Archetype === "Wonderkid") {
+      if (totalMatches >= 25 && (totalGoals >= 8 || p.Ruolo !== "CF")) {
+        deltaOVR = 3 + Math.floor(Math.random() * 4);
+        p.PotentialPeak = Math.min(99, p.PotentialPeak + 2);
+        note = "Breakthrough Season! Menjawab ekspektasi dengan menit reguler.";
+        if (deltaOVR >= 5) seasonGazetteHighlights.push("🌟 SENSASI MUDA: " + p.Nome_Completo + " (" + p.Squadra + ") mencatatkan lonjakan performa luar biasa musim ini.");
+      } else if (totalMatches < 12) {
+        deltaOVR = -(2 + Math.floor(Math.random() * 3));
+        p.Archetype = "Flop Risk";
+        p.PotentialPeak -= 4;
+        note = "Stunted Growth. Jarang dimainkan dan kehilangan ketajaman.";
+        seasonGazetteHighlights.push("⚠️ EKSPEKTASI REDUP: Wonderkid " + p.Nome_Completo + " (" + p.Squadra + ") gagal menembus skuad utama dan terancam berlabel flop.");
+      } else {
+        deltaOVR = Math.floor(Math.random() * 2);
+        note = "Perkembangan stabil di tim senior.";
+      }
+    } 
+    // Logika Late Bloomer
+    else if (p.Archetype === "Late Bloomer") {
+      if (totalMatches >= 30 && (totalGoals >= 12 || lSt.mvp >= 3)) {
+        deltaOVR = 4 + Math.floor(Math.random() * 4);
+        p.Archetype = "Steady Pro";
+        note = "Late Bloom! Meledak di usia matang berkat menit bermain tinggi.";
+        seasonGazetteHighlights.push("🔥 KEBANGKITAN KARIER: " + p.Nome_Completo + " (" + p.Squadra + ") membuktikan usia matang bukan halangan untuk meledak.");
+      } else {
+        deltaOVR = Math.floor(Math.random() * 3) - 1;
+        note = "Performa konsisten di kompetisi regional.";
+      }
+    } 
+    // Logika Glass Cannon (Rentan Cedera)
+    else if (p.Archetype === "Glass Cannon") {
+      if (p.Infortunato > 0 || Math.random() < 0.25) {
+        deltaOVR = -2;
+        p.PotentialPeak -= 3;
+        note = "Kemunduran fisik akibat riwayat trauma cedera kambuhan.";
+      } else {
+        deltaOVR = Math.floor(Math.random() * 3);
+        note = "Bugar sepanjang musim.";
+      }
+    } 
+    // Perkembangan Berdasarkan Usia Normal
+    else {
+      if (p.Eta <= 23) {
+        deltaOVR = totalMatches >= 20 ? (2 + Math.floor(Math.random() * 3)) : 0;
+      } else if (p.Eta <= 29) {
+        deltaOVR = Math.floor(Math.random() * 3) - 1;
+      } else if (p.Eta <= 33) {
+        deltaOVR = -(Math.floor(Math.random() * 2));
+      } else {
+        deltaOVR = -(1 + Math.floor(Math.random() * 3));
+      }
+      note = deltaOVR >= 0 ? "Fase prima karier." : "Penurunan faktor fisik usia lanjut.";
+    }
+
+    p.OVR = Math.max(35, Math.min(p.PotentialPeak || 95, p.OVR + deltaOVR));
+    if (p.OVR > (p.CareerPeakOVR || p.OVR)) p.CareerPeakOVR = p.OVR;
+
+    p.CareerProgressionLog.push({
+      season: DB.season,
+      age: p.Eta,
+      matches: totalMatches,
+      goals: totalGoals,
+      delta: deltaOVR,
+      ovrResult: p.OVR,
+      note: note
+    });
+  });
+
+  DB.playerGazetteStories = seasonGazetteHighlights.slice(0, 8);
+}
+
+// 3. Modul Kompetisi Wimbledon Youth Premier Cup (U-21)
+function simulateYouthPremierCup() {
+  if (!DB.clubs || !DB.clubs.length) return;
+  var topYouths = [];
+
+  DB.clubs.slice(0, 64).forEach(function(c) {
+    var sq = DB.rostersByClubId[c.ID_Club] || [];
+    var u21s = sq.filter(function(p){ return p.Eta <= 21; });
+    if (u21s.length > 0) {
+      var star = u21s.sort(function(a,b){ return b.OVR - a.OVR; })[0];
+      topYouths.push({ club: c.Nome, player: star });
+    }
+  });
+
+  topYouths.sort(function(a,b){ return (b.player.OVR + Math.random()*10) - (a.player.OVR + Math.random()*10); });
+  var champion = topYouths[0] || { club: "Aberwick United U21", player: { Nome_Completo: "Bakat Muda", OVR: 70 } };
+
+  DB.youthCupArchive = {
+    season: DB.season,
+    championClub: champion.club,
+    mvpName: champion.player.Nome_Completo,
+    mvpOVR: champion.player.OVR
+  };
+}
+
+// 4. Smart AI Coach Rotation (Mencegah Starter Kelelahan)
+var originalSelectStartingLineup = selectStartingLineup;
+selectStartingLineup = function(squad) {
+  var freshSquad = squad.map(function(p) {
+    // Penalti seleksi tajam jika kebugaran < 74% agar AI merotasi pemain cadangan
+    var fitnessMod = p.Fitness < 74 ? -12 : (p.Fitness < 82 ? -4 : 0);
+    var ageFatigue = p.Eta >= 32 ? -3 : 0;
+    return { player: p, score: calculatePlayerEffectiveOVR(p) + fitnessMod + ageFatigue };
+  }).sort(function(a, b){ return b.score - a.score; }).map(function(item){ return item.player; });
+
+  return originalSelectStartingLineup(freshSquad);
+};
+
+// 5. Intersepsi Modal Profil Pemain: Menampilkan Lencana Trajektori & Log Perkembangan
+var originalOpenPlayerModal = openPlayerModal;
+openPlayerModal = function(pId) {
+  originalOpenPlayerModal(pId);
+  var p = DB.playerById[pId];
+  if (!p) return;
+
+  ensurePlayerTrajectoryAttributes();
+  var modalContent = document.getElementById("modal-player-content");
+  if (!modalContent) return;
+
+  var archColors = {
+    "Wonderkid": "background:rgba(168,85,247,0.25); color:#c084fc; border:1px solid #a855f7;",
+    "Late Bloomer": "background:rgba(16,185,129,0.25); color:#34d399; border:1px solid #10b981;",
+    "Flop Risk": "background:rgba(239,68,68,0.25); color:#f87171; border:1px solid #ef4444;",
+    "Glass Cannon": "background:rgba(245,158,11,0.25); color:#fbbf24; border:1px solid #f59e0b;",
+    "Steady Pro": "background:rgba(56,189,248,0.2); color:#38bdf8; border:1px solid #0284c7;"
+  };
+
+  var archBadge = '<span style="padding:2px 8px; border-radius:4px; font-weight:800; font-size:11px; ' + (archColors[p.Archetype] || '') + '">' + (p.Archetype || 'Steady Pro') + '</span>';
+  var historyRows = (p.CareerProgressionLog || []).slice().reverse().map(function(log) {
+    var deltaTxt = log.delta >= 0 ? ('+' + log.delta) : log.delta;
+    var deltaCol = log.delta > 0 ? 'color:var(--success);' : (log.delta < 0 ? 'color:var(--danger);' : 'color:var(--text-muted);');
+    return '<tr><td>S.' + log.season + '</td><td>' + log.age + ' th</td><td>' + log.matches + ' (' + log.goals + 'G)</td><td style="' + deltaCol + ' font-weight:bold;">' + deltaTxt + '</td><td><b>' + log.ovrResult + '</b></td><td style="font-size:10.5px; color:#cbd5e1;">' + log.note + '</td></tr>';
+  }).join('');
+
+  var extraHtml = '<div style="margin-top:10px; padding:10px; background:#080c18; border-radius:6px; border:1px solid var(--border); font-size:11.5px;">' +
+    '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+      '<div>Trajektori Karier: ' + archBadge + '</div>' +
+      '<div>Batas Potensi: <b style="color:var(--accent-bright); font-family:\'JetBrains Mono\';">' + (p.PotentialPeak || p.OVR) + ' OVR</b> (Puncak: ' + (p.CareerPeakOVR || p.OVR) + ')</div>' +
+    '</div>' +
+    (historyRows ? '<div style="max-height:160px; overflow-y:auto; margin-top:6px;"><table style="font-size:11px;"><thead><tr><th>Musim</th><th>Usia</th><th>Main</th><th>OVR Delta</th><th>Hasil</th><th>Evaluasi Lapangan</th></tr></thead><tbody>' + historyRows + '</tbody></table></div>' : '<span style="color:var(--text-muted);">Belum ada catatan evaluasi akhir musim.</span>') +
+  '</div>';
+
+  modalContent.insertAdjacentHTML('beforeend', extraHtml);
+};
+
+// 6. Intersepsi Modal Profil Klub / Dossier: Menambahkan Live Match Chronicle
+var originalOpenClubModal = openClubModal;
+openClubModal = function(cId) {
+  originalOpenClubModal(cId);
+  var c = DB.clubById[cId];
+  if (!c) return;
+
+  var detailsEl = document.getElementById("modal-club-details");
+  if (!detailsEl) return;
+
+  // Bangun kronik naratif dari pertandingan liga terakhir yang tuntas
+  var playedMatches = Object.keys(DB.matchStore).map(function(k){ return DB.matchStore[k]; }).filter(function(m){
+    return m.Played && (m.HomeID === cId || m.AwayID === cId);
+  });
+
+  if (playedMatches.length > 0) {
+    var lastMatch = playedMatches[playedMatches.length - 1];
+    var hC = DB.clubById[lastMatch.HomeID], aC = DB.clubById[lastMatch.AwayID];
+    var chronicleEntries = [];
+    chronicleEntries.push('<div style="color:var(--text-muted); padding:2px 0;">01\' Wasit meniup peluit tanda mulainya laga di Stadion ' + hC.Stadio + '.</div>');
+
+    (lastMatch.Events || []).forEach(function(ev) {
+      chronicleEntries.push('<div style="padding:2px 0;">' + ev.minute + '\' ⚽ <b>GOOOAL!</b> Penyelesaian tajam dari <b>' + ev.player + '</b>' + (ev.assister ? (' (ast: ' + ev.assister + ')') : '') + ' menggetarkan jala gawang!</div>');
+    });
+
+    chronicleEntries.push('<div style="color:var(--text-muted); padding:2px 0;">90\' Peluit panjang ditiupkan. Pertandingan selesai dengan skor akhir ' + lastMatch.HomeScore + ' - ' + lastMatch.AwayScore + '. ⭐ Bintang Laga: ' + (lastMatch.MVP || '-') + '</div>');
+
+    var chronicleCard = '<div style="margin-top:12px; background:rgba(8,12,24,0.95); padding:10px; border-radius:6px; border:1px solid var(--accent);">' +
+      '<span style="font-size:10px; color:var(--accent-bright); font-weight:800; text-transform:uppercase; font-family:\'JetBrains Mono\';">📖 Live Match Chronicle (Pekan ' + lastMatch.Giornata + ')</span>' +
+      '<h4 style="color:#fff; margin:4px 0 8px 0; font-size:12px;">' + hC.Nome + ' ' + lastMatch.HomeScore + ' - ' + lastMatch.AwayScore + ' ' + aC.Nome + '</h4>' +
+      '<div style="max-height:120px; overflow-y:auto; font-size:11px; line-height:1.5; color:#cbd5e1;">' + chronicleEntries.join('') + '</div>' +
+    '</div>';
+
+    detailsEl.insertAdjacentHTML('beforeend', chronicleCard);
+  }
+};
+
+// ==============================================================
+// 7. PEMBARUAN: BULETIN MINGGUAN EDITORIAL PANJANG (10+ KALIMAT BERBOBOT)
+// ==============================================================
+
+function generateWeeklyGazetteContent(targetWeek, tierKey, zonaVal) {
+  var standKey = (tierKey === 'T1' || tierKey === 'T2') ? tierKey : (tierKey + "_" + zonaVal);
+  var table = DB.standings[standKey] || [];
+  var clubs = clubsByZoneCache[standKey] || [];
+  var tierName = TIER_CONFIG[tierKey].name + (zonaVal > 0 ? (" Zona " + zonaVal) : "");
+  var maxMatchPlayed = table[0] ? table[0].P : 0;
+
+  if (maxMatchPlayed === 0 && currentGlobalMatchday === 0) {
+    return {
+      headline: "EDISI KHUSUS PRALIGA: MENYONGSONG KICK-OFF AKBAR " + tierName.toUpperCase(),
+      leadStory: "Genderang perang piramida sepak bola Wimbledon resmi bersiap ditabuh untuk mengarungi musim baru. Sebanyak " + clubs.length + " kesebelasan di kasta " + tierName + " telah menuntaskan pemusatan latihan dan verifikasi skuad akhir. Seluruh manajer menegaskan komitmen fisik tingkat tinggi dalam menghadapi kalender kompetisi maraton. Sorotan publik terpusat pada partai pembuka Pekan 1 guna menakar siapa yang mampu mencuri momentum awal. Atmosfer di tribun stadion diprediksi mencapai titik didih sejak peluit sepak mula dibunyikan. Tim-tim unggulan dituntut menjaga konsistensi taktik dan meredam risiko cedera kambuhan. Sektor gelandang tengah dan ketajaman ujung tombak akan langsung diuji dalam laga pembuka yang penuh tensi. Persaingan promosi dan ancaman degradasi membayangi langkah setiap kontestan tanpa terkecuali. Pengamat sepak bola menilai bahwa kedalaman bangku cadangan menjadi faktor mutlak penentu gelar musim ini. Selamat menyongsong pesta sepak bola termegah di jagat Wimbledon!",
+      motwReview: "Kompetisi resmi belum menggulirkan partai pekan perdana. Para juru taktik masih mematangkan skema bola mati dan transisi bertahan pada sesi uji coba tertutup. Evaluasi menyeluruh terhadap performa pemain debutan akan segera tersaji pasca-pekan pembuka rampung. Stadion-stadion utama kini tengah bersiap menyambut kehadiran puluhan ribu suporter setia.",
+      playerSpotlight: "Seluruh legiun pemain kunci, amunisi muda bertalenta, hingga rekrutan anyar pramusim berada pada kondisi fisik puncak untuk menyongsong laga debut mereka pekan ini.",
+      previewNext: "Pekan 1 dipastikan menyajikan duel-duel sarat adu gengsi kedaerahan yang akan menjadi tolok ukur kesiapan mental para kontestan dalam menatap kerasnya maraton piramida."
+    };
+  }
+
+  if (targetWeek > maxMatchPlayed && targetWeek > currentGlobalMatchday) {
+    return {
+      headline: "MENANTI KICK-OFF PEKAN KE-" + targetWeek + ": " + tierName.toUpperCase(),
+      leadStory: "Kompetisi saat ini baru bergulir hingga rampungnya Pekan ke-" + maxMatchPlayed + ". Pertandingan untuk putaran ke-" + targetWeek + " belum dimainkan oleh tim-tim peserta. Para analis dan jurnalis tengah mengumpulkan data kebugaran skuad terkini sebelum sepak mula dilangsungkan. Silakan operasikan tombol simulasi untuk memutar kalender kompetisi dan merilis edisi resmi koran pekan ini.",
+      motwReview: "Ulasan mendalam laga terbaik akan terbit sesaat setelah seluruh pertandingan pekan ini tuntas diselenggarakan.",
+      playerSpotlight: "Statistik individu dan daftar pemain terbaik pekanan diperbarui secara otomatis berdasarkan rapor pertandingan.",
+      previewNext: "Simulasikan pekan pertandingan untuk membedah dinamika pergeseran papan klasemen."
+    };
+  }
+
+  // Tarik seluruh pertandingan pekan target
+  var weekMatches = [];
+  var pairs = getPairingForMatchday(clubs, targetWeek);
+  pairs.forEach(function(p) {
+    var mId = "WMB-M-" + DB.season + "-" + targetWeek + "-" + p.home.ID_Club + "-" + p.away.ID_Club;
+    if (DB.matchStore && DB.matchStore[mId] && DB.matchStore[mId].Played) {
+      weekMatches.push({ record: DB.matchStore[mId], home: p.home, away: p.away });
+    }
+  });
+
+  // 1. Analisis Klasemen Papan Atas & Papan Bawah (10 Kalimat Naratif)
+  var leader = table[0] || { Nome: "TBD", Pts: 0, GD: 0, GF: 0, W: 0 };
+  var runnerUp = table[1] || { Nome: "TBD", Pts: 0, GD: 0, GF: 0, W: 0 };
+  var third = table[2] || { Nome: "TBD", Pts: 0 };
+  var bottomClub = table[table.length - 1] || { Nome: "TBD", Pts: 0, GD: 0 };
+  var penultClub = table[table.length - 2] || { Nome: "TBD", Pts: 0 };
+  var gap = leader.Pts - runnerUp.Pts;
+
+  var headline = "";
+  var leadSentences = [];
+
+  if (gap === 0) {
+    headline = "PERANG DINGIN PUNCAK KLASEMEN: " + leader.Nome.toUpperCase() + " & " + runnerUp.Nome.toUpperCase() + " BERBAGI ANGKAN KEMBAR (" + leader.Pts + " POIN)";
+    leadSentences.push("Persaingan menuju takhta juara " + tierName + " menyajikan ketegangan mutlak usai tuntasnya maraton pekan ke-" + targetWeek + ".");
+    leadSentences.push(leader.Nome + " dan sang rival terdekat, " + runnerUp.Nome + ", saling menempel ketat dengan perolehan angka identik sebesar " + leader.Pts + " poin.");
+    leadSentences.push("Singgasana peringkat pertama saat ini hanya ditentukan oleh keunggulan margin selisih gol mutlak, di mana " + leader.Nome + " menorehkan surplus " + leader.GD + " gol berbanding " + runnerUp.GD + " milik sang penantang.");
+    leadSentences.push("Keduanya sama-sama memperlihatkan konsistensi mental luar biasa dengan mengemas " + leader.W + " kemenangan krusial di fase awal musim ini.");
+    leadSentences.push("Tepat di belakang mereka, " + third.Nome + " mengintai pada peringkat ketiga klasemen siap memanfaatkan kelengahan barisan depan jika salah satu dari duo pemimpin terpeleset.");
+  } else if (gap >= 6) {
+    headline = leader.Nome.toUpperCase() + " MERENTANGKAN JARAK: GAP " + gap + " ANGKA KUKUHKAN DOMINASI TAKHTA";
+    leadSentences.push("Pekan ke-" + targetWeek + " menjadi penegasan kekuasaan mutlak bagi sang pemuncak klasemen, " + leader.Nome + ", yang tampil tak terbendung.");
+    leadSentences.push("Tambahan poin penuh membuat mereka kini melenggang sendirian mengoleksi " + leader.Pts + " poin di kasta " + tierName + ".");
+    leadSentences.push("Jarak selebar " + gap + " angka atas " + runnerUp.Nome + " memberikan ruang napas yang sangat lega bagi juru taktik pemuncak klasemen dalam mengelola kebugaran rotasi skuad.");
+    leadSentences.push("Runner-up klasemen, " + runnerUp.Nome + ", dipaksa menelan kenyataan pahit setelah gagal memangkas defisit angka akibat perlawanan alot barisan lawan.");
+    leadSentences.push("Keunggulan mutlak ini sekaligus mengirimkan sinyal bahaya bagi para pesaing promosi bahwa sang pemuncak berada dalam trajektori juara yang sangat solid.");
+  } else {
+    headline = "PACUAN JUARA MEMANAS: " + leader.Nome.toUpperCase() + " DALAM TEKANAN HEBAT " + runnerUp.Nome.toUpperCase();
+    leadSentences.push("Maraton kompetisi pekan ke-" + targetWeek + " menyuguhkan tensi tinggi yang merata di seluruh lini panggung " + tierName + ".");
+    leadSentences.push(leader.Nome + " masih sanggup menjaga mahkota puncak dengan torehan " + leader.Pts + " poin berkat disiplin organisasi permainan yang kokoh.");
+    leadSentences.push("Akan tetapi, napas " + runnerUp.Nome + " terasa begitu dekat di tengkuk mereka dengan jarak tipis yang hanya terpaut " + gap + " angka.");
+    leadSentences.push("Setiap poin yang terbuang di laga tandang kini memiliki harga yang amat mahal bagi kedua kandidat penguasa takhta.");
+    leadSentences.push("Kemenangan demi kemenangan tipis membuktikan bahwa soliditas lini belakang kini menjadi faktor pembeda di kasta tertinggi piramida.");
+  }
+
+  // Tambahkan 5 kalimat pelengkap analisis taktik, suporter, dan zona degradasi (Total 10 Kalimat)
+  leadSentences.push("Sementara itu pada belahan kutub berlawanan, zona merah degradasi kian membara menyusul keterpurukan berkepanjangan yang dialami " + bottomClub.Nome + " di dasar klasemen.");
+  leadSentences.push("Koleksi minim " + bottomClub.Pts + " poin dan defisit gol sebesar " + bottomClub.GD + " menempatkan manajer mereka dalam bayang-bayang pemecatan dini oleh jajaran direksi.");
+  leadSentences.push("Situasi mencekam serupa dialami oleh " + penultClub.Nome + " yang belum sanggup memutus tren minor nirmenang dalam beberapa lawatan terakhir.");
+  leadSentences.push("Tuntutan rotasi stamina akibat jadwal laga tengah pekan terbukti menghukum kesebelasan yang memiliki ketimpangan kualitas di bangku cadangan.");
+  leadSentences.push("Dengan persaingan yang kian terfragmentasi rapat, setiap pekan lanjutan dipastikan menyajikan drama taktik yang sanggup merombak peta hierarki liga dalam sekejap.");
+
+  var leadStory = leadSentences.join(" ");
+
+  // 2. Analisis Match of the Week (MOTW) dengan Rekor Riil
+  var motwReview = "";
+  if (weekMatches.length > 0) {
+    weekMatches.sort(function(a, b) {
+      return (b.record.HomeScore + b.record.AwayScore) - (a.record.HomeScore + a.record.AwayScore);
+    });
+    var bm = weekMatches[0];
+    var bmRec = bm.record;
+    var totalG = bmRec.HomeScore + bmRec.AwayScore;
+    var scorersH = (bmRec.Events || []).filter(function(e){ return e.team === 'home'; }).map(function(e){ return e.player + " (" + e.minute + "')"; });
+    var scorersA = (bmRec.Events || []).filter(function(e){ return e.team === 'away'; }).map(function(e){ return e.player + " (" + e.minute + "')"; });
+
+    var motwLines = [];
+    motwLines.push("Panggung drama termegah pekan ke-" + targetWeek + " pecah saat " + bm.home.Nome + " meladeni tantangan sengit dari " + bm.away.Nome + ".");
+    motwLines.push("Pertarungan terbuka tanpa kompromi tersebut berakhir dengan skor spektakuler " + bmRec.HomeScore + " - " + bmRec.AwayScore + " yang memanjakan ribuan pasang mata suporter di stadion.");
+    if (totalG > 0) {
+      motwLines.push("Gelontoran total " + totalG + " gol tercipta melalui variasi skema serangan balik kilat dan eksekusi penyelesaian akhir yang luar biasa klinis.");
+      if (scorersH.length > 0) motwLines.push("Papan skor tuan rumah diwarnai oleh aksi " + scorersH.slice(0, 3).join(", ") + ".");
+      if (scorersA.length > 0) motwLines.push("Sementara kubu tim tamu membalas lewat kontribusi " + scorersA.slice(0, 3).join(", ") + ".");
+    } else {
+      motwLines.push("Meskipun laga berakhir imbang tanpa gol kacamata, duel fisik di lini tengah dan penyelamatan akrobatik penjaga gawang mengundang decak kagum para pengamat.");
+    }
+    motwLines.push(bmRec.MVP ? ("Penghargaan prestisius Man of the Match (MVP) dinobatkan kepada <b>" + bmRec.MVP + "</b> yang mendominasi jalannya tempo laga sepanjang 90 menit penuh.") : "Kedua kesebelasan berbagi angka secara terhormat usai pertarungan adu strategi yang menguras energi.");
+    motwReview = motwLines.join(" ");
+  } else {
+    var defPair = pairs[0];
+    motwReview = "Pekan ke-" + targetWeek + " menyajikan duel sarat adu taktik antara " + (defPair ? defPair.home.Nome : "tuan rumah") + " dan " + (defPair ? defPair.away.Nome : "tim tamu") + ". Pertarungan lini tengah yang sangat rapat memaksa kedua kesebelasan mengerahkan seluruh disiplin transisi bertahan hingga peluit panjang berbunyi.";
+  }
+
+  // 3. Player of the Week Riil (Mencari Penyerang / Pemain Paling Tajam)
+  var playerScorerMap = {};
+  var bestPlayerName = null;
+  var bestPlayerClub = null;
+  var maxGoals = 0;
+
+  weekMatches.forEach(function(wm) {
+    (wm.record.Events || []).forEach(function(ev) {
+      if (ev.player) {
+        if (!playerScorerMap[ev.player]) {
+          playerScorerMap[ev.player] = { count: 0, club: (ev.team === 'home' ? wm.home.Nome : wm.away.Nome) };
+        }
+        playerScorerMap[ev.player].count++;
+        if (playerScorerMap[ev.player].count > maxGoals) {
+          maxGoals = playerScorerMap[ev.player].count;
+          bestPlayerName = ev.player;
+          bestPlayerClub = playerScorerMap[ev.player].club;
+        }
+      }
+    });
+  });
+
+  // Jika tidak ada gol banyak, cari MVP laga
+  if (!bestPlayerName && weekMatches.length > 0 && weekMatches[0].record.MVP && weekMatches[0].record.MVP !== 'N/A') {
+    bestPlayerName = weekMatches[0].record.MVP;
+    bestPlayerClub = weekMatches[0].home.Nome;
+  }
+
+  var potwLines = [];
+  if (bestPlayerName) {
+    potwLines.push("Predikat Bintang Lapangan Pekan Ini resmi disematkan kepada <b>" + bestPlayerName + "</b> dari kubu <b>" + bestPlayerClub + "</b>.");
+    if (maxGoals >= 2) {
+      potwLines.push("Ketajaman insting predatornya terbukti lewat torehan brilian " + maxGoals + " gol yang mengoyak pertahanan musuh dalam satu malam.");
+    } else {
+      potwLines.push("Pergerakan tanpa bola, distribusi umpan matang, dan kepemimpinan taktisnya menjadi pembeda utama dalam memuluskan raihan poin berharga timnya.");
+    }
+    potwLines.push("Performa impresif ini memastikan namanya menghiasi halaman depan media olahraga dan memperkokoh statusnya sebagai salah satu pilar tak tergantikan di skema tim.");
+  } else {
+    potwLines.push("Pekan ini menjadi panggung keemasan bagi kedisiplinan organisasi barisan palang pintu pertahanan.");
+    potwLines.push("Ketangguhan para penjaga gawang dalam mementahkan peluang emas membungkam dominasi para striker papan atas di seluruh penjuru divisi.");
+  }
+  var playerSpotlight = potwLines.join(" ");
+
+  // 4. Preview Pekan Selanjutnya
+  var nextWeek = targetWeek + 1;
+  var totalJornadas = (clubs.length - 1) * 2;
+  var previewLines = [];
+  if (nextWeek <= totalJornadas) {
+    var nextPairs = getPairingForMatchday(clubs, nextWeek);
+    var bigMatchNext = nextPairs[0];
+    previewLines.push("MENATAP PEKAN KE-" + nextWeek + ": Seluruh fokus kini terarah pada jadwal pertarungan akbar yang mempertemukan <b>" + (bigMatchNext ? bigMatchNext.home.Nome : "TBD") + "</b> kontra <b>" + (bigMatchNext ? bigMatchNext.away.Nome : "TBD") + "</b>.");
+    previewLines.push("Hasil akhir dari duel papan atas ini diproyeksikan bakal memicu goncangan masif terhadap komposisi tangga klasemen.");
+    previewLines.push("Kedalaman rotasi skuad dan ketahanan fisik pemain menghadapi jadwal maraton akan kembali diuji secara ekstrem dalam pertarungan 90 menit mendatang.");
+  } else {
+    previewLines.push("Kompetisi reguler liga resmi menuntaskan seluruh 62 pekan maraton! Segala atensi publik kini tertuju pada partai puncak turnamen piala nasional dan upacara penutupan musim.");
+  }
+  var previewNext = previewLines.join(" ");
+
+  return {
+    headline: headline,
+    leadStory: leadStory,
+    motwReview: motwReview,
+    playerSpotlight: playerSpotlight,
+    previewNext: previewNext
+  };
+}
+
+// 8. Intersepsi Perender Tampilan Tab Buletin Mingguan
+var originalRenderCurrentView = renderCurrentView;
+renderCurrentView = function() {
+  ensurePlayerTrajectoryAttributes();
+  originalRenderCurrentView();
+
+  if (currentRootMode === 'sim' && activeSubTab === 7) {
+    var panel = document.getElementById("view-panel");
+    if (!panel) return;
+
+    var viewW = browsingMatchday > 0 ? browsingMatchday : (currentGlobalMatchday > 0 ? currentGlobalMatchday : 1);
+    var zVal = TIER_CONFIG[activeTier].zones === 0 ? 0 : activeZona;
+    var gazData = generateWeeklyGazetteContent(viewW, activeTier, zVal);
+
+    var extraStories = (DB.playerGazetteStories || []).slice(0, 4).map(function(st) {
+      return '<li style="margin-bottom:6px; color:#cbd5e1; line-height:1.5;">' + st + '</li>';
+    }).join('');
+
+    panel.innerHTML = '<div style="background:linear-gradient(135deg,#152037,#0d1322); padding:22px; border-radius:8px; border:1px solid var(--border); border-top:3px double var(--accent-gold); box-shadow:0 8px 30px rgba(0,0,0,0.5);">' +
+      '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:16px; flex-wrap:wrap; gap:10px;">' +
+        '<div>' +
+          '<span style="font-size:11px; color:var(--accent); font-weight:800; font-family:\'JetBrains Mono\'; letter-spacing:0.5px;">THE WIMBLEDON WEEKLY GAZETTE &bull; EDISI PEKAN ' + viewW + '</span>' +
+          '<h2 style="color:#fff; margin:4px 0 0 0; font-size:19px; line-height:1.3;">' + gazData.headline + '</h2>' +
+        '</div>' +
+        '<div style="text-align:right;">' +
+          '<span style="font-size:12px; color:var(--accent-gold); font-weight:700;">Musim ' + DB.season + ' &bull; ' + TIER_CONFIG[activeTier].short + '</span>' +
+          '<div style="font-size:11px; color:var(--text-muted);">Melihat Pekan: <b>' + viewW + '</b> / ' + currentGlobalMatchday + '</div>' +
+        '</div>' +
+      '</div>' +
+
+      // Kolom Berita Utama (10 Kalimat Penuh)
+      '<div style="background:#080c18; border:1px solid var(--border); border-left:4px solid var(--accent); padding:16px; border-radius:6px; margin-bottom:16px;">' +
+        '<h4 style="color:#fde047; margin-bottom:8px; font-size:13.5px; display:flex; align-items:center; gap:6px;">📰 Analisis Menyeluruh Klasemen &amp; Dinamika Liga</h4>' +
+        '<p style="font-size:13px; line-height:1.8; color:#e2e8f0; margin:0; text-align:justify;">' + gazData.leadStory + '</p>' +
+      '</div>' +
+
+      // Dua Kolom: Match of the Week & Player of the Week
+      '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:14px; margin-bottom:16px;">' +
+        '<div style="background:#0b1120; border:1px solid var(--border); padding:14px; border-radius:6px;">' +
+          '<h4 style="color:var(--accent-bright); font-size:12.5px; margin-bottom:8px;">⚽ Match of the Week Review</h4>' +
+          '<p style="font-size:12.5px; line-height:1.7; color:#cbd5e1; margin:0; text-align:justify;">' + gazData.motwReview + '</p>' +
+        '</div>' +
+        '<div style="background:#0b1120; border:1px solid var(--border); padding:14px; border-radius:6px;">' +
+          '<h4 style="color:#34d399; font-size:12.5px; margin-bottom:8px;">⭐ Player of the Week Spotlight</h4>' +
+          '<p style="font-size:12.5px; line-height:1.7; color:#cbd5e1; margin:0; text-align:justify;">' + gazData.playerSpotlight + '</p>' +
+        '</div>' +
+      '</div>' +
+
+      // Kolom Preview Pekan Depan
+      '<div style="background:#080c18; border:1px solid var(--border); border-left:4px solid var(--accent-gold); padding:14px; border-radius:6px; margin-bottom:16px;">' +
+        '<h4 style="color:var(--accent-gold); font-size:12.5px; margin-bottom:6px;">🔮 Preview &amp; Proyeksi Taktis Pekan Berikutnya</h4>' +
+        '<p style="font-size:12.5px; line-height:1.7; color:#cbd5e1; margin:0; text-align:justify;">' + gazData.previewNext + '</p>' +
+      '</div>' +
+
+      // Catatan Arsip Investigasi Pemain
+      (extraStories ? (
+        '<div style="background:rgba(21,32,55,0.4); padding:14px; border-radius:6px; border:1px dashed var(--border);">' +
+          '<h5 style="color:var(--purple); margin-bottom:8px; font-size:11px; text-transform:uppercase; font-weight:800;">Catatan Investigasi &amp; Drama Pemain (Musim Lalu):</h5>' +
+          '<ul style="margin-left:18px; font-size:11.5px; line-height:1.7;">' + extraStories + '</ul>' +
+        '</div>'
+      ) : '') +
+    '</div>';
+  }
+};
+// 8. Intersepsi Tutup Musim: Eksekusi Otomatis Evaluasi Dinamis & Turnamen U-21
+var originalAdvanceSeasonWithAutoArchive = advanceSeasonWithAutoArchive;
+advanceSeasonWithAutoArchive = function() {
+  processYearEndPlayerDevelopment();
+  simulateYouthPremierCup();
+  originalAdvanceSeasonWithAutoArchive();
+};
+
+// ==============================================================
+// MODUL TERPADU LENGKAP: TAB 12 KRONIK MULTI-KOMPETISI (FIXED)
+// ==============================================================
+
+var CHRONICLE_STATE = {
+  compType: 'LEAGUE', // 'LEAGUE', 'FA', 'LC'
+  cupStage: 'ALL',
+  page: 1,
+  pageSize: 5,
+  filterClubId: 'ALL'
+};
+
+// 1. Suntikkan Tombol Tab 12 ke Bilah Navigasi Sub-Tab Simulator
+(function injectChronicleNavTab() {
+  function tryInject() {
+    var subtabs = document.getElementById("sim-subtabs");
+    if (subtabs && !document.getElementById("btn-subtab-chronicles")) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.id = "btn-subtab-chronicles";
+      btn.className = "btn-subtab";
+      btn.style.color = "var(--accent-gold)";
+      btn.style.fontWeight = "800";
+      btn.innerHTML = "12. Kronik Seluruh Laga (Journalism)";
+      btn.onclick = function() { switchSubTab(12); };
+      subtabs.appendChild(btn);
+    }
+  }
+  if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', tryInject);
+  } else {
+    tryInject();
+  }
+})();
+
+// Dapatkan ranking dan kasta klub terkini
+function getClubStandingSnapshot(cId) {
+  var c = DB.clubById[cId];
+  if (!c) return { tier: '??', rank: '??', label: 'TBD' };
+  var standKey = (c.Tier === 'T1' || c.Tier === 'T2') ? c.Tier : (c.Tier + "_" + (c.Zona || 1));
+  var tab = DB.standings[standKey] || [];
+  var idx = tab.findIndex(function(t){ return t.ID_Club === cId; });
+  var rank = idx !== -1 ? (idx + 1) : '-';
+  return {
+    tier: TIER_CONFIG[c.Tier] ? TIER_CONFIG[c.Tier].short : c.Tier,
+    tierName: TIER_CONFIG[c.Tier] ? TIER_CONFIG[c.Tier].name : c.Tier,
+    rank: rank,
+    label: (TIER_CONFIG[c.Tier] ? TIER_CONFIG[c.Tier].short : c.Tier) + " #" + rank
+  };
+}
+
+// 2. Engine Jurnalisme Dinamis: Kontekstual & Berbasis Dampak Klasemen Nyata
+function analyzeSingleMatchJournalism(mRecord, homeClub, awayClub, table, targetWeek) {
+  var gh = mRecord.HomeScore, ga = mRecord.AwayScore;
+  var posH = (table.findIndex(function(t){ return t.ID_Club === homeClub.ID_Club; }) + 1) || 99;
+  var posA = (table.findIndex(function(t){ return t.ID_Club === awayClub.ID_Club; }) + 1) || 99;
+  var isDerby = homeClub.Nome.split(' ')[0] === awayClub.Nome.split(' ')[0];
+  var totalG = gh + ga;
+  var diff = Math.abs(gh - ga);
+  var totalTeams = table.length || 32;
+
+  // Dapatkan poin terkini
+  var rowH = table.find(function(t){ return t.ID_Club === homeClub.ID_Club; }) || { Pts: 0 };
+  var rowA = table.find(function(t){ return t.ID_Club === awayClub.ID_Club; }) || { Pts: 0 };
+
+  // Sortir pencetak gol berdasarkan kronologi menit laga (kecil ke besar)
+  var evsH = (mRecord.Events || []).filter(function(e){ return e.team === 'home'; }).sort(function(a,b){ return a.minute - b.minute; });
+  var evsA = (mRecord.Events || []).filter(function(e){ return e.team === 'away'; }).sort(function(a,b){ return a.minute - b.minute; });
+
+  var scorersH = evsH.map(function(e){ return e.player + " (" + e.minute + "')"; });
+  var scorersA = evsA.map(function(e){ return e.player + " (" + e.minute + "')"; });
+
+  // Klasifikasi Tag Laga
+  var tag = "Rutin Liga";
+  var tagColor = "var(--accent)";
+  if (isDerby) { tag = "🔥 DERBY WILAYAH"; tagColor = "#f87171"; }
+  else if (posH <= 4 && posA <= 4) { tag = "👑 BENTROK PAPAN ATAS"; tagColor = "var(--accent-bright)"; }
+  else if (posH >= (totalTeams - 4) && posA >= (totalTeams - 4)) { tag = "⚠️ DUEL 6 ANGKA ZONA MERAH"; tagColor = "#fb923c"; }
+  else if (diff >= 3) { tag = "💥 KEMENANGAN TELAK"; tagColor = "#ec4899"; }
+  else if (totalG >= 5) { tag = "⚡ FESTIVAL GOL"; tagColor = "#34d399"; }
+
+  var narrative = "";
+
+  // SKENARIO 1: TUAN RUMAH MENANG
+  if (gh > ga) {
+    var leadH = "";
+    var impactH = "";
+
+    // A. Analisis Jalannya Laga
+    if (posH > posA + 8) {
+      leadH = "Kejutan taktis tersaji di hadapan publik sendiri saat <b>" + homeClub.Nome + " (#" + posH + ")</b> sukses menjungkirbalikkan prediksi dengan menaklukkan tim papan atas <b>" + awayClub.Nome + " (#" + posA + ")</b> lewat keunggulan " + gh + " - " + ga + ".";
+    } else if (diff >= 3) {
+      leadH = "Performa tanpa ampun dipertontonkan <b>" + homeClub.Nome + " (#" + posH + ")</b> yang membantai barisan pertahanan <b>" + awayClub.Nome + " (#" + posA + ")</b> dengan skor mencolok " + gh + " - " + ga + ".";
+    } else if (diff === 1) {
+      leadH = "Melalui pertarungan alot dan sarat ketegangan fisik, <b>" + homeClub.Nome + " (#" + posH + ")</b> sukses mengamankan kemenangan tipis dramatis " + gh + " - " + ga + " atas <b>" + awayClub.Nome + " (#" + posA + ")</b>.";
+    } else {
+      leadH = "Keunggulan bermain di kandang dimaksimalkan dengan sempurna oleh <b>" + homeClub.Nome + " (#" + posH + ")</b> usai mengatasi perlawanan <b>" + awayClub.Nome + " (#" + posA + ")</b> dengan skor meyakinkan " + gh + " - " + ga + ".";
+    }
+
+    var goalDetailH = scorersH.length ? (" Gol kemenangan tuan rumah dilesakkan secara berurutan oleh " + scorersH.join(", ") + (scorersA.length ? (", sementara balasan tim tamu dicetak oleh " + scorersA.join(", ")) : "") + ".") : "";
+
+    // B. Analisis Dampak Terhadap Klasemen
+    if (posH <= 4) {
+      impactH = " Tambahan 3 poin krusial ini melesatkan " + homeClub.Nome + " mengoleksi " + rowH.Pts + " poin untuk terus menempel ketat perburuan gelar juara. Sebaliknya, hasil minor memaksa " + awayClub.Nome + " tertahan di peringkat #" + posA + " dan terancam terlempar dari zona persaingan elit.";
+    } else if (posH >= (totalTeams - 6)) {
+      impactH = " Kemenangan ini bernilai emas dalam upaya meloloskan diri dari jeratan degradasi, mendongkrak perolehan " + homeClub.Nome + " menjadi " + rowH.Pts + " poin. Bagi " + awayClub.Nome + ", kegagalan memetik angka ini memperberat langkah mereka memperbaiki posisi di peringkat #" + posA + ".";
+    } else {
+      impactH = " Hasil positif ini mengukuhkan stabilitas " + homeClub.Nome + " di papan tengah klasemen dengan koleksi " + rowH.Pts + " poin sekaligus memperlebar jarak dari ancaman zona bahaya. Sementara " + awayClub.Nome + " dipaksa pulang dengan tangan hampa dan tertahan di posisi #" + posA + ".";
+    }
+
+    narrative = leadH + goalDetailH + impactH;
+  }
+  // SKENARIO 2: TIM TAMU MENANG
+  else if (ga > gh) {
+    var leadA = "";
+    var impactA = "";
+
+    // A. Analisis Jalannya Laga
+    if (posA > posH + 8) {
+      leadA = "Pukulan telak menghantam publik tuan rumah saat <b>" + awayClub.Nome + " (#" + posA + ")</b> secara mengejutkan mencuri kemenangan tandang sensasional " + ga + " - " + gh + " atas tim unggulan <b>" + homeClub.Nome + " (#" + posH + ")</b>.";
+    } else if (diff >= 3) {
+      leadA = "Dominasi mutlak diperagakan oleh <b>" + awayClub.Nome + " (#" + posA + ")</b> yang mempermalukan tuan rumah <b>" + homeClub.Nome + " (#" + posH + ")</b> di markasnya sendiri lewat pesta kemenangan telak " + ga + " - " + gh + ".";
+    } else if (diff === 1) {
+      leadA = "Lewat skema serangan balik disiplin dan efektivitas menit akhir, <b>" + awayClub.Nome + " (#" + posA + ")</b> berhasil mengunci kemenangan tandang sarat gengsi " + ga + " - " + gh + " atas <b>" + homeClub.Nome + " (#" + posH + ")</b>.";
+    } else {
+      leadA = "Kematangan taktik tandang diperlihatkan <b>" + awayClub.Nome + " (#" + posA + ")</b> yang sukses meredam tekanan suporter dan menundukkan <b>" + homeClub.Nome + " (#" + posH + ")</b> dengan skor " + ga + " - " + gh + ".";
+    }
+
+    var goalDetailA = scorersA.length ? (" Deretan gol penentu tim tamu dibukukan oleh " + scorersA.join(", ") + (scorersH.length ? (", sementara gol hiburan tuan rumah dicetak oleh " + scorersH.join(", ")) : "") + ".") : "";
+
+    // B. Analisis Dampak Terhadap Klasemen
+    if (posA <= 4) {
+      impactA = " Tiga angka berharga dari laga tandang ini menjaga momentum " + awayClub.Nome + " di jalur juara dengan torehan " + rowA.Pts + " poin. Di sisi lain, kekalahan ini memperpanjang tren negatif " + homeClub.Nome + " yang tertahan di posisi #" + posH + ".";
+    } else if (posA >= (totalTeams - 6)) {
+      impactA = " Kemenangan tandang heroik ini menjadi suntikan napas penting bagi " + awayClub.Nome + " (" + rowA.Pts + " poin) untuk merangkak keluar dari jurang degradasi, sekaligus menekan posisi " + homeClub.Nome + " di peringkat #" + posH + ".";
+    } else {
+      impactA = " Raihan poin penuh di kandang lawan mengangkat posisi " + awayClub.Nome + " menuju peringkat #" + posA + " dengan koleksi " + rowA.Pts + " poin. Bagi " + homeClub.Nome + ", kehilangan poin di hadapan suporter sendiri menjadi alarm bahaya bagi evaluasi skuad mereka.";
+    }
+
+    narrative = leadA + goalDetailA + impactA;
+  }
+  // SKENARIO 3: HASIL IMBANG
+  else {
+    var leadD = "";
+    var impactD = "";
+
+    if (totalG === 0) {
+      leadD = "Pertarungan tanpa kompromi antara <b>" + homeClub.Nome + " (#" + posH + ")</b> dan <b>" + awayClub.Nome + " (#" + posA + ")</b> berkesudahan dengan skor kacamata 0 - 0. Kokohnya tembok pertahanan dan ketangguhan kiper di bawah mistar membuat seluruh upaya serangan mentah.";
+      impactD = " Berbagi satu angka membuat " + homeClub.Nome + " (" + rowH.Pts + " poin) dan " + awayClub.Nome + " (" + rowA.Pts + " poin) gagal memaksimalkan peluang untuk mendongkrak peringkat mereka di tabel klasemen pekan ini.";
+    } else {
+      leadD = "Drama kejar-mengejar angka tersaji di stadion saat duel sengit <b>" + homeClub.Nome + " (#" + posH + ")</b> kontra <b>" + awayClub.Nome + " (#" + posA + ")</b> berakhir imbang sama kuat " + gh + " - " + ga + ".";
+      var goalDetailD = " Gol tuan rumah dicetak oleh " + (scorersH.join(", ") || "-") + ", yang dibalas tuntas lewat aksi " + (scorersA.join(", ") || "-") + ".";
+      impactD = " Tambahan satu poin menjaga posisi kedua tim tetap berdampingan di tangga klasemen, meski belum cukup untuk membawa salah satu dari mereka melesat ke zona aman.";
+      leadD += goalDetailD;
+    }
+
+    narrative = leadD + impactD;
+  }
+
+  return {
+    tag: tag,
+    tagColor: tagColor,
+    scoreText: gh + " - " + ga,
+    narrative: narrative,
+    mvp: mRecord.MVP || "Kolektif Tim",
+    posH: posH,
+    posA: posA
+  };
+}
+// 3. Engine Jurnalisme Laga Piala (Agregat 2 Leg & Giant Killing)
+function analyzeSingleCupMatchJournalism(mItem, cupName, stageLabel) {
+  var hC = DB.clubById[mItem.h], aC = DB.clubById[mItem.a];
+  if (!hC || !aC) return null;
+
+  var snapH = getClubStandingSnapshot(mItem.h);
+  var snapA = getClubStandingSnapshot(mItem.a);
+
+  if (!mItem.winner) {
+    return {
+      tag: "⏳ Menunggu Laga",
+      tagColor: "var(--text-muted)",
+      scoreText: "VS",
+      legInfo: "Partai 2 Leg belum dimainkan",
+      narrative: "Pertandingan babak " + stageLabel + " mempertemukan " + hC.Nome + " (" + snapH.label + ") kontra " + aC.Nome + " (" + snapA.label + "). Kedua juru taktik tengah menyusun kalkulasi rotasi skuad untuk mengamankan tiket fase berikutnya.",
+      mvp: "-",
+      hC: hC, aC: aC, snapH: snapH, snapA: snapA, stage: stageLabel
+    };
+  }
+
+  var winnerClub = DB.clubById[mItem.winner];
+  var loserClub = DB.clubById[mItem.loser];
+  var isHomeWinner = mItem.winner === mItem.h;
+  var winSnap = isHomeWinner ? snapH : snapA;
+  var loseSnap = isHomeWinner ? snapA : snapH;
+
+  var tierHierarchy = { 'T1': 1, 'T2': 2, 'T3': 3, 'T4': 4, 'T5': 5 };
+  var isGiantKilling = tierHierarchy[winnerClub.Tier] > tierHierarchy[loserClub.Tier];
+
+  var tag = "Turnamen Piala";
+  var tagColor = "var(--accent)";
+  if (isGiantKilling) {
+    tag = "💥 SENSASI GIANT KILLING!";
+    tagColor = "#f87171";
+  } else if (mItem.pso) {
+    tag = "🎯 DRAMA ADU PENALTI";
+    tagColor = "#fde047";
+  } else if (stageLabel.indexOf("Final") !== -1) {
+    tag = "🏆 PARTAI PUNCAK";
+    tagColor = "var(--accent-gold)";
+  }
+
+  var l1 = mItem.leg1 || { hG: 0, aG: 0, mvp: "-" };
+  var l2 = mItem.leg2 || { hG: 0, aG: 0, mvp: "-" };
+
+  var psoTxt = mItem.pso ? (" (Adu Penalti: " + mItem.pso.h + " - " + mItem.pso.a + ")") : "";
+  var aggTxt = "Agg: " + mItem.aggH + " - " + mItem.aggA + psoTxt;
+  var legDetail = "Leg 1: " + hC.Nome + " " + l1.hG + " - " + l1.aG + " " + aC.Nome + " | Leg 2: " + aC.Nome + " " + l2.hG + " - " + l2.aG + " " + hC.Nome;
+
+  var narrative = "";
+  if (isGiantKilling) {
+    narrative = "Kisah dongeng tercipta di panggung " + cupName + "! Klub kuda hitam <b>" + winnerClub.Nome + " (" + winSnap.label + ")</b> secara sensasional menghentikan laju raksasa <b>" + loserClub.Nome + " (" + loseSnap.label + ")</b> lewat keunggulan agregat " + mItem.aggH + " - " + mItem.aggA + ". Kemenangan ini membuktikan magis kompetisi piala piramida terbuka.";
+  } else if (mItem.pso) {
+    narrative = "Drama adu penalti mengakhiri duel agregat sengit antara <b>" + hC.Nome + " (" + snapH.label + ")</b> dan <b>" + aC.Nome + " (" + snapA.label + ")</b> usai agregat imbang sama kuat " + mItem.aggH + " - " + mItem.aggA + ". Keteguhan mental algojo penalti <b>" + winnerClub.Nome + "</b> menjadi pembeda tiket kelolosan.";
+  } else {
+    narrative = "<b>" + winnerClub.Nome + " (" + winSnap.label + ")</b> menyegel tiket kelolosan babak " + stageLabel + " usai mengatasi perlawanan gigih <b>" + loserClub.Nome + " (" + loseSnap.label + ")</b> dengan skor agregat " + mItem.aggH + " - " + mItem.aggA + ". Kematangan taktik kandang-tandang menjadi kunci soliditas mereka.";
+  }
+
+  return {
+    tag: tag,
+    tagColor: tagColor,
+    scoreText: aggTxt,
+    legInfo: legDetail,
+    narrative: narrative,
+    mvp: l2.mvp || l1.mvp || "Kolektif Tim",
+    hC: hC, aC: aC, snapH: snapH, snapA: snapA, stage: stageLabel
+  };
+}
+
+// 4. Render Panel Tab 12 Terpadu
+// 4. Render Panel Tab 12 Terpadu (Pencocokan Cerdas & Anti-Miss MatchStore)
+function renderChroniclesTab(panel) {
+  var viewW = browsingMatchday > 0 ? browsingMatchday : (currentGlobalMatchday > 0 ? currentGlobalMatchday : 1);
+  var zVal = TIER_CONFIG[activeTier].zones === 0 ? 0 : activeZona;
+  var standKey = (activeTier === 'T1' || activeTier === 'T2') ? activeTier : (activeTier + "_" + zVal);
+  var table = DB.standings[standKey] || [];
+  var clubs = clubsByZoneCache[standKey] || [];
+
+  var analyzedItems = [];
+
+  if (CHRONICLE_STATE.compType === 'LEAGUE') {
+    var pairs = getPairingForMatchday(clubs, viewW);
+    pairs.forEach(function(p) {
+      // 1. Cek kunci primer & alternatif Home-Away
+      var mId1 = "WMB-M-" + DB.season + "-" + viewW + "-" + p.home.ID_Club + "-" + p.away.ID_Club;
+      var mId2 = "WMB-M-" + DB.season + "-" + viewW + "-" + p.away.ID_Club + "-" + p.home.ID_Club;
+      
+      var rec = (DB.matchStore && DB.matchStore[mId1] && DB.matchStore[mId1].Played) ? DB.matchStore[mId1] :
+                ((DB.matchStore && DB.matchStore[mId2] && DB.matchStore[mId2].Played) ? DB.matchStore[mId2] : null);
+
+      // 2. Pencarian cadangan jika kunci teks tidak cocok
+      if (!rec && DB.matchStore) {
+        var allKeys = Object.keys(DB.matchStore);
+        for (var k = 0; k < allKeys.length; k++) {
+          var mObj = DB.matchStore[allKeys[k]];
+          if (mObj && mObj.Played && Number(mObj.Giornata) === Number(viewW)) {
+            if ((mObj.HomeID === p.home.ID_Club && mObj.AwayID === p.away.ID_Club) ||
+                (mObj.HomeID === p.away.ID_Club && mObj.AwayID === p.home.ID_Club)) {
+              rec = mObj;
+              break;
+            }
+          }
+        }
+      }
+
+      var snapH = getClubStandingSnapshot(p.home.ID_Club);
+      var snapA = getClubStandingSnapshot(p.away.ID_Club);
+
+      if (rec) {
+        var an = analyzeSingleMatchJournalism(rec, p.home, p.away, table, viewW);
+        analyzedItems.push({
+          homeName: p.home.Nome, awayName: p.away.Nome,
+          homeId: p.home.ID_Club, awayId: p.away.ID_Club,
+          homeSnap: snapH.label, awaySnap: snapA.label,
+          tag: an.tag, tagColor: an.tagColor, scoreText: an.scoreText,
+          subText: "Pekan " + viewW + " &bull; " + TIER_CONFIG[activeTier].name,
+          narrative: an.narrative, mvp: an.mvp, played: true
+        });
+      } else {
+        analyzedItems.push({
+          homeName: p.home.Nome, awayName: p.away.Nome,
+          homeId: p.home.ID_Club, awayId: p.away.ID_Club,
+          homeSnap: snapH.label, awaySnap: snapA.label,
+          tag: "Belum Dimainkan", tagColor: "var(--text-muted)", scoreText: "VS",
+          subText: "Pekan " + viewW + " &bull; " + TIER_CONFIG[activeTier].name,
+          narrative: "Pertandingan antara <b>" + p.home.Nome + "</b> (" + snapH.label + ") dan <b>" + p.away.Nome + "</b> (" + snapA.label + ") di pekan ke-" + viewW + " belum dimainkan.",
+          mvp: "-", played: false, week: viewW
+        });
+      }
+    });
+  } else {
+    var isFA = CHRONICLE_STATE.compType === 'FA';
+    var cup = isFA ? DB.faCup : DB.leagueCup;
+    var cupName = isFA ? "The Wimbledon FA Cup" : "The Wimbledon League Cup";
+    var stages = isFA ? 
+      ["qual1", "qual2", "qual3", "r128", "r64", "r32", "r16", "qf", "sf", "final"] :
+      ["r128", "r64", "r32", "r16", "qf", "sf", "final"];
+
+    var stageLabels = {
+      qual1: "Kualifikasi 1", qual2: "Kualifikasi 2", qual3: "Kualifikasi Final",
+      r128: "Babak 128 Besar", r64: "Babak 64 Besar", r32: "Babak 32 Besar",
+      r16: "Babak 16 Besar", qf: "Perempat Final", sf: "Semifinal", final: "Grand Final"
+    };
+
+    var targetStages = CHRONICLE_STATE.cupStage === 'ALL' ? stages : [CHRONICLE_STATE.cupStage];
+
+    targetStages.forEach(function(stKey){
+      var list = cup ? (cup[stKey] || []) : [];
+      list.forEach(function(m){
+        if (m.h && m.a) {
+          var an = analyzeSingleCupMatchJournalism(m, cupName, stageLabels[stKey] || stKey);
+          if (an) {
+            analyzedItems.push({
+              homeName: an.hC.Nome, awayName: an.aC.Nome,
+              homeId: an.hC.ID_Club, awayId: an.aC.ID_Club,
+              homeSnap: an.snapH.label, awaySnap: an.snapA.label,
+              tag: an.tag, tagColor: an.tagColor, scoreText: an.scoreText,
+              subText: cupName + " &bull; " + an.stage + " &bull; " + an.legInfo,
+              narrative: an.narrative, mvp: an.mvp, played: !!m.winner
+            });
+          }
+        }
+      });
+    });
+  }
+
+  var filteredList = analyzedItems;
+  if (CHRONICLE_STATE.filterClubId !== 'ALL') {
+    filteredList = analyzedItems.filter(function(m) {
+      return m.homeId === CHRONICLE_STATE.filterClubId || m.awayId === CHRONICLE_STATE.filterClubId;
+    });
+  }
+
+  var totalItems = filteredList.length;
+  var totalPages = Math.ceil(totalItems / CHRONICLE_STATE.pageSize) || 1;
+  if (CHRONICLE_STATE.page > totalPages) CHRONICLE_STATE.page = totalPages;
+  if (CHRONICLE_STATE.page < 1) CHRONICLE_STATE.page = 1;
+
+  var startIndex = (CHRONICLE_STATE.page - 1) * CHRONICLE_STATE.pageSize;
+  var pagedList = filteredList.slice(startIndex, startIndex + CHRONICLE_STATE.pageSize);
+
+  var clubOptions = '<option value="ALL"' + (CHRONICLE_STATE.filterClubId === 'ALL' ? ' selected' : '') + '>🌐 Semua Klub</option>';
+  table.forEach(function(t, idx) {
+    clubOptions += '<option value="' + t.ID_Club + '"' + (CHRONICLE_STATE.filterClubId === t.ID_Club ? ' selected' : '') + '>#' + (idx+1) + ' ' + t.Nome + '</option>';
+  });
+
+  var cupStageFilterHtml = "";
+  if (CHRONICLE_STATE.compType !== 'LEAGUE') {
+    var isFA2 = CHRONICLE_STATE.compType === 'FA';
+    var stKeys = isFA2 ? ["qual1","qual2","qual3","r128","r64","r32","r16","qf","sf","final"] : ["r128","r64","r32","r16","qf","sf","final"];
+    var stageLabels2 = {
+      qual1: "Kualifikasi 1", qual2: "Kualifikasi 2", qual3: "Kualifikasi Final",
+      r128: "128 Besar", r64: "64 Besar", r32: "32 Besar",
+      r16: "16 Besar", qf: "Perempat Final", sf: "Semifinal", final: "Grand Final"
+    };
+
+    cupStageFilterHtml = '<select onchange="filterChronicleCupStage(this.value)" style="background:#080c18; color:var(--accent-gold); border:1px solid var(--accent-gold); padding:6px 10px; border-radius:6px; font-size:12px;">' +
+      '<option value="ALL"' + (CHRONICLE_STATE.cupStage === 'ALL' ? ' selected' : '') + '>Semua Babak</option>' +
+      stKeys.map(function(k){
+        return '<option value="' + k + '"' + (CHRONICLE_STATE.cupStage === k ? ' selected' : '') + '>' + (stageLabels2[k]||k) + '</option>';
+      }).join('') +
+    '</select>';
+  }
+
+  var cardsHtml = pagedList.map(function(item) {
+    var playActionBtn = (!item.played && CHRONICLE_STATE.compType === 'LEAGUE') ? 
+      ('<button type="button" class="btn-sm primary" style="font-size:10px; padding:2px 8px; margin-left:8px;" onclick="simulateManualSingleMatch(\'' + item.homeId + '\',\'' + item.awayId + '\',' + item.week + ',this)">⚽ Mainkan Laga</button>') : '';
+
+    return '<div style="background:#080c18; border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:12px; box-shadow:0 4px 15px rgba(0,0,0,0.3);">' +
+      '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:8px; margin-bottom:10px; flex-wrap:wrap; gap:6px;">' +
+        '<div style="display:flex; align-items:center;">' +
+          '<span style="font-size:11px; font-weight:800; padding:2px 8px; border-radius:4px; background:rgba(255,255,255,0.05); color:' + item.tagColor + '; border:1px solid ' + item.tagColor + ';">' + item.tag + '</span>' +
+          playActionBtn +
+        '</div>' +
+        '<span style="font-size:11px; color:var(--text-muted); font-family:\'JetBrains Mono\';">' + item.subText + '</span>' +
+      '</div>' +
+      '<div style="display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; background:rgba(21,32,55,0.4); padding:10px 14px; border-radius:6px; margin-bottom:12px;">' +
+        '<div><b style="font-size:13px; color:#fff;">' + item.homeName + '</b> <span style="font-size:11px; color:var(--accent); font-weight:700;">[' + item.homeSnap + ']</span></div>' +
+        '<div style="font-size:20px; font-weight:900; font-family:\'JetBrains Mono\'; color:var(--accent-bright); letter-spacing:1px; text-align:center;">' + item.scoreText + '</div>' +
+        '<div style="text-align:right;"><span style="font-size:11px; color:var(--accent); font-weight:700;">[' + item.awaySnap + ']</span> <b style="font-size:13px; color:#fff;">' + item.awayName + '</b></div>' +
+      '</div>' +
+      '<p style="font-size:12.5px; line-height:1.7; color:#cbd5e1; margin:0 0 10px 0; text-align:justify;">' + item.narrative + '</p>' +
+      '<div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--text-muted); border-top:1px dashed var(--border); padding-top:8px;">' +
+        '<span>⭐ Bintang Pertandingan (MVP): <b style="color:var(--accent-gold);">' + item.mvp + '</b></span>' +
+        '<span style="color:var(--accent);">Musim ' + DB.season + '</span>' +
+      '</div>' +
+    '</div>';
+  }).join('') || '<div style="text-align:center; padding:30px; color:var(--text-muted);">Belum ada partai yang tercatat pada filter kompetisi ini.</div>';
+
+  var paginationBar = '<div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding-top:12px; border-top:1px solid var(--border);">' +
+    '<button type="button" class="btn-sm" ' + (CHRONICLE_STATE.page <= 1 ? 'disabled' : '') + ' onclick="changeChroniclePage(' + (CHRONICLE_STATE.page - 1) + ')">&laquo; Sebelumnya</button>' +
+    '<span style="font-size:12px; font-family:\'JetBrains Mono\'; color:var(--accent-bright);">Halaman ' + CHRONICLE_STATE.page + ' dari ' + totalPages + ' (' + totalItems + ' Partai)</span>' +
+    '<button type="button" class="btn-sm" ' + (CHRONICLE_STATE.page >= totalPages ? 'disabled' : '') + ' onclick="changeChroniclePage(' + (CHRONICLE_STATE.page + 1) + ')">Berikutnya &raquo;</button>' +
+  '</div>';
+
+  panel.innerHTML = '<div style="background:linear-gradient(135deg,#152037,#0d1322); padding:20px; border-radius:8px; border:1px solid var(--border); border-top:3px double var(--accent-gold);">' +
+    '<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:16px;">' +
+      '<div>' +
+        '<span style="font-size:11px; color:var(--accent); font-weight:800; font-family:\'JetBrains Mono\';">WIMBLEDON MULTI-COMPETITION CHRONICLES</span>' +
+        '<h2 style="color:#fff; margin:4px 0 0 0; font-size:18px;">Arsip Liputan Nasional &bull; Liga &amp; Piala</h2>' +
+      '</div>' +
+      '<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">' +
+        '<label style="font-size:11.5px; color:var(--text-muted); font-weight:700;">Ajang:</label>' +
+        '<select onchange="switchChronicleCompetition(this.value)" style="background:#080c18; color:var(--accent-bright); border:1px solid var(--accent); padding:6px 10px; border-radius:6px; font-size:12px; font-weight:700;">' +
+          '<option value="LEAGUE"' + (CHRONICLE_STATE.compType === 'LEAGUE' ? ' selected' : '') + '>⚽ Liga Domestik</option>' +
+          '<option value="FA"' + (CHRONICLE_STATE.compType === 'FA' ? ' selected' : '') + '>🛡️ Wimbledon FA Cup (370 Klub)</option>' +
+          '<option value="LC"' + (CHRONICLE_STATE.compType === 'LC' ? ' selected' : '') + '>🏆 The League Cup (128 Klub)</option>' +
+        '</select>' +
+        cupStageFilterHtml +
+        '<label style="font-size:11.5px; color:var(--text-muted); font-weight:700; margin-left:4px;">Filter Klub:</label>' +
+        '<select onchange="filterChronicleByClub(this.value)" style="background:#080c18; color:var(--accent-bright); border:1px solid var(--accent); padding:6px 10px; border-radius:6px; font-size:12px;">' +
+          clubOptions +
+        '</select>' +
+      '</div>' +
+    '</div>' +
+    cardsHtml +
+    paginationBar +
+  '</div>';
+}
+function switchChronicleCompetition(val) {
+  CHRONICLE_STATE.compType = val;
+  CHRONICLE_STATE.page = 1;
+  CHRONICLE_STATE.cupStage = 'ALL';
+  renderCurrentView();
+}
+
+function filterChronicleCupStage(val) {
+  CHRONICLE_STATE.cupStage = val;
+  CHRONICLE_STATE.page = 1;
+  renderCurrentView();
+}
+
+function changeChroniclePage(newPage) {
+  CHRONICLE_STATE.page = newPage;
+  renderCurrentView();
+}
+
+function filterChronicleByClub(clubId) {
+  CHRONICLE_STATE.filterClubId = clubId;
+  CHRONICLE_STATE.page = 1;
+  renderCurrentView();
+}
+
+// 5. Intersepsi Sub-Tab 12 di Fungsi Render Utama
+var previousRenderCurrentView = renderCurrentView;
+renderCurrentView = function() {
+  previousRenderCurrentView();
+  if (currentRootMode === 'sim' && activeSubTab === 12) {
+    var panel = document.getElementById("view-panel");
+    if (panel) renderChroniclesTab(panel);
+  }
+};
+
+// ==============================================================
+// MODUL INTERSEPSI: EKSPOR HTML OFFLINE MENJADI DIGITAL MUSEUM (FIXED)
+// ==============================================================
+
+window.exportSeasonArchiveHTML = function() {
+  if (!DB || !DB.clubs || !DB.clubs.length) {
+    alert("Data liga belum dimuat atau masih kosong!");
+    return;
+  }
+
+  // 1. Kloning DOM dokumen saat ini
+  var docClone = document.documentElement.cloneNode(true);
+
+  // 2. Bersihkan elemen simulasi dan kontrol yang tidak perlu di mode Read-Only
+  var selectorsToRemove = [
+    "#sim-controls",
+    "#header-action-buttons",
+    "#btn-reset-universe",
+    "#btn-advance-season",
+    "#btn-play-all-rounds",
+    "#quick-sim-buttons",
+    "#admin-tools",
+    ".btn-action-sim"
+  ];
+  selectorsToRemove.forEach(function(sel) {
+    var els = docClone.querySelectorAll(sel);
+    els.forEach(function(el){ el.parentNode.removeChild(el); });
+  });
+
+  // 3. Tambahkan Banner Permanen Museum Read-Only di bagian header
+  var header = docClone.querySelector("header") || docClone.querySelector(".app-header") || docClone.querySelector("body > div");
+  if (header) {
+    var banner = document.createElement("div"); // Menggunakan document, bukan docClone
+    banner.style.cssText = "background: linear-gradient(90deg, #92400e, #d97706); color: #fff; padding: 7px 14px; font-size: 11px; font-weight: 800; text-align: center; letter-spacing: 1px; font-family: 'JetBrains Mono', monospace; border-bottom: 2px solid #fde047; box-shadow: 0 4px 12px rgba(0,0,0,0.5);";
+    banner.innerHTML = "🏛️ THE WIMBLEDON HERITAGE MUSEUM &bull; ARSIP RESMI MUSIM " + DB.season + " (READ-ONLY INTERACTIVE)";
+    header.parentNode.insertBefore(banner, header);
+  }
+
+  // 4. Buat Script Injeksi Snapshot Basis Data (Beku & Zero-Dependency)
+  var frozenDbScript = document.createElement("script"); // Menggunakan document
+  frozenDbScript.type = "text/javascript";
+  frozenDbScript.text = 
+    "// Snapshot Basis Data Musim " + DB.season + "\n" +
+    "window.IS_OFFLINE_ARCHIVE_MODE = true;\n" +
+    "var DB = " + JSON.stringify(DB) + ";\n" +
+    "\n" +
+    "// Netralkan fungsi mutasi agar data beku tidak berubah\n" +
+    "window.saveLocalState = function(){};\n" +
+    "window.loadLocalState = async function(){ return true; };\n" +
+    "window.advanceSeasonWithAutoArchive = function(){ alert('Ini adalah arsip museum (Read-Only).'); };\n" +
+    "window.simulateManualSingleMatch = function(){ alert('Pertandingan telah tuntas tercatat di arsip musim ini.'); };\n" +
+    "\n" +
+    "// Booting Tampilan Otomatis Setelah File Dibuka\n" +
+    "window.addEventListener('DOMContentLoaded', function() {\n" +
+    "  if (typeof initApplication === 'function') initApplication();\n" +
+    "  if (typeof renderCurrentView === 'function') renderCurrentView();\n" +
+    "});\n";
+
+  var body = docClone.querySelector("body");
+  if (body) {
+    body.insertBefore(frozenDbScript, body.firstChild);
+  }
+
+  // 5. Rakit Dokumen HTML Utuh dan Unduh Otomatis
+  var fullHtml = "<!DOCTYPE html>\n<html lang=\"id\">\n" + docClone.innerHTML + "\n</html>";
+  var blob = new Blob([fullHtml], { type: "text/html;charset=utf-8" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = "Wimbledon_Museum_Season_" + DB.season + "_Interactive.html";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+</script>
+</body>
+</html>

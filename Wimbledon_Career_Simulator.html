@@ -1,0 +1,1919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Wimbledon Heritage — Advanced Pyramid & Career Simulator (370 Clubs)</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Cinzel:wght@700;900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,700;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-main: #060911;
+    --bg-card: #0d1322;
+    --bg-hover: #152037;
+    --accent: #38bdf8;
+    --accent-gold: #f59e0b;
+    --accent-bright: #fde047;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --border: #1e293b;
+    --danger: #ef4444;
+    --success: #10b981;
+    --purple: #a855f7;
+    --badge-bg: #1e293b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body { background-color: var(--bg-main); color: var(--text-main); padding: 14px; font-size: 13px; background-image: radial-gradient(#1e293b 1px, transparent 1px); background-size: 24px 24px; }
+
+  header {
+    background: var(--bg-card); padding: 14px 18px; border-radius: 8px; border: 1px solid var(--border);
+    margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px; border-top: 3px double var(--accent-gold);
+  }
+  .header-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; }
+  .header-titles h1 { font-family: 'Cinzel', serif; font-size: 20px; color: var(--accent-bright); font-weight: 900; letter-spacing: 1px; text-shadow: 0 2px 10px rgba(245,158,11,0.25); }
+  .header-titles p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .header-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+  .root-nav-bar { display: flex; gap: 8px; background: #080c18; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 12px; }
+  .btn-root { font-size: 13px; font-weight: 800; padding: 8px 18px; border-radius: 6px; border: 1px solid transparent; background: transparent; color: var(--text-muted); cursor: pointer; transition: 0.2s; }
+  .btn-root:hover { color: #fff; border-color: #334155; }
+  .btn-root.active { background: linear-gradient(135deg, #d97706, #f59e0b); color: #060911; border-color: var(--accent-gold); box-shadow: 0 2px 10px rgba(245,158,11,0.3); }
+
+  .global-simulation-bar {
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;
+    background: rgba(21, 32, 55, 0.5); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);
+  }
+  .sim-controls-group { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+
+  .week-navigator-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: rgba(13, 19, 34, 0.95); padding: 8px 14px; border-radius: 6px; border: 1px solid var(--accent);
+    margin-bottom: 12px; flex-wrap: wrap;
+  }
+
+  button {
+    background: var(--bg-hover); color: var(--text-main); border: 1px solid var(--border);
+    padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; display: inline-flex;
+    align-items: center; gap: 6px; transition: all 0.2s; user-select: none; font-weight: 600;
+  }
+  button:hover:not(:disabled) { background: var(--accent); color: #000; border-color: var(--accent); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.primary { background: var(--accent); color: #000; font-weight: 700; border-color: var(--accent); }
+  button.warning { background: var(--accent-gold); color: #000; font-weight: 700; border-color: var(--accent-gold); }
+  button.danger { background: var(--danger); color: #fff; font-weight: 700; border-color: var(--danger); }
+  button.excel { background: #107c41; color: #fff; font-weight: 700; border-color: #0c5e31; }
+  button.excel:hover:not(:disabled) { background: #15944f; color: #fff; }
+  button.btn-sm { padding: 4px 8px; font-size: 11px; }
+
+  .hyperlink { color: var(--text-main); text-decoration: none; cursor: pointer; border-bottom: 1px dashed rgba(56, 189, 248, 0.5); transition: 0.15s; }
+  .hyperlink:hover { color: var(--accent-bright); border-bottom-color: var(--accent-bright); }
+
+  .tier-container { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .btn-tier { font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 6px; }
+  .btn-tier.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+  .zona-container {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 12px;
+    background: rgba(13, 19, 34, 0.7); padding: 8px 12px; border-radius: 6px; border: 1px dashed var(--border);
+  }
+  .btn-zona { padding: 4px 10px; font-size: 11px; }
+  .btn-zona.active { background: var(--accent-gold); color: #000; font-weight: 700; border-color: var(--accent-gold); }
+
+  .subtabs-container {
+    display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; background: var(--bg-card);
+    padding: 6px; border-radius: 6px; border: 1px solid var(--border);
+  }
+  .btn-subtab { padding: 6px 12px; font-size: 12px; border-radius: 4px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; }
+  .btn-subtab.active { background: var(--bg-hover); color: var(--accent); font-weight: 700; }
+
+  .content-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; min-height: 520px; overflow-x: auto; }
+
+  table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; margin-top: 6px; }
+  th, td { padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th { background: rgba(8, 12, 24, 0.9); color: var(--text-muted); font-weight: 600; position: sticky; top: 0; z-index: 10; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  tr:hover { background: var(--bg-hover); }
+  tr.mgr-club-row td { background: rgba(168, 85, 247, 0.15) !important; font-weight: 700; }
+  .badge-mgr { background: rgba(168, 85, 247, 0.25); color: #c084fc; border: 1px solid var(--purple); padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 800; }
+  .pos-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--badge-bg); border: 1px solid var(--accent-gold); color: var(--accent-gold); font-weight: 700; display: inline-block; font-family: 'JetBrains Mono'; }
+  .number-badge { font-size: 10px; font-weight: 800; padding: 1px 5px; border-radius: 4px; background: rgba(56, 189, 248, 0.15); border: 1px solid var(--accent); color: var(--accent); display: inline-block; min-width: 22px; text-align: center; font-family: 'JetBrains Mono'; }
+
+  .ovr-pill { font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 4px; display: inline-block; font-family: 'JetBrains Mono'; }
+  .ovr-elite { background: rgba(168, 85, 247, 0.25); color: #c084fc; border: 1px solid #a855f7; }
+  .ovr-high { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; }
+  .ovr-mid { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid #f59e0b; }
+  .ovr-low { background: rgba(148, 163, 184, 0.2); color: #94a3b8; border: 1px solid #94a3b8; }
+
+  .badge-trait { background: rgba(56, 189, 248, 0.15); border: 1px solid var(--accent); color: var(--accent); padding: 1px 5px; border-radius: 3px; font-size: 10px; font-weight: 700; font-family: 'Inter'; }
+
+  .fixtures-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: 12px; }
+  .fixture-card { background: rgba(13, 19, 34, 0.9); border: 1px solid var(--border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .fixture-header { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 5px; }
+  .fixture-scoreboard { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; background: rgba(21, 32, 55, 0.45); padding: 8px 12px; border-radius: 6px; }
+  .fixture-score-num { font-size: 20px; font-weight: 900; color: var(--accent-bright); letter-spacing: 2px; font-family: 'JetBrains Mono'; }
+  .fixture-goals-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11px; background: rgba(6, 9, 17, 0.6); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); min-height: 40px; }
+  .fixture-goals-col { display: flex; flex-direction: column; gap: 3px; }
+  .goal-entry { padding: 2px 0; border-bottom: 1px dashed rgba(255,255,255,0.05); line-height: 1.4; }
+
+  .career-dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .career-stat-card { background: rgba(21, 32, 55, 0.45); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: left; }
+  .career-stat-card span { font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; font-family: 'JetBrains Mono'; }
+  .career-stat-card b { display: block; font-size: 22px; font-family: 'JetBrains Mono'; margin-top: 4px; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 999; padding: 16px; backdrop-filter: blur(4px); }
+  .modal-overlay.open { display: flex; }
+  .modal-box { background: var(--bg-card); border: 1px solid var(--accent); border-radius: 8px; width: 100%; max-width: 820px; max-height: 90vh; overflow-y: auto; padding: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.95); }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+  .modal-header h2 { font-size: 16px; color: var(--accent-bright); font-weight: 800; font-family: 'Chakra Petch'; }
+  .modal-close { background: transparent; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer; }
+  .modal-close:hover { color: var(--danger); }
+  .form-group { margin-bottom: 10px; }
+  .form-group label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+  .form-group input, .form-group select { width: 100%; background: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); padding: 7px 10px; border-radius: 5px; font-size: 12px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+  #status-bar { margin-top: 12px; font-size: 11px; color: var(--accent); display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono'; }
+  .spinner { width: 12px; height: 12px; border: 2px solid var(--accent); border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="header-titles">
+      <h1>THE WIMBLEDON HERITAGE &mdash; ADVANCED PYRAMID &amp; CAREER SIMULATOR</h1>
+      <p id="header-sub">Season: <span id="current-season-display">1</span> &bull; Current Matchday: <span id="global-week-display" style="color:var(--accent-gold); font-weight:700;">0</span> &bull; 370 British Pyramid Clubs &bull; Dynamic Morale, Fitness &amp; Tactical Engine</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="primary" onclick="generateMassiveDatabase()">⚡ Build Universe (370 Clubs)</button>
+      <button type="button" class="excel" onclick="exportMultiSheetExcel()">📊 Multi-Sheet Excel</button>
+      <button type="button" class="warning" onclick="exportStandingsOnlyExcel()">📋 Standings Only</button>
+      <button type="button" style="background:#0284c7; color:#fff;" onclick="exportDatabaseJSON()">📦 Export JSON</button>
+      <button type="button" style="background:#8b5cf6; color:#fff;" onclick="advanceSeasonWithAutoArchive()">🏆 New Season</button>
+      <button type="button" class="danger" onclick="resetEntireUniverse()">🗑 Reset Universe</button>
+    </div>
+  </div>
+
+  <div class="global-simulation-bar">
+    <div class="sim-controls-group">
+      <span style="font-size:11px; color:var(--text-muted); font-weight:700; margin-right:4px;">SIMULATE MATCHDAYS:</span>
+      <button type="button" class="btn-sm" onclick="triggerGlobalBatchSimulation(1)">+1 Round</button>
+      <button type="button" class="btn-sm" onclick="triggerGlobalBatchSimulation(5)">+5 Rounds</button>
+      <button type="button" class="btn-sm" onclick="triggerGlobalBatchSimulation(10)">+10 Rounds</button>
+      <button type="button" class="btn-sm" onclick="triggerGlobalBatchSimulation(30)">+30 Rounds</button>
+      <button type="button" class="btn-sm primary" onclick="triggerGlobalBatchSimulation(66)">⚡ Complete Season</button>
+    </div>
+    <div>
+      <span id="mgr-badge-display" style="font-size:11px; font-weight:700; color:var(--purple); background:rgba(168,85,247,0.15); border:1px solid var(--purple); padding:3px 8px; border-radius:4px;">👔 Manager: Unemployed</span>
+    </div>
+  </div>
+</header>
+
+<!-- ROOT NAVIGATION (MODE SELECTOR) -->
+<div class="root-nav-bar">
+  <button type="button" class="btn-root active" id="btn-root-sim" onclick="switchRootMode('sim')">🌐 National League Simulator (370 Clubs)</button>
+  <button type="button" class="btn-root" id="btn-root-career" onclick="switchRootMode('career')">👔 Manager Career Mode</button>
+</div>
+
+<!-- SUB-BARS FOR SIMULATOR MODE -->
+<div id="sim-controls-wrapper">
+  <div class="week-navigator-bar">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <button type="button" class="btn-sm" onclick="navigateWeek(-10)">&laquo; -10</button>
+      <button type="button" class="btn-sm" onclick="navigateWeek(-1)">&lsaquo; -1</button>
+      <span>Browsing Round: <strong id="browsing-week-display" style="color:var(--accent-bright); font-size:14px; font-family:'JetBrains Mono';">0</strong></span>
+      <button type="button" class="btn-sm" onclick="navigateWeek(1)">+1 &rsaquo;</button>
+      <button type="button" class="btn-sm" onclick="navigateWeek(10)">+10 &raquo;</button>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <button type="button" class="btn-sm primary" onclick="jumpToCurrentSimulatedWeek()">Jump to Current Round</button>
+    </div>
+  </div>
+
+  <div class="tier-container" id="tier-nav"></div>
+  <div class="zona-container" id="zona-nav" style="display: none;"></div>
+
+  <div class="subtabs-container" id="sim-subtabs">
+    <button type="button" class="btn-subtab active" onclick="switchSubTab(1)">1. Standings</button>
+    <button type="button" class="btn-subtab" onclick="switchSubTab(2)">2. Player Stats</button>
+    <button type="button" class="btn-subtab" onclick="switchSubTab(3)">3. Fixtures &amp; Scores</button>
+    <button type="button" class="btn-subtab" onclick="switchSubTab(4)">4. Club Rosters</button>
+    <button type="button" class="btn-subtab" onclick="switchSubTab(5)">5. Finance &amp; Grounds</button>
+    <button type="button" class="btn-subtab" onclick="switchSubTab(6)">6. Form Guide</button>
+    <button type="button" class="btn-subtab" onclick="switchSubTab(7)">7. Weekly Gazette</button>
+    <button type="button" class="btn-subtab" onclick="switchSubTab(8)">8. Medical Room</button>
+    <button type="button" class="btn-subtab" onclick="switchSubTab(9)">9. Market Value</button>
+    <button type="button" class="btn-subtab" onclick="switchSubTab(10)">10. Knockout Cups (64)</button>
+  </div>
+</div>
+
+<!-- SUB-BARS FOR CAREER MODE -->
+<div id="career-controls-wrapper" style="display:none;">
+  <div class="subtabs-container" id="career-subtabs">
+    <button type="button" class="btn-subtab active" onclick="switchCareerSubTab(1)">1. Club Office &amp; Board</button>
+    <button type="button" class="btn-subtab" onclick="switchCareerSubTab(2)">2. Tactical Board &amp; Shape</button>
+    <button type="button" class="btn-subtab" onclick="switchCareerSubTab(3)">3. Matchday Touchline</button>
+    <button type="button" class="btn-subtab" onclick="switchCareerSubTab(4)">4. Transfer &amp; Scouting Hub</button>
+  </div>
+</div>
+
+<div class="content-panel" id="view-panel"></div>
+
+<div id="status-bar">
+  <div class="spinner" id="loading-spinner"></div>
+  <span id="status-text">Ready.</span>
+</div>
+
+<!-- Modal Pop-up Club -->
+<div class="modal-overlay" id="club-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="modal-club-title">Club Record Dossier</h2>
+      <button type="button" class="modal-close" onclick="closeClubModal()">&times;</button>
+    </div>
+    <div id="modal-club-details" style="margin-bottom:14px;"></div>
+    <h3 style="color:var(--accent); font-size:13px; margin-bottom:8px; border-top:1px solid rgba(255,255,255,0.08); padding-top:10px;">Edit Information &amp; Stadium Ground</h3>
+    <form id="club-form" onsubmit="saveClubChanges(event)">
+      <input type="hidden" id="edit-club-id">
+      <div class="form-group">
+        <label>Club Name</label>
+        <input type="text" id="edit-club-name" required>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Home Ground (Stadium)</label>
+          <input type="text" id="edit-club-stadium" required>
+        </div>
+        <div class="form-group">
+          <label>Seating Capacity</label>
+          <input type="number" id="edit-club-capacity" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Matchday Ticket Price (£)</label>
+          <input type="number" id="edit-club-ticket" required>
+        </div>
+        <div class="form-group">
+          <label>Transfer &amp; Wage Budget (£)</label>
+          <input type="number" id="edit-club-budget" required>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px;">
+        <button type="button" class="btn-sm primary" onclick="takeManagerPostFromModal()">👔 Take Charge as Manager</button>
+        <div style="display:flex; gap:8px;">
+          <button type="button" onclick="closeClubModal()">Close</button>
+          <button type="submit" class="warning">Save Dossier</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Pop-up Player (Editable & Synced to IndexedDB) -->
+<div class="modal-overlay" id="player-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="modal-player-title">Player Dossier &amp; Profile</h2>
+      <button type="button" class="modal-close" onclick="closePlayerModal()">&times;</button>
+    </div>
+    <div id="modal-player-content"></div>
+    <h3 style="color:var(--accent); font-size:13px; margin-bottom:8px; border-top:1px solid rgba(255,255,255,0.08); padding-top:10px;">Edit Player Attributes (Live Persistence)</h3>
+    <form id="player-form" onsubmit="savePlayerChanges(event)">
+      <input type="hidden" id="edit-player-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Player Name (Editable)</label>
+          <input type="text" id="edit-player-name" required>
+        </div>
+        <div class="form-group">
+          <label>Squad Number</label>
+          <input type="number" id="edit-player-number" min="1" max="99" required>
+        </div>
+      </div>
+      <div class="form-row-3">
+        <div class="form-group">
+          <label>Position</label>
+          <select id="edit-player-role">
+            <option value="GK">GK (Goalkeeper)</option>
+            <option value="CB">CB (Centre Back)</option>
+            <option value="LB">LB (Left Back)</option>
+            <option value="RB">RB (Right Back)</option>
+            <option value="DMF">DMF (Defensive Midfielder)</option>
+            <option value="CMF">CMF (Central Midfielder)</option>
+            <option value="AMF">AMF (Attacking Midfielder)</option>
+            <option value="LWF">LWF (Left Winger)</option>
+            <option value="RWF">RWF (Right Winger)</option>
+            <option value="CF">CF (Centre Forward)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>OVR Rating (35 - 99)</label>
+          <input type="number" id="edit-player-ovr" min="35" max="99" required>
+        </div>
+        <div class="form-group">
+          <label>Age</label>
+          <input type="number" id="edit-player-age" min="16" max="42" required>
+        </div>
+      </div>
+      <div class="form-row-3">
+        <div class="form-group">
+          <label>Match Fitness (%)</label>
+          <input type="number" id="edit-player-fitness" min="10" max="100" required>
+        </div>
+        <div class="form-group">
+          <label>Morale (0 - 100)</label>
+          <input type="number" id="edit-player-morale" min="0" max="100" required>
+        </div>
+        <div class="form-group">
+          <label>Leadership (1 - 20)</label>
+          <input type="number" id="edit-player-leadership" min="1" max="20" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Player Trait</label>
+        <select id="edit-player-trait">
+          <option value="Standard">Standard</option>
+          <option value="Clutch Finisher">Clutch Finisher (Bonus late goals)</option>
+          <option value="Set-Piece Specialist">Set-Piece Specialist (Free-kick threat)</option>
+          <option value="Big Game Player">Big Game Player (Boosts in Derbies/Cups)</option>
+          <option value="Workhorse">Workhorse (Resists match fatigue)</option>
+        </select>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:14px;">
+        <button type="button" onclick="closePlayerModal()">Close</button>
+        <button type="submit" class="primary">Save Player to IndexedDB</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// ==============================================================
+// 1. DATASET RESMI 370 KLUB WIMBLEDON & STRUKTUR 5 TIER
+// ==============================================================
+var TIER_CONFIG = {
+  'T1': { name: 'Tier 1: Premier League', short: 'PL', zones: 0, clubsPerZone: 32, ovrMin: 76, ovrMax: 92, capBase: 52000, tktPrice: 50 },
+  'T2': { name: 'Tier 2: The Championship', short: 'CH', zones: 0, clubsPerZone: 32, ovrMin: 65, ovrMax: 76, capBase: 28000, tktPrice: 32 },
+  'T3': { name: 'Tier 3: National League', short: 'NL', zones: 2, clubsPerZone: 34, ovrMin: 55, ovrMax: 65, capBase: 14000, tktPrice: 22 },
+  'T4': { name: 'Tier 4: Regional League', short: 'RL', zones: 3, clubsPerZone: 34, ovrMin: 45, ovrMax: 55, capBase: 6500,  tktPrice: 15 },
+  'T5': { name: 'Tier 5: District Conf', short: 'DC', zones: 4, clubsPerZone: 34, ovrMin: 36, ovrMax: 46, capBase: 2500,  tktPrice: 10 }
+};
+
+var WIMBLEDON_RAW_DATA = {
+  T1: [
+    "Aberwick United","Ashford Athletic","Barrowfield Town","Bramblesea City","Brannock Rovers",
+    "Calderbridge FC","Carrmoor Wednesday","Chelmsford Gate","Coldstream Villa","Corbridge Rangers",
+    "Cromarty Orient","Cumbria Harriers","Danelaw Celtic","Dunsmere Albion","Eastfield Thursday",
+    "Elmwood Forest","Falmouth Guild","Gallowgate Victoria","Greystoke Wanderers","Hadrian Wall FC",
+    "Harthaven City","Hawthorn County","Highland Heath","Holtby Academicals","Ironstone Town",
+    "Kielder Foresters","Kingsbury Athletic","Kirkfall Argyle","Lindisfell City","Lockwood Strollers",
+    "Marlowe Alexandra","Midsomer Corinthians"
+  ],
+  T2: [
+    "Millwall Docks","Northwyck Town","Oakhampton United","Pennine Rovers","Pendlebury Thistle",
+    "Redgrave Athletic","Rookery Park","Severnside Mariners","Silverdale Borough","Southwark Royals",
+    "Stanhope Rangers","Stonehaven FC","Teesmouth Celtic","Valeside Albion","Wealdstone Villa",
+    "Wessex Centurions","Whitehaven Harriers","Yorbury Central","Alnwick Town","Amberley United",
+    "Appledore FC","Arundel Castle","Aylesbury Albion","Bampton United","Beckenham City",
+    "Berkhamsted Town","Beverley Minster","Bideford United","Blackwood Forest","Bodmin Moor",
+    "Bosworth Field","Bridport Harbour"
+  ],
+  T3: [
+    // Zone 1: North
+    [
+      "Aberwick Town","Barrowfield Albion","Brannock Athletic","Calderbridge Town","Carrmoor United",
+      "Coldstream Town","Corbridge United","Cromarty Celtic","Cumbria United","Danelaw Athletic",
+      "Dunsmere United","Eastfield United","Gallowgate Athletic","Greystoke United","Hadrian Wall Rangers",
+      "Highland United","Holtby Town","Ironstone Works","Kielder United","Kirkfall Celtic",
+      "Lindisfell United","Northwyck United","Pennine Athletic","Pendlebury United","Redgrave Town",
+      "Stanhope United","Stonehaven Harriers","Teesmouth Ironworks","Whitehaven Town","Yorbury Minster",
+      "Alnwick Rovers","Beverley Athletic","Clitheroe Castle","Cockermouth United"
+    ],
+    // Zone 2: South
+    [
+      "Ashford Town","Bramblesea United","Chelmsford City","Elmwood Athletic","Falmouth Town",
+      "Harthaven Rovers","Hawthorn Town","Kingsbury Town","Lockwood Town","Marlowe United",
+      "Midsomer Town","Millwall Town","Oakhampton Town","Rookery Town","Severnside City",
+      "Silverdale Athletic","Southwark Bridge","Valeside Town","Wealdstone United","Wessex Wanderers",
+      "Amberley Athletic","Appledore Rangers","Arundel Town","Aylesbury Villa","Bampton Town",
+      "Beckenham Celtic","Berkhamsted Rovers","Bideford Albion","Blackwood Town","Bodmin Athletic",
+      "Bosworth Rangers","Bridport Town","Brockenhurst United","Buckfast Abbey"
+    ]
+  ],
+  T4: [
+    // Zone 1: North & Scotland
+    [
+      "Aberwick Celtic","Barrowfield Rovers","Brannock Thistle","Calderbridge Albion","Carrmoor Miners",
+      "Coldstream Thistle","Corbridge Town","Cromarty Port","Cumbria Wanderers","Danelaw Town",
+      "Dunsmere Town","Gallowgate Rovers","Hadrian Wall Centurions","Highland Thistle","Holtby United",
+      "Ironstone Athletic","Kirkfall Wednesday","Lindisfell Wanderers","Pennine Albion","Redgrave Miners",
+      "Stanhope Quarry","Stonehaven Bay","Teesmouth United","Yorbury Athletic","Caistor Romans",
+      "Castleford Town","Clitheroe Rovers","Cockermouth Town","Glossop North End","Helmsley Castle",
+      "Hexham Priory","Ilkley Moor","Jedburgh Borderers","Kendal Town"
+    ],
+    // Zone 2: Midlands & Wales
+    [
+      "Eastfield Rovers","Elmwood Villa","Hawthorn United","Lockwood Villa","Marlowe Docks",
+      "Midsomer Athletic","Northwyck Albion","Oakhampton Rangers","Pendlebury Old Pendlebury","Silverdale Town",
+      "Valeside Athletic","Wealdstone Borough","Wessex Royal","Buxton Spa","Daventry United",
+      "Faringdon Folly","Gainsborough Trinity","Grantham United","Halesowen Town","Knighton Town",
+      "Ledbury Town","Leek Moorlands","Ludlow Castle","Lutterworth United","Malmesbury Abbey",
+      "Matlock Town","Melksham United","Nantwich Town","Newent Town","Oakham Castle",
+      "Oswestry Borderers","Otley Chevin","Oundle Town","Pershore Abbey"
+    ],
+    // Zone 3: South & Coast
+    [
+      "Ashford Rangers","Bramblesea Marine","Chelmsford Rovers","Falmouth United","Harthaven Port",
+      "Kingsbury Royal","Millwall Rovers","Rookery Manor","Severnside United","Southwark Athletic",
+      "Whitehaven Port","Brockenhurst Rovers","Buckfast Celtic","Burnham On Sea","Cirencester Gate",
+      "Colyton Athletic","Corfe Castle","Cranborne Chase","Dartford Bridge","Denbigh Rovers",
+      "Dorking Wanderers","Dulverton Town","Dunwich Coast","Egham Runnymede","Ellesmere Port FC",
+      "Evershot Athletic","Faversham Creek","Framlingham Castle","Glastonbury Tor","Godalming Town",
+      "Harlech Castle","Hartland Point","Ilfracombe Bay","Winchester City"
+    ]
+  ],
+  T5: [
+    // Zone 1: North West
+    [
+      "West Cumbria","Greystoke Castle","South Kielder","North Kirkfall","High Pennine",
+      "Keswick Wanderers","Keswick Celtic","Penrith Castle","Penrith United","Sedbergh Fells",
+      "Sedbergh Town","Skipton Castle","Skipton United","Kendal United","Jedburgh Abbey",
+      "Denbigh Athletic","Ellesmere Rangers","Harlech Athletic","Knighton Albion","Oswestry Town",
+      "Ludlow Town","Ledbury Rovers","Nantwich Albion","Leek United","Matlock Bath",
+      "Buxton Town","Glossop Athletic","Castleford Albion","Pontefract Collieries","Pontefract Albion",
+      "Otley Athletic","Ilkley Athletic","Pickering Town","Pickering Vale"
+    ],
+    // Zone 2: North East
+    [
+      "Port Aberwick","West Carrmoor","North Cromarty","Red Star Danelaw","Danelaw Vikings",
+      "Eastfield Town","Gallowgate City","Old Gallowgate","Wallsend Hadrian","North Highland",
+      "North Ironstone","Holy Isle Lindisfell","Pennine Thistle","Redgrave Bridge","East Teesmouth",
+      "Old Yorbury","Yorbury Gate","Caistor United","Gainsborough Town","Grantham Villa",
+      "Helmsley Town","Hexham Rovers","Morpeth Town","Morpeth Harriers","Richmond Castle",
+      "Richmond Town","Whitby Abbey","Whitby Town","Saffron Walden Town","Saffron Walden Albion",
+      "Dunwich United","Framlingham Albion","Oundle Rovers","Halesowen Albion"
+    ],
+    // Zone 3: South West
+    [
+      "South Brannock","East Coldstream","High Elmwood","West Oakhampton","Severnside Bridge",
+      "West Silverdale","West Wessex","Burnham Athletic","Cirencester City","Colyton Wanderers",
+      "Corfe Villa","Cranborne Town","Dulverton Harriers","Evershot Rovers","Glastonbury Celtic",
+      "Hartland United","Ilfracombe Town","Liskeard Town","Liskeard Harriers","Malmesbury Rovers",
+      "Melksham Town","Newent Athletic","Pershore Town","Shaftesbury Abbey","Shaftesbury Rovers",
+      "Tavistock Town","Tavistock Harriers","Tewkesbury Abbey","Tewkesbury Rovers","Winchester Royals",
+      "Winchester Castle","Romsey Abbey","Romsey Town","Ringwood Forest"
+    ],
+    // Zone 4: South East
+    [
+      "North Barrowfield","St. Jude’s Barrowfield","Chelmsford Athletic","Kingsbury Orient","South Marlowe",
+      "South Millwall","Wharf Millwall","Borough of Southwark","Southwark Rangers","High Wealdstone",
+      "Dartford Albion","Dorking FC","Egham Town","Faringdon United","Faversham Town",
+      "Godalming Rovers","Lewes Priory","Lewes Athletic","Lutterworth Athletic","Lymington Pier",
+      "Lymington Town","Midhurst Town","Midhurst Rangers","Ramsgate Port","Ramsgate Athletic",
+      "Ringwood United","Rye Bay","Rye United","Sandwich Bay","Sandwich Athletic",
+      "St. Albans City","St. Albans Celtic","Liskeard Harriers Res.","Eastbourne Port"
+    ]
+  ]
+};
+
+var FIRST_NAMES_EN = [
+  "Adam","David","John","Darren","Oliver","George","Harry","Jack","Noah","Leo",
+  "Arthur","Oscar","Charlie","Freddie","Alfie","Henry","Archie","Theo","Thomas","James",
+  "Joshua","Alexander","William","Edward","Isaac","Lucas","Ethan","Max","Daniel","Jacob",
+  "Samuel","Joseph","Benjamin","Mason","Harrison","Finlay","Logan","Dylan","Caleb","Sebastian",
+  "Zachary","Toby","Luke","Liam","Matthew","Ryan","Lewis","Nathan","Callum","Connor",
+  "Kieran","Declan","Harvey","Ellis","Owen","Rhys","Cameron","Jamie","Bradley","Jordan",
+  "Scott","Ross","Craig","Stuart","Mitchell","Kyle","Travis","Brandon","Bailey","Tyler",
+  "Hayden","Ashton","Reece","Taylor","Morgan","Corey","Elliot","Finnegan","Jude","Jasper",
+  "Felix","Miles","Hugo","Gabriel","Louis","Ronnie","Reggie","Frankie","Bobby","Tommy",
+  "Sonny","Teddy","Stanley","Albert","Chester","Walter","Rupert","Monty","Barnaby","Otis",
+  "Albie","Rory","Brodie","Fraser","Hamish","Angus","Ewan","Iain","Alistair","Lachlan",
+  "Douglas","Duncan","Malcolm","Murray","Niall","Gareth","Rhodri","Ieuan","Owain","Gethin",
+  "Dafydd","Llewelyn","Sion","Bryn","Caelan","Tristan","Rowan","Dexter","Fletcher","Spencer",
+  "Carter","Cooper","Hunter","Hudson","Parker","Wyatt","Jaxon","Brody","Riley","Harley",
+  "Blake","Leon","Gavin","Callan","Keir","Brogan","Euan","Torin","Colm","Blair"
+];
+
+var LAST_NAMES_EN = [
+  "Smith","Jones","Taylor","Brown","Williams","Wilson","Johnson","Davies","Robinson","Wright",
+  "Thompson","Evans","Walker","White","Roberts","Green","Hall","Thomas","Clarke","Jackson",
+  "Wood","Harris","Edwards","Turner","Martin","Cooper","Hill","Ward","Hughes","Moore",
+  "King","Harrison","Baker","Patel","Young","Allen","Anderson","Phillips","Lee","Bell",
+  "Parker","Davis","Miller","Watson","Bennett","Shaw","Reynolds","Price","Morgan","Bailey",
+  "Carter","Kelly","Richardson","Cox","Howard","Wardle","Mitchell","James","Ellis","Campbell",
+  "Stewart","Morrison","Murray","McIntyre","Fraser","Robertson","Ross","Henderson","Graham","Johnston",
+  "Hamilton","Kerr","Ferguson","Cameron","Duncan","Armstrong","Hunter","Crawford","Reid","Burns",
+  "Gibson","Wallace","Simpson","Boyd","Fleming","Cunningham","Montgomery","Douglas","Macleod","Sinclair",
+  "Ritchie","McLean","Christie","Sutherland","Macfarlane","Buchanan","Forsyth","Griffiths","Powell","Jenkins",
+  "Owen","Vaughan","Pugh","Bevan","Lloyd","Parry","Rees","Howell","Llewellyn","Pritchard",
+  "Bowen","Meredith","Hopkins","Prosser","Watkins","Morris","Lewis","Gough","Cadwallader","Kendrick",
+  "Mostyn","Trevor","Wynn","Maddox","Gethin","Conway","Blayney","Tudor","Kyffin","Hanmer",
+  "Pennant","Salusbury","Glynne","Meyrick","Anwyl","Nannau","Fletcher","Mason","Weaver","Mercer",
+  "Skinner","Sadler","Cartwright","Wainwright","Fowler","Chandler","Glover","Potter","Webster","Baxter",
+  "Chapman","Collier","Sawyer","Barker","Coleman","Thatcher","Brewster","Spicer","Naylor","Hooper",
+  "Fuller","Dyer","Shearer","Forester","Woodward","Hayward","Horner","Roper","Wheeler","Bridger",
+  "Palmer","Atwell","Underhill","Woodhouse","Greenhalgh","Holroyd","Boothroyd","Ramsbottom","Shuttleworth","Butterworth",
+  "Higginbottom","Featherstonehaugh","Broadbent","Heginbotham","Longbottom","Sidebottom","Winterbottom","Netherwood","Higham","Clough",
+  "Bardsley","Clegg","Entwistle","Kenyon","Crompton","Hesketh","Pickup","Rawsthorne","Wigglesworth","Fairclough",
+  "Ashurst","Billington","Duckworth","Charnley","Grimshaw","Walmsley","Whalley","Eccleston","Standish","Pilkington",
+  "Atherton","Culcheth","Pemberton","Ince","Bradshaw","Tyldesley","Worsley","Risley","Holcroft","Bold",
+  "Halsall","Scarisbrick","Lathom","Tarleton","Formby","Crosby","Maghull","Melling","Altcar","Aughton",
+  "Bickerstaffe","Rainford","Windle","Parr","Haydock","Ashton","Golborne","Lowton","Rixton","Glazebrook",
+  "Croft","Middleton","Chadderton","Royton","Oldham","Lees","Saddleworth","Quick","Mossley","Stalybridge",
+  "Dukinfield","Hyde","Newton","Godley","Mottram","Hollingworth","Tintwistle","Hadfield","Padfield","Glossop",
+  "Charlesworth","Chisworth","Ludworth","Marple","Mellor","Disley","Poynton","Adlington","Bollington","Rainow",
+  "Kettleshulme","Taxal","Whaley","Yeardsley","Buxworth","Chinley","Bugsworth","Brownside","Chapel","Fernilee",
+  "Hartington","Fairfield","Buxton","Burbage","Unsworth","Horrocks","Wolstenholme","Fitton","Hardman","Schofield",
+  "Kershaw","Stott","Bamford","Ashworth","Heywood","Healey","Whitworth","Littlewood","Hamer","Buckley",
+  "Ogden","Scholes","Travis","Gartside","Wrigley","Kenworthy","Radclyffe","Rylands","Partington","Warburton",
+  "Leigh","Astley","Hulton","Harwood","Sharples","Turton","Edgworth","Quarlton","Topping","Haslam",
+  "Horwich","Anderton","Rivington","Heath","Charnock","Duxbury","Coppull","Langtree","Shevington","Wrightington",
+  "Parbold","Dalton","Upholland","Orrell","Billinge","Winstanley","Abram","Hindley","Haigh","Aspull",
+  "Blackrod","Westhoughton","Lostock","Heaton","Rumworth","Halliwell","Tonge","Breightmet","Darcy","Lever",
+  "Farnworth","Kearsley","Clifton","Pendlebury","Prestwich","Broughton","Cheetham","Crumpsall","Blackley","Harpurhey",
+  "Moston","Failsworth","Droylsden","Gorton","Openshaw","Bradford","Beswick","Ardwick","Chorlton","Hulme",
+  "Moss","Rusholme","Fallowfield","Withington","Didsbury","Burnage","Levenshulme","Reddish","Norris","Cheadle",
+  "Gatley","Stockport","Brinnington","Bredbury","Romiley","Offerton","Torkington","Norbury","Bramhall","Woodford",
+  "Handforth","Styal","Wilmslow","Morley","Pownall","Chorley","Alderley","Nether","Over","Chelford",
+  "Warford","Marthall","Ollerton","Toft","Bexton","Knutsford","Tabley","Rostherne","Tatton","Mere",
+  "Millington","Legh","Agden","Dunham","Massey","Carrington","Sale","Mersey","Timperley","Altrincham",
+  "Bowdon","Hale","Ashley","Ringway","Mobberley","Peover","Superior","Inferior","Plumley","Pickmere",
+  "Wincham","Marston","Gralam","Northwich","Witton","Leftwich","Davenham","Bostock","Wharton","Winsford",
+  "Weaverham","Acton","Cliff","Crowton","Norley","Kingsley","Frodsham","Helsby","Alvanley","Manley",
+  "Hapsford","Elton","Thornton","Moors","Stanlow","Ellesmere","Port","Whitby","Sutton","Childer",
+  "Hooton","Willaston","Ness","Neston","Parkgate","Burton","Puddington","Shotwick","Capenhurst","Ledsham",
+  "Lea","Mollington","Backford","Upton","Chester","Blacon","Saughall","Hoole","Boughton","Christleton",
+  "Littleton","Waverton","Saighton","Aldford","Churton","Farndon","Shocklach","Tilston","Malpas","Cholmondeley",
+  "Bickerton","Bulkeley","Peckforton","Beeston","Tarporley","Bunbury","Alpraham","Calveley","Barbridge","Wettenhall",
+  "Cholmondeston","Minshull","Vernon","Church","Coppenhall","Monks","Crewe","Haslington","Barthomley","Weston",
+  "Basford","Shavington","Gresty","Wistaston","Nantwich","Woolstanwood","Leighton","Worleston","Poole","Aston",
+  "Juxta","Mondrum","Baddiley","Brindley","Burland","Faddiley","Hurleston","Edleston","Henhull","Sound",
+  "Austerson","Baddington","Broomhall","Coole","Pilate","Hankelow","Hatherton","Walgherton","Doddington","Blakenhall",
+  "Checkley","Wrinehill","Betley","Madeley","Woore","Pipe","Gate","Knighton","Onneley","Gravenhunger",
+  "Dorrington","Mucklestone","Oakley","Winnington","Bearstone"
+];
+
+var IDB_NAME = "WimbledonUltimatePyramidDB";
+var IDB_VERSION = 1;
+
+var isBusy = false;
+var seasonNumber = 1;
+var currentGlobalMatchday = 0;
+var browsingMatchday = 0;
+var currentRootMode = 'sim';
+var activeTier = 'T1';
+var activeZona = 1;
+var activeSubTab = 1;
+var activeCareerSubTab = 1;
+var selectedClubId = null;
+
+var DB = {
+  season: 1,
+  globalMatchday: 0,
+  clubs: [],
+  clubById: {},
+  rostersByClubId: {},
+  players: [],
+  playerById: {},
+  standings: {},
+  stats: {},
+  matchStore: {},
+  faCup64: null,
+  leagueCup64: null,
+  career: {
+    clubId: null,
+    rating: 80,
+    balance: 5000000,
+    weeklyWage: 65000,
+    tactics: { formation: "4-3-3", mentality: "Balanced", tempo: "Direct", familiarity: 85 }
+  }
+};
+
+var clubsByZoneCache = {};
+
+function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function pseudoRandom(seed) {
+  var s = Math.floor(Math.abs(seed)) % 2147483647;
+  if (s <= 0) s += 2147483646;
+  var f = function() { return (s = s * 16807 % 2147483647) / 2147483647; };
+  f(); f(); f(); f();
+  return f;
+}
+
+function nameFromId(n) {
+  var F = FIRST_NAMES_EN.length, L = LAST_NAMES_EN.length, pairs = F * L;
+  if (n < pairs) {
+    var k = (n * 7919) % pairs;
+    return FIRST_NAMES_EN[k % F] + ' ' + LAST_NAMES_EN[Math.floor(k / F)];
+  }
+  var m = n - pairs, total = pairs * L, k2 = (m * 104729) % total;
+  return FIRST_NAMES_EN[k2 % F] + ' ' + LAST_NAMES_EN[Math.floor(k2 / F) % L];
+}
+
+/* === [AKHIR PART 1 - SAMBUNG KE PART 2] === */
+
+// ==============================================================
+// 2. PEMBANGKIT DATABASE LENGKAP DENGAN MODUL PERFORMA
+// ==============================================================
+var ROSTER_ROLES = [
+  "GK", "GK",
+  "CB", "CB", "CB", "CB", "LB", "LB", "RB", "RB",
+  "DMF", "DMF", "CMF", "CMF", "CMF", "AMF", "AMF",
+  "LWF", "RWF", "CF"
+];
+
+var PLAYER_TRAITS_POOL = ["Standard", "Clutch Finisher", "Set-Piece Specialist", "Big Game Player", "Workhorse"];
+
+function assignSquadNumbers(roster) {
+  var poolByRole = {
+    "GK": [1, 13, 22],
+    "RB": [2, 12, 20],
+    "LB": [3, 14, 21],
+    "CB": [4, 5, 6, 15, 16],
+    "DMF": [4, 6, 8, 18],
+    "CMF": [8, 10, 17, 24],
+    "AMF": [10, 23, 27],
+    "LWF": [11, 19, 29],
+    "RWF": [7, 18, 28],
+    "CF": [9, 11, 25, 99]
+  };
+  var used = new Set();
+  roster.forEach(function(p) {
+    var pool = poolByRole[p.Ruolo] || [10, 20, 30];
+    var assigned = null;
+    for (var i = 0; i < pool.length; i++) {
+      if (!used.has(pool[i])) { assigned = pool[i]; break; }
+    }
+    if (!assigned) {
+      for (var n = 1; n <= 99; n++) {
+        if (!used.has(n)) { assigned = n; break; }
+      }
+    }
+    used.add(assigned);
+    p.Numero = assigned;
+  });
+}
+
+function refreshZoneCache() {
+  clubsByZoneCache = {};
+  Object.keys(TIER_CONFIG).forEach(function(tKey) {
+    var cfg = TIER_CONFIG[tKey];
+    var totalZ = cfg.zones === 0 ? 1 : cfg.zones;
+    for (var z = 1; z <= totalZ; z++) {
+      var zVal = cfg.zones === 0 ? 0 : z;
+      var key = cfg.zones === 0 ? tKey : (tKey + "_" + z);
+      clubsByZoneCache[key] = DB.clubs.filter(function(c) { return c.Tier === tKey && c.Zona === zVal; });
+    }
+  });
+}
+
+function buildPyramidClubs() {
+  var cList = [];
+  var cIdCounter = 1;
+  var pIdCounter = 1001;
+
+  Object.keys(TIER_CONFIG).forEach(function(tKey) {
+    var cfg = TIER_CONFIG[tKey];
+    var raw = WIMBLEDON_RAW_DATA[tKey];
+    var totalZ = cfg.zones === 0 ? 1 : cfg.zones;
+
+    for (var z = 1; z <= totalZ; z++) {
+      var zVal = cfg.zones === 0 ? 0 : z;
+      var clubNames = cfg.zones === 0 ? raw : raw[z - 1];
+      var standKey = cfg.zones === 0 ? tKey : (tKey + "_" + z);
+      DB.standings[standKey] = [];
+
+      clubNames.forEach(function(cName) {
+        var cid = "WMB-" + String(cIdCounter).padStart(4, '0');
+        var r = Math.random;
+        var ovr = Math.round(cfg.ovrMin + r() * (cfg.ovrMax - cfg.ovrMin));
+        var stadiumName = cName.indexOf("City") !== -1 ? (cName + " Stadium") : ("St. " + cName.split(" ")[0] + " Ground");
+        var capacity = Math.round(cfg.capBase * (0.85 + r() * 0.35));
+        var budget = Math.round((ovr * ovr) * 3500);
+
+        var clubObj = {
+          ID_Club: cid,
+          Nome: cName,
+          Tier: tKey,
+          Zona: zVal,
+          Stadio: stadiumName,
+          Capienza: capacity,
+          PrezzoBiglietto: cfg.tktPrice,
+          MatchdayRevenue: 0,
+          Budget: budget,
+          OVR_Tim: ovr,
+          MoraleTeam: 75,
+          Chemistry: 80,
+          recentMatches: []
+        };
+
+        cList.push(clubObj);
+        DB.clubById[cid] = clubObj;
+        DB.rostersByClubId[cid] = [];
+
+        DB.standings[standKey].push({
+          ID_Club: cid,
+          Nome: cName,
+          OVR_Tim: ovr,
+          P: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, Pts: 0, Form: []
+        });
+
+        var squad = [];
+        for (var i = 0; i < ROSTER_ROLES.length; i++) {
+          var pid = "PLY-" + String(pIdCounter).padStart(6, '0');
+          var role = ROSTER_ROLES[i];
+          var age = 18 + Math.floor(r() * 15);
+          var potDelta = Math.round((r() + r() - 1) * 8);
+          var pOvr = Math.max(35, Math.min(99, Math.round(ovr + potDelta)));
+          var pName = nameFromId(pIdCounter);
+
+          var leadershipVal = Math.min(20, Math.max(1, Math.round((age - 18) * 1.1 + r() * 5)));
+          var traitRoll = r();
+          var trait = traitRoll < 0.15 ? "Clutch Finisher" : (traitRoll < 0.28 ? "Set-Piece Specialist" : (traitRoll < 0.40 ? "Big Game Player" : (traitRoll < 0.55 ? "Workhorse" : "Standard")));
+
+          var pObj = {
+            ID_Giocatore: pid,
+            Nome_Completo: pName,
+            Numero: null,
+            ID_Club: cid,
+            Squadra: cName,
+            Ruolo: role,
+            OVR: pOvr,
+            Eta: age,
+            Fitness: 100,
+            Morale: 75 + Math.floor(r() * 20),
+            Leadership: leadershipVal,
+            Trait: trait,
+            Piede_Preferito: r() < 0.78 ? "Right" : "Left",
+            Infortunato: 0,
+            InjuryDesc: "",
+            eventLogs: []
+          };
+
+          DB.players.push(pObj);
+          DB.playerById[pid] = pObj;
+          squad.push(pObj);
+          DB.stats[pid] = { goals: 0, assists: 0, matches: 0, cleanSheets: 0, yellowCards: 0, bans: 0 };
+          pIdCounter++;
+        }
+
+        assignSquadNumbers(squad);
+        DB.rostersByClubId[cid] = squad;
+        cIdCounter++;
+      });
+    }
+  });
+
+  DB.clubs = cList;
+}
+
+function initCup64(cupType, se) {
+  var r = pseudoRandom(se * 8819 + (cupType === 'fa' ? 71 : 33));
+  var t1Clubs = DB.clubs.filter(function(c){ return c.Tier === 'T1'; }).map(function(c){ return c.ID_Club; });
+  var entrants = [];
+
+  if (cupType === 'fa') {
+    var seeded16 = t1Clubs.slice(0, 16);
+    var remainingT1 = t1Clubs.slice(16);
+    var t2Clubs = DB.clubs.filter(function(c){ return c.Tier === 'T2'; }).map(function(c){ return c.ID_Club; });
+    var proPool = shuffleArr(remainingT1.concat(t2Clubs), r).slice(0, 24);
+
+    var lowerTiers = DB.clubs.filter(function(c){ return c.Tier !== 'T1' && c.Tier !== 'T2'; }).map(function(c){ return c.ID_Club; });
+    var wild24 = shuffleArr(lowerTiers, r).slice(0, 24);
+
+    var challengers = shuffleArr(proPool.concat(wild24), r);
+    for (var i = 0; i < 16; i++) {
+      entrants.push(seeded16[i]);
+      entrants.push(challengers[i]);
+    }
+    for (var j = 16; j < 48; j += 2) {
+      entrants.push(challengers[j]);
+      entrants.push(challengers[j + 1]);
+    }
+  } else {
+    var allT1T2 = DB.clubs.filter(function(c){ return c.Tier === 'T1' || c.Tier === 'T2'; }).map(function(c){ return c.ID_Club; });
+    entrants = shuffleArr(allT1T2, r);
+  }
+
+  var makeEmpty = function(count) {
+    var arr = [];
+    for (var k = 0; k < count; k++) arr.push({ h: null, a: null, res: null });
+    return arr;
+  };
+
+  var r64 = [];
+  for (var c = 0; c < 32; c++) {
+    r64.push({ h: entrants[c * 2], a: entrants[c * 2 + 1], res: null });
+  }
+
+  return {
+    r64: r64, r32: makeEmpty(16), r16: makeEmpty(8), qf: makeEmpty(4), sf: makeEmpty(2), final: makeEmpty(1),
+    winner: null, runner: null
+  };
+}
+
+function shuffleArr(arr, r) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(r() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+
+function generateMassiveDatabase() {
+  if (isBusy) return;
+  setAppBusy(true, "Building 370 Clubs British Pyramid...");
+
+  setTimeout(function() {
+    DB.season = seasonNumber;
+    DB.globalMatchday = 0;
+    currentGlobalMatchday = 0;
+    browsingMatchday = 0;
+    DB.clubs = [];
+    DB.clubById = {};
+    DB.rostersByClubId = {};
+    DB.players = [];
+    DB.playerById = {};
+    DB.standings = {};
+    DB.stats = {};
+    DB.matchStore = {};
+
+    buildPyramidClubs();
+    refreshZoneCache();
+
+    DB.faCup64 = initCup64('fa', 1);
+    DB.leagueCup64 = initCup64('lc', 1);
+
+    selectedClubId = DB.standings['T1'][0].ID_Club;
+    saveLocalState();
+    setAppBusy(false, "370 Clubs & 7,400 Players successfully initialized!");
+    document.getElementById("global-week-display").innerText = "0";
+    document.getElementById("browsing-week-display").innerText = "0";
+    renderTierNavigation();
+    renderZonaNavigation();
+    renderCurrentView();
+  }, 40);
+}
+
+// ==============================================================
+// 3. ENGINE PERHITUNGAN KEKUATAN & MATCHDAY POISSON
+// ==============================================================
+function calculatePlayerEffectiveOVR(p) {
+  var eff = p.OVR;
+  if (p.Fitness < 80) eff -= Math.round((80 - p.Fitness) * 0.25);
+  if (p.Morale >= 85) eff += 2;
+  else if (p.Morale < 45) eff -= 3;
+  return Math.max(25, eff);
+}
+
+function selectStartingLineup(squad) {
+  var avail = squad.filter(function(p){ return p.Infortunato === 0 && (!DB.stats[p.ID_Giocatore] || DB.stats[p.ID_Giocatore].bans === 0); });
+  var gks = avail.filter(function(p){ return p.Ruolo === "GK"; }).sort(function(a,b){ return calculatePlayerEffectiveOVR(b) - calculatePlayerEffectiveOVR(a); });
+  var outfields = avail.filter(function(p){ return p.Ruolo !== "GK"; }).sort(function(a,b){ return calculatePlayerEffectiveOVR(b) - calculatePlayerEffectiveOVR(a); });
+
+  var starting = [];
+  var used = new Set();
+  if (gks.length > 0) { starting.push(gks[0]); used.add(gks[0].ID_Giocatore); }
+
+  function pickRoles(roles, count) {
+    var c = 0;
+    for (var i = 0; i < outfields.length && c < count; i++) {
+      var p = outfields[i];
+      if (!used.has(p.ID_Giocatore) && roles.indexOf(p.Ruolo) !== -1) {
+        used.add(p.ID_Giocatore); starting.push(p); c++;
+      }
+    }
+  }
+
+  pickRoles(["CB", "LB", "RB"], 4);
+  pickRoles(["DMF", "CMF", "AMF"], 3);
+  pickRoles(["CF", "LWF", "RWF"], 3);
+
+  for (var j = 0; j < outfields.length && starting.length < 11; j++) {
+    if (!used.has(outfields[j].ID_Giocatore)) { used.add(outfields[j].ID_Giocatore); starting.push(outfields[j]); }
+  }
+
+  var subs = outfields.filter(function(p){ return !used.has(p.ID_Giocatore); }).slice(0, 5);
+  return { starting: starting, subs: subs };
+}
+
+function calculateTeamDynamicPower(club, lineup, isHome) {
+  var xi = lineup.starting;
+  if (!xi.length) return club.OVR_Tim || 50;
+
+  var sumOvr = 0;
+  var maxLeadership = 0;
+  var traitBoost = 0;
+
+  xi.forEach(function(p) {
+    sumOvr += calculatePlayerEffectiveOVR(p);
+    if (p.Leadership > maxLeadership) maxLeadership = p.Leadership;
+    if (p.Trait === "Big Game Player" && (club.Tier === "T1" || club.Tier === "T2")) traitBoost += 0.3;
+    if (p.Trait === "Workhorse") traitBoost += 0.2;
+  });
+
+  var avgOvr = sumOvr / xi.length;
+  var captaincyBuff = (maxLeadership - 10) * 0.15;
+  var chemistryFactor = ((club.Chemistry || 80) - 75) * 0.08;
+  var moraleFactor = ((club.MoraleTeam || 75) - 70) * 0.1;
+
+  var crowdAtmosphere = 0;
+  if (isHome) {
+    var occupancy = Math.min(1.0, Math.max(0.4, (club.MatchdayRevenue || 10000) / (club.Capienza * club.PrezzoBiglietto + 1)));
+    crowdAtmosphere = 2.0 + (occupancy * 1.5);
+  }
+
+  return avgOvr + captaincyBuff + chemistryFactor + moraleFactor + crowdAtmosphere + traitBoost;
+}
+
+function getPairingForMatchday(zoneClubs, matchday) {
+  if (!zoneClubs || zoneClubs.length === 0) return [];
+  var n = zoneClubs.length;
+  var isSecondHalf = matchday > (n - 1);
+  var roundIdx = (matchday - 1) % (n - 1);
+  var pairs = [];
+
+  for (var i = 0; i < n / 2; i++) {
+    var t1 = (roundIdx + i) % (n - 1);
+    var t2 = (n - 1 - i + roundIdx) % (n - 1);
+    if (i === 0) t2 = n - 1;
+
+    var h = isSecondHalf ? zoneClubs[t2] : zoneClubs[t1];
+    var a = isSecondHalf ? zoneClubs[t1] : zoneClubs[t2];
+    pairs.push({ home: h, away: a });
+  }
+  return pairs;
+}
+
+function simulateSingleMatch(homeClub, awayClub, matchday) {
+  var matchId = "WMB-M-" + DB.season + "-" + matchday + "-" + homeClub.ID_Club + "-" + awayClub.ID_Club;
+  if (DB.matchStore[matchId] && DB.matchStore[matchId].Played) return DB.matchStore[matchId];
+
+  var hRoster = DB.rostersByClubId[homeClub.ID_Club] || [];
+  var aRoster = DB.rostersByClubId[awayClub.ID_Club] || [];
+
+  var hL = selectStartingLineup(hRoster);
+  var aL = selectStartingLineup(aRoster);
+  var hActive = hL.starting.concat(hL.subs.slice(0, 3));
+  var aActive = aL.starting.concat(aL.subs.slice(0, 3));
+
+  hActive.forEach(function(p){ if (DB.stats[p.ID_Giocatore]) DB.stats[p.ID_Giocatore].matches++; });
+  aActive.forEach(function(p){ if (DB.stats[p.ID_Giocatore]) DB.stats[p.ID_Giocatore].matches++; });
+
+  var powerH = calculateTeamDynamicPower(homeClub, hL, true);
+  var powerA = calculateTeamDynamicPower(awayClub, aL, false);
+
+  if (DB.career.clubId === homeClub.ID_Club) {
+    if (DB.career.tactics.mentality === "Attacking") powerH += 3.5;
+    else if (DB.career.tactics.mentality === "Defensive") powerH -= 2.0;
+  }
+  if (DB.career.clubId === awayClub.ID_Club) {
+    if (DB.career.tactics.mentality === "Attacking") powerA += 3.5;
+    else if (DB.career.tactics.mentality === "Defensive") powerA -= 2.0;
+  }
+
+  var attRatio = Math.min(1.0, Math.max(0.40, 0.60 + ((powerH + powerA) / 200) * 0.4));
+  var crowd = Math.round(homeClub.Capienza * attRatio);
+  var income = crowd * homeClub.PrezzoBiglietto;
+  var hWeeklyWage = Math.round(homeClub.Budget * 0.007);
+  var aWeeklyWage = Math.round(awayClub.Budget * 0.007);
+  homeClub.Budget = Math.max(50000, homeClub.Budget + income - hWeeklyWage);
+  homeClub.MatchdayRevenue = (homeClub.MatchdayRevenue || 0) + income;
+  awayClub.Budget = Math.max(50000, awayClub.Budget - aWeeklyWage);
+
+  if (DB.career.clubId === homeClub.ID_Club) DB.career.balance += income - DB.career.weeklyWage;
+
+  var diff = powerH - powerA;
+  var lh = Math.max(0.35, 1.4 + diff * 0.08);
+  var la = Math.max(0.20, 1.1 - diff * 0.08);
+
+  var hScore = 0, aScore = 0;
+  for (var k = 0; k < 5; k++) {
+    if (Math.random() < (lh / 3.4)) hScore++;
+    if (Math.random() < (la / 3.4)) aScore++;
+  }
+
+  if (aScore === 0) {
+    hL.starting.forEach(function(p){ if (p.Ruolo === "GK" || ["CB","LB","RB"].indexOf(p.Ruolo)!==-1) DB.stats[p.ID_Giocatore].cleanSheets++; });
+  }
+  if (hScore === 0) {
+    aL.starting.forEach(function(p){ if (p.Ruolo === "GK" || ["CB","LB","RB"].indexOf(p.Ruolo)!==-1) DB.stats[p.ID_Giocatore].cleanSheets++; });
+  }
+
+  var standKey = homeClub.Tier === 'T1' || homeClub.Tier === 'T2' ? homeClub.Tier : (homeClub.Tier + "_" + homeClub.Zona);
+  var tab = DB.standings[standKey];
+  if (tab) {
+    var hRow = tab.find(function(t){ return t.ID_Club === homeClub.ID_Club; });
+    var aRow = tab.find(function(t){ return t.ID_Club === awayClub.ID_Club; });
+    if (hRow && aRow) {
+      hRow.P++; aRow.P++;
+      hRow.GF += hScore; hRow.GA += aScore; hRow.GD = hRow.GF - hRow.GA;
+      aRow.GF += aScore; aRow.GA += hScore; aRow.GD = aRow.GF - aRow.GA;
+      if (hScore > aScore) {
+        hRow.W++; hRow.Pts += 3; hRow.Form.unshift('W'); aRow.L++; aRow.Form.unshift('L');
+        homeClub.MoraleTeam = Math.min(100, (homeClub.MoraleTeam || 75) + 4);
+        awayClub.MoraleTeam = Math.max(30, (awayClub.MoraleTeam || 75) - 3);
+      } else if (hScore < aScore) {
+        aRow.W++; aRow.Pts += 3; aRow.Form.unshift('W'); hRow.L++; hRow.Form.unshift('L');
+        awayClub.MoraleTeam = Math.min(100, (awayClub.MoraleTeam || 75) + 5);
+        homeClub.MoraleTeam = Math.max(30, (homeClub.MoraleTeam || 75) - 4);
+      } else {
+        hRow.D++; aRow.D++; hRow.Pts += 1; aRow.Pts += 1;
+        hRow.Form.unshift('D'); aRow.Form.unshift('D');
+      }
+      if (hRow.Form.length > 10) hRow.Form.pop();
+      if (aRow.Form.length > 10) aRow.Form.pop();
+    }
+  }
+
+  homeClub.recentMatches.unshift({ matchday: matchday, opponent: awayClub.Nome, isHome: true, scoreText: hScore + " - " + aScore, status: hScore > aScore ? 'W' : (hScore === aScore ? 'D' : 'L') });
+  if (homeClub.recentMatches.length > 8) homeClub.recentMatches.pop();
+  awayClub.recentMatches.unshift({ matchday: matchday, opponent: homeClub.Nome, isHome: false, scoreText: aScore + " - " + hScore, status: aScore > hScore ? 'W' : (aScore === hScore ? 'D' : 'L') });
+  if (awayClub.recentMatches.length > 8) awayClub.recentMatches.pop();
+
+  // Pengurangan Stamina Mingguan Pasca-Laga
+  hActive.forEach(function(p) {
+    var drain = p.Trait === "Workhorse" ? 4 : 7;
+    p.Fitness = Math.max(20, p.Fitness - drain);
+  });
+  aActive.forEach(function(p) {
+    var drain = p.Trait === "Workhorse" ? 4 : 7;
+    p.Fitness = Math.max(20, p.Fitness - drain);
+  });
+
+  // Pemulihan stamina bagi pemain yang tidak bertanding
+  hRoster.forEach(function(p) { if (hActive.indexOf(p) === -1) p.Fitness = Math.min(100, p.Fitness + 12); });
+  aRoster.forEach(function(p) { if (aActive.indexOf(p) === -1) p.Fitness = Math.min(100, p.Fitness + 12); });
+
+  var events = [];
+  function assignMatchGoals(count, squad, ownClub, oppClub, side) {
+    var outfield = squad.filter(function(p){ return p.Ruolo !== "GK"; });
+    for (var g = 0; g < count; g++) {
+      var minute = Math.floor(Math.random() * 85) + 5;
+      var fwd = outfield.filter(function(p){ return ["CF","LWF","RWF"].indexOf(p.Ruolo)!==-1; });
+      var clutchPlayers = fwd.filter(function(p){ return p.Trait === "Clutch Finisher"; });
+      var scorer = (minute >= 75 && clutchPlayers.length && Math.random() < 0.6) ? pickRandom(clutchPlayers) : ((Math.random() < 0.75 && fwd.length > 0) ? pickRandom(fwd) : pickRandom(outfield));
+      var assister = Math.random() < 0.78 ? pickRandom(outfield.filter(function(p){ return p.ID_Giocatore !== scorer.ID_Giocatore; })) : null;
+
+      DB.stats[scorer.ID_Giocatore].goals++;
+      scorer.Morale = Math.min(100, scorer.Morale + 5);
+      scorer.eventLogs.unshift({ matchday: matchday, minute: minute, opponent: oppClub.Nome, type: "Goal" });
+      if (scorer.eventLogs.length > 8) scorer.eventLogs.pop();
+
+      if (assister) {
+        DB.stats[assister.ID_Giocatore].assists++;
+        assister.Morale = Math.min(100, assister.Morale + 3);
+        assister.eventLogs.unshift({ matchday: matchday, minute: minute, opponent: oppClub.Nome, type: "Assist" });
+        if (assister.eventLogs.length > 8) assister.eventLogs.pop();
+      }
+
+      events.push({
+        minute: minute, team: side, clubName: ownClub.Nome,
+        player: scorer.Nome_Completo, playerId: scorer.ID_Giocatore, playerNumber: scorer.Numero,
+        assister: assister ? assister.Nome_Completo : null, assisterId: assister ? assister.ID_Giocatore : null, assisterNumber: assister ? assister.Numero : null
+      });
+    }
+  }
+
+  assignMatchGoals(hScore, hActive, homeClub, awayClub, "home");
+  assignMatchGoals(aScore, aActive, awayClub, homeClub, "away");
+  events.sort(function(a,b){ return a.minute - b.minute; });
+
+  var matchRecord = {
+    ID_Partita: matchId,
+    Giornata: matchday,
+    Played: true,
+    HomeID: homeClub.ID_Club,
+    AwayID: awayClub.ID_Club,
+    HomeScore: hScore,
+    AwayScore: aScore,
+    Events: events
+  };
+
+  DB.matchStore[matchId] = matchRecord;
+  return matchRecord;
+}
+
+// ==============================================================
+// 4. KONTROL BATCH SIMULASI & INTEGRASI PIALA
+// ==============================================================
+function triggerGlobalBatchSimulation(rounds) {
+  if (isBusy || !DB.clubs || DB.clubs.length === 0) return;
+  var startRound = currentGlobalMatchday + 1;
+  var targetEnd = currentGlobalMatchday + rounds;
+  var cur = startRound;
+
+  if (Object.keys(clubsByZoneCache).length === 0) refreshZoneCache();
+  var zKeys = Object.keys(clubsByZoneCache);
+
+  setAppBusy(true, "Simulating " + rounds + " matchday rounds...");
+
+  function stepSim() {
+    if (cur <= targetEnd) {
+      setAppBusy(true, "Simulating Matchday " + cur + " across 5 Tiers...");
+
+      for (var z = 0; z < zKeys.length; z++) {
+        var clubs = clubsByZoneCache[zKeys[z]];
+        var totalJornadas = (clubs.length - 1) * 2;
+        if (cur > totalJornadas) continue;
+
+        var pairings = getPairingForMatchday(clubs, cur);
+        for (var p = 0; p < pairings.length; p++) {
+          simulateSingleMatch(pairings[p].home, pairings[p].away, cur);
+        }
+      }
+
+      advanceCupsIfScheduled(cur);
+
+      if (cur > 8) {
+        var pruneW = cur - 8;
+        Object.keys(DB.matchStore).forEach(function(k){
+          if (DB.matchStore[k] && DB.matchStore[k].Giornata === pruneW) DB.matchStore[k].Events = [];
+        });
+      }
+
+      cur++;
+      setTimeout(stepSim, 10);
+    } else {
+      currentGlobalMatchday = targetEnd;
+      DB.globalMatchday = targetEnd;
+      browsingMatchday = targetEnd;
+
+      Object.keys(DB.standings).forEach(function(k){
+        if (DB.standings[k]) {
+          DB.standings[k].sort(function(a,b){ return (b.Pts - a.Pts) || (b.GD - a.GD) || (b.GF - a.GF); });
+        }
+      });
+
+      saveLocalState();
+      setAppBusy(false, "Simulated successfully up to Matchday " + currentGlobalMatchday + ".");
+      document.getElementById("global-week-display").innerText = currentGlobalMatchday;
+      document.getElementById("browsing-week-display").innerText = browsingMatchday;
+      renderCurrentView();
+    }
+  }
+
+  stepSim();
+}
+
+function advanceCupsIfScheduled(mDay) {
+  var cupSchedule = [10, 20, 30, 42, 54, 64];
+  var stages = ["r64", "r32", "r16", "qf", "sf", "final"];
+  var stIdx = cupSchedule.indexOf(mDay);
+  if (stIdx === -1) return;
+
+  var stName = stages[stIdx];
+  var nextSt = stages[stIdx + 1] || null;
+
+  ['faCup64', 'leagueCup64'].forEach(function(cKey){
+    var cup = DB[cKey];
+    if (!cup || !cup[stName]) return;
+
+    cup[stName].forEach(function(m, idx){
+      if (!m.res && m.h && m.a) {
+        var hC = DB.clubById[m.h], aC = DB.clubById[m.a];
+        var ovrH = hC ? hC.OVR_Tim : 60, ovrA = aC ? aC.OVR_Tim : 60;
+        var r = pseudoRandom(DB.season * 999 + idx * 37 + mDay);
+        var gh = Math.floor(r() * 3) + (ovrH > ovrA ? 1 : 0);
+        var ga = Math.floor(r() * 3) + (ovrA > ovrH ? 1 : 0);
+        if (stName === 'final' && gh === ga) gh++;
+        var win = gh >= ga ? m.h : m.a;
+        var los = win === m.h ? m.a : m.h;
+        m.res = { gh: gh, ga: ga, winner: win, loser: los };
+
+        if (nextSt && cup[nextSt]) {
+          var targetM = cup[nextSt][Math.floor(idx / 2)];
+          if (idx % 2 === 0) targetM.h = win; else targetM.a = win;
+        }
+        if (stName === 'final') { cup.winner = win; cup.runner = los; }
+      }
+    });
+  });
+}
+
+function navigateWeek(delta) {
+  var maxMatchdays = (TIER_CONFIG[activeTier].clubsPerZone - 1) * 2;
+  var target = browsingMatchday + delta;
+  if (target < 1) target = 1;
+  if (target > maxMatchdays) target = maxMatchdays;
+  browsingMatchday = target;
+  document.getElementById("browsing-week-display").innerText = browsingMatchday;
+  renderCurrentView();
+}
+
+function jumpToCurrentSimulatedWeek() {
+  browsingMatchday = currentGlobalMatchday > 0 ? currentGlobalMatchday : 1;
+  document.getElementById("browsing-week-display").innerText = browsingMatchday;
+  renderCurrentView();
+}
+
+// ==============================================================
+// 5. PERSISTENSI INDEXEDDB & EKSPOR
+// ==============================================================
+function setAppBusy(busy, msg) {
+  isBusy = busy;
+  var sp = document.getElementById("loading-spinner");
+  var txt = document.getElementById("status-text");
+  var btns = document.querySelectorAll("button");
+  if (busy) {
+    if (sp) sp.style.display = "inline-block";
+    if (txt) txt.innerText = msg || "Processing...";
+    btns.forEach(function(b){ b.disabled = true; });
+  } else {
+    if (sp) sp.style.display = "none";
+    if (txt) txt.innerText = msg || "Ready.";
+    btns.forEach(function(b){ b.disabled = false; });
+  }
+}
+
+function saveLocalState() {
+  try {
+    if (!window.indexedDB) return;
+    var req = window.indexedDB.open(IDB_NAME, IDB_VERSION);
+    req.onupgradeneeded = function(e){ var db = e.target.result; if (!db.objectStoreNames.contains("k")) db.createObjectStore("k"); };
+    req.onsuccess = function(e){
+      var db = e.target.result;
+      var tx = db.transaction("k", "readwrite");
+      tx.objectStore("k").put({
+        season: DB.season, globalMatchday: DB.globalMatchday,
+        clubs: DB.clubs, players: DB.players, standings: DB.standings,
+        stats: DB.stats, career: DB.career, faCup64: DB.faCup64, leagueCup64: DB.leagueCup64
+      }, "root");
+    };
+  } catch(e){}
+}
+
+function loadLocalState() {
+  return new Promise(function(resolve){
+    try {
+      if (!window.indexedDB) return resolve(false);
+      var req = window.indexedDB.open(IDB_NAME, IDB_VERSION);
+      req.onupgradeneeded = function(e){ var db = e.target.result; if (!db.objectStoreNames.contains("k")) db.createObjectStore("k"); };
+      req.onsuccess = function(e){
+        var db = e.target.result;
+        var tx = db.transaction("k", "readonly");
+        var getReq = tx.objectStore("k").get("root");
+        getReq.onsuccess = function(){
+          if (getReq.result && getReq.result.clubs && getReq.result.clubs.length > 0) {
+            var r = getReq.result;
+            DB.season = r.season || 1;
+            DB.globalMatchday = r.globalMatchday || 0;
+            DB.clubs = r.clubs || [];
+            DB.players = r.players || [];
+            DB.standings = r.standings || {};
+            DB.stats = r.stats || {};
+            DB.career = r.career || DB.career;
+            DB.faCup64 = r.faCup64 || null;
+            DB.leagueCup64 = r.leagueCup64 || null;
+
+            DB.clubById = {};
+            DB.rostersByClubId = {};
+            DB.clubs.forEach(function(c){ DB.clubById[c.ID_Club] = c; DB.rostersByClubId[c.ID_Club] = []; });
+            DB.playerById = {};
+            DB.players.forEach(function(p){
+              DB.playerById[p.ID_Giocatore] = p;
+              if (DB.rostersByClubId[p.ID_Club]) DB.rostersByClubId[p.ID_Club].push(p);
+            });
+            refreshZoneCache();
+            resolve(true);
+          } else resolve(false);
+        };
+        getReq.onerror = function(){ resolve(false); };
+      };
+      req.onerror = function(){ resolve(false); };
+    } catch(err){ resolve(false); }
+  });
+}
+
+function exportMultiSheetExcel() {
+  if (isBusy || !DB.clubs.length || typeof XLSX === 'undefined') return;
+  setAppBusy(true, "Compiling multi-sheet Excel workbook...");
+
+  setTimeout(function(){
+    var wb = XLSX.utils.book_new();
+    var clubsSummary = DB.clubs.map(function(c, i){
+      return { "Rank": i+1, "ID": c.ID_Club, "Name": c.Nome, "Tier": c.Tier, "Ground": c.Stadio, "Capacity": c.Capienza, "OVR": c.OVR_Tim, "Morale": c.MoraleTeam, "Chemistry": c.Chemistry, "Budget": c.Budget };
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(clubsSummary), "All 370 Clubs");
+
+    ['T1', 'T2'].forEach(function(tKey){
+      var rows = (DB.standings[tKey] || []).map(function(t, i){
+        return { "Pos": i+1, "Club": t.Nome, "OVR": t.OVR_Tim, "P": t.P, "W": t.W, "D": t.D, "L": t.L, "GF": t.GF, "GA": t.GA, "GD": t.GD, "Pts": t.Pts };
+      });
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), TIER_CONFIG[tKey].name.slice(8));
+    });
+
+    XLSX.writeFile(wb, "Wimbledon_Ultimate_S" + DB.season + "_W" + currentGlobalMatchday + ".xlsx");
+    setAppBusy(false, "Excel exported successfully!");
+  }, 40);
+}
+
+function exportStandingsOnlyExcel() {
+  if (isBusy || !DB.clubs.length || typeof XLSX === 'undefined') return;
+  setAppBusy(true, "Compiling standings summary...");
+
+  setTimeout(function(){
+    var wb = XLSX.utils.book_new();
+    Object.keys(TIER_CONFIG).forEach(function(tKey){
+      var cfg = TIER_CONFIG[tKey];
+      var totalZ = cfg.zones === 0 ? 1 : cfg.zones;
+      var sheetRows = [];
+
+      for (var z = 1; z <= totalZ; z++) {
+        var key = cfg.zones === 0 ? tKey : (tKey + "_" + z);
+        var tab = DB.standings[key] || [];
+        if (cfg.zones > 0) sheetRows.push({ "Pos": "=== ZONE " + z + " ===" });
+        tab.forEach(function(t, i){
+          sheetRows.push({ "Pos": i+1, "Club": t.Nome, "OVR": t.OVR_Tim, "P": t.P, "W": t.W, "D": t.D, "L": t.L, "GF": t.GF, "GA": t.GA, "GD": t.GD, "Pts": t.Pts });
+        });
+      }
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sheetRows), cfg.short);
+    });
+    XLSX.writeFile(wb, "Wimbledon_All_Standings_S" + DB.season + ".xlsx");
+    setAppBusy(false, "Standings Excel downloaded!");
+  }, 40);
+}
+
+function exportDatabaseJSON() {
+  var blob = new Blob([JSON.stringify(DB)], { type: "application/json" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "Wimbledon_Ultimate_S" + DB.season + ".json";
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+function resetEntireUniverse() {
+  if (!confirm("Are you sure you want to reset all 370 clubs and wipe IndexedDB?")) return;
+  if (window.indexedDB) window.indexedDB.deleteDatabase(IDB_NAME);
+  location.reload();
+}
+
+function advanceSeasonWithAutoArchive() {
+  if (!confirm("Advance to Season " + (seasonNumber + 1) + "? Standings will be reset and promotions/relegations executed.")) return;
+  seasonNumber++;
+  DB.season = seasonNumber;
+  DB.globalMatchday = 0;
+  currentGlobalMatchday = 0;
+  browsingMatchday = 0;
+
+  var t1Tab = DB.standings['T1'];
+  var t2Tab = DB.standings['T2'];
+  if (t1Tab && t2Tab) {
+    var downT1 = t1Tab.slice(-6).map(function(x){ return x.ID_Club; });
+    var upT2 = t2Tab.slice(0, 6).map(function(x){ return x.ID_Club; });
+
+    downT1.forEach(function(id){ DB.clubById[id].Tier = 'T2'; });
+    upT2.forEach(function(id){ DB.clubById[id].Tier = 'T1'; });
+  }
+
+  Object.keys(DB.standings).forEach(function(k){
+    (DB.standings[k] || []).forEach(function(t){
+      t.P = 0; t.W = 0; t.D = 0; t.L = 0; t.GF = 0; t.GA = 0; t.GD = 0; t.Pts = 0; t.Form = [];
+    });
+  });
+
+  DB.matchStore = {};
+  DB.faCup64 = initCup64('fa', seasonNumber);
+  DB.leagueCup64 = initCup64('lc', seasonNumber);
+
+  // Pemulihan stamina & moril penuh menyongsong musim baru
+  DB.players.forEach(function(p){ p.Fitness = 100; p.Morale = 80; });
+  DB.clubs.forEach(function(c){ c.MoraleTeam = 80; c.Chemistry = 82; });
+
+  refreshZoneCache();
+  saveLocalState();
+  document.getElementById("current-season-display").innerText = seasonNumber;
+  document.getElementById("global-week-display").innerText = "0";
+  document.getElementById("browsing-week-display").innerText = "0";
+  renderCurrentView();
+}
+
+// ==============================================================
+// 6. PERENDERAN ANTARMUKA: 10 SUB-TAB & MODE KARIER
+// ==============================================================
+function switchRootMode(mode) {
+  currentRootMode = mode;
+  document.getElementById("btn-root-sim").classList.toggle("active", mode === 'sim');
+  document.getElementById("btn-root-career").classList.toggle("active", mode === 'career');
+  document.getElementById("sim-controls-wrapper").style.display = mode === 'sim' ? 'block' : 'none';
+  document.getElementById("career-controls-wrapper").style.display = mode === 'career' ? 'block' : 'none';
+  renderCurrentView();
+}
+
+function switchTier(tKey) {
+  activeTier = tKey; activeZona = 1; selectedClubId = null;
+  renderTierNavigation(); renderZonaNavigation(); renderCurrentView();
+}
+
+function switchZona(z) {
+  activeZona = z; selectedClubId = null;
+  renderZonaNavigation(); renderCurrentView();
+}
+
+function switchSubTab(idx) {
+  activeSubTab = idx;
+  document.querySelectorAll("#sim-subtabs .btn-subtab").forEach(function(b, i){ b.classList.toggle("active", i === (idx - 1)); });
+  renderCurrentView();
+}
+
+function switchCareerSubTab(idx) {
+  activeCareerSubTab = idx;
+  document.querySelectorAll("#career-subtabs .btn-subtab").forEach(function(b, i){ b.classList.toggle("active", i === (idx - 1)); });
+  renderCurrentView();
+}
+
+function renderTierNavigation() {
+  var el = document.getElementById("tier-nav");
+  el.innerHTML = Object.keys(TIER_CONFIG).map(function(t){
+    return '<button type="button" class="btn-tier ' + (t === activeTier ? 'active' : '') + '" onclick="switchTier(\'' + t + '\')">' + TIER_CONFIG[t].name + '</button>';
+  }).join('');
+}
+
+function renderZonaNavigation() {
+  var el = document.getElementById("zona-nav");
+  var cfg = TIER_CONFIG[activeTier];
+  if (cfg.zones === 0) { el.style.display = "none"; return; }
+  el.style.display = "flex";
+  var html = '<span style="font-size:11px; font-weight:700; color:var(--text-muted); margin-right:4px;">ZONES:</span>';
+  for (var z = 1; z <= cfg.zones; z++) {
+    html += '<button type="button" class="btn-zona ' + (z === activeZona ? 'active' : '') + '" onclick="switchZona(' + z + ')">Zone ' + z + '</button>';
+  }
+  el.innerHTML = html;
+}
+
+function getOvrClass(ovr) {
+  var v = Number(ovr) || 50;
+  if (v >= 84) return "ovr-elite";
+  if (v >= 74) return "ovr-high";
+  if (v >= 62) return "ovr-mid";
+  return "ovr-low";
+}
+
+function renderCurrentView() {
+  var panel = document.getElementById("view-panel");
+  if (!DB.clubs || DB.clubs.length === 0) {
+    panel.innerHTML = '<div style="text-align:center; padding: 60px; color:var(--text-muted);">Universe is uninitialized. Please click <b>"⚡ Build Universe (370 Clubs)"</b> above.</div>';
+    return;
+  }
+
+  // -------------------------------------------------------------
+  // MODE 1: NATIONAL LEAGUE SIMULATOR (10 SUB-TABS)
+  // -------------------------------------------------------------
+  if (currentRootMode === 'sim') {
+    var zVal = TIER_CONFIG[activeTier].zones === 0 ? 0 : activeZona;
+    var standKey = activeTier === 'T1' || activeTier === 'T2' ? activeTier : (activeTier + "_" + zVal);
+    var table = DB.standings[standKey] || [];
+
+    // SUB-TAB 1: KLASEMEN
+    if (activeSubTab === 1) {
+      var rows = table.map(function(t, idx) {
+        var rNum = idx + 1;
+        var isMgr = DB.career.clubId === t.ID_Club;
+        var clubObj = DB.clubById[t.ID_Club];
+        var badges = (t.Form || []).slice(0, 5).map(function(f) {
+          var col = f === 'W' ? 'background:rgba(16,185,129,0.2); color:#10b981;' : (f === 'D' ? 'background:rgba(245,158,11,0.2); color:#f59e0b;' : 'background:rgba(239,68,68,0.2); color:#f87171;');
+          return '<span style="display:inline-block; width:18px; text-align:center; font-weight:bold; font-size:9px; border-radius:2px; margin-right:2px;' + col + '">' + f + '</span>';
+        }).join('');
+
+        return '<tr class="' + (isMgr ? 'mgr-club-row' : '') + '">' +
+          '<td><strong>#' + rNum + '</strong></td>' +
+          '<td><a class="hyperlink" onclick="openClubModal(\'' + t.ID_Club + '\')"><strong>' + t.Nome + '</strong></a>' + (isMgr ? ' <span class="badge-mgr">👔 YOU</span>' : '') + '</td>' +
+          '<td><span class="ovr-pill ' + getOvrClass(t.OVR_Tim) + '">' + t.OVR_Tim + '</span></td>' +
+          '<td>' + t.P + '</td><td>' + t.W + '</td><td>' + t.D + '</td><td>' + t.L + '</td>' +
+          '<td>' + t.GF + '</td><td>' + t.GA + '</td><td>' + t.GD + '</td>' +
+          '<td>' + (clubObj ? clubObj.MoraleTeam : 75) + '</td>' +
+          '<td>' + (badges || '-') + '</td>' +
+          '<td style="color:var(--accent-bright); font-weight:800; font-size:13px;">' + t.Pts + '</td>' +
+        '</tr>';
+      }).join('');
+
+      panel.innerHTML = '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">' +
+        '<h3 style="color:var(--accent);">' + TIER_CONFIG[activeTier].name + (zVal > 0 ? (' (Zone ' + zVal + ')') : '') + '</h3>' +
+        '<span style="font-size:12px; color:var(--text-muted);">Round: <strong>' + browsingMatchday + '</strong></span>' +
+      '</div><table><thead><tr><th>Pos</th><th>Club</th><th>OVR</th><th>Pld</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Morale</th><th>Form</th><th>Pts</th></tr></thead><tbody>' + rows + '</tbody></table>';
+      return;
+    }
+
+    // SUB-TAB 2: STATISTIK PEMAIN
+    if (activeSubTab === 2) {
+      var zClubs = clubsByZoneCache[standKey] || [];
+      var players = [];
+      zClubs.forEach(function(c){ players = players.concat(DB.rostersByClubId[c.ID_Club] || []); });
+
+      var topG = players.slice().sort(function(a,b){ return ((DB.stats[b.ID_Giocatore]&&DB.stats[b.ID_Giocatore].goals)||0) - ((DB.stats[a.ID_Giocatore]&&DB.stats[a.ID_Giocatore].goals)||0); }).slice(0, 15);
+      var topA = players.slice().sort(function(a,b){ return ((DB.stats[b.ID_Giocatore]&&DB.stats[b.ID_Giocatore].assists)||0) - ((DB.stats[a.ID_Giocatore]&&DB.stats[a.ID_Giocatore].assists)||0); }).slice(0, 15);
+
+      var gRows = topG.map(function(p, i){
+        var g = (DB.stats[p.ID_Giocatore]&&DB.stats[p.ID_Giocatore].goals)||0;
+        return '<tr><td>#' + (i+1) + '</td><td><span class="number-badge">#' + (p.Numero||10) + '</span></td><td><a class="hyperlink" onclick="openPlayerModal(\'' + p.ID_Giocatore + '\')"><strong>' + p.Nome_Completo + '</strong></a></td><td><span class="pos-badge">' + p.Ruolo + '</span></td><td><span class="ovr-pill ' + getOvrClass(p.OVR) + '">' + p.OVR + '</span></td><td><span class="badge-trait">' + p.Trait + '</span></td><td>' + p.Squadra + '</td><td style="color:var(--accent-bright); font-weight:800;">' + g + '</td></tr>';
+      }).join('');
+
+      var aRows = topA.map(function(p, i){
+        var a = (DB.stats[p.ID_Giocatore]&&DB.stats[p.ID_Giocatore].assists)||0;
+        return '<tr><td>#' + (i+1) + '</td><td><span class="number-badge">#' + (p.Numero||8) + '</span></td><td><a class="hyperlink" onclick="openPlayerModal(\'' + p.ID_Giocatore + '\')"><strong>' + p.Nome_Completo + '</strong></a></td><td><span class="pos-badge">' + p.Ruolo + '</span></td><td><span class="ovr-pill ' + getOvrClass(p.OVR) + '">' + p.OVR + '</span></td><td><span class="badge-trait">' + p.Trait + '</span></td><td>' + p.Squadra + '</td><td style="color:var(--accent); font-weight:800;">' + a + '</td></tr>';
+      }).join('');
+
+      panel.innerHTML = '<div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">' +
+        '<div><h4 style="color:var(--accent-gold); margin-bottom:8px;">⚽ Top Goalscorers</h4><table><thead><tr><th>#</th><th>No</th><th>Player</th><th>Pos</th><th>OVR</th><th>Trait</th><th>Club</th><th>Goals</th></tr></thead><tbody>' + (gRows || '<tr><td colspan=8>No goals yet.</td></tr>') + '</tbody></table></div>' +
+        '<div><h4 style="color:var(--accent); margin-bottom:8px;">🎯 Top Assists</h4><table><thead><tr><th>#</th><th>No</th><th>Player</th><th>Pos</th><th>OVR</th><th>Trait</th><th>Club</th><th>Assists</th></tr></thead><tbody>' + (aRows || '<tr><td colspan=8>No assists yet.</td></tr>') + '</tbody></table></div>' +
+      '</div>';
+      return;
+    }
+
+    // SUB-TAB 3: JADWAL & SKOR
+    if (activeSubTab === 3) {
+      var viewW = browsingMatchday > 0 ? browsingMatchday : 1;
+      var zClubs2 = clubsByZoneCache[standKey] || [];
+      var pairs = getPairingForMatchday(zClubs2, viewW);
+
+      var fBoxes = pairs.map(function(p){
+        var mId = "WMB-M-" + DB.season + "-" + viewW + "-" + p.home.ID_Club + "-" + p.away.ID_Club;
+        var f = DB.matchStore[mId] || { Played: false, HomeScore: 0, AwayScore: 0, Events: [] };
+        var hEvs = f.Events.filter(function(e){ return e.team === 'home'; });
+        var aEvs = f.Events.filter(function(e){ return e.team === 'away'; });
+
+        var renderEvs = function(list, isH){
+          if (!f.Played) return '-';
+          return list.map(function(e){
+            return '<div class="goal-entry" style="' + (isH ? 'text-align:left;' : 'text-align:right;') + '">' +
+              '<b style="color:var(--accent-gold);">' + e.minute + '\'</b> ⚽ <a class="hyperlink" onclick="openPlayerModal(\'' + e.playerId + '\')">' + e.player + ' <span class="number-badge">#' + e.playerNumber + '</span></a>' +
+              (e.assister ? ('<div style="font-size:10px; color:var(--text-muted);">ast: ' + e.assister + '</div>') : '') +
+            '</div>';
+          }).join('') || '<span style="color:var(--text-muted); font-size:10px;">(No goals)</span>';
+        };
+
+        return '<div class="fixture-card">' +
+          '<div class="fixture-header"><span>Round ' + viewW + ' &bull; ' + TIER_CONFIG[activeTier].name + '</span><b style="color:' + (f.Played ? 'var(--success)' : 'var(--accent-gold)') + ';">' + (f.Played ? 'FT' : 'Unplayed') + '</b></div>' +
+          '<div class="fixture-scoreboard">' +
+            '<div><a class="hyperlink" onclick="openClubModal(\'' + p.home.ID_Club + '\')"><b>' + p.home.Nome + '</b></a><br><small style="color:var(--text-muted);">OVR ' + p.home.OVR_Tim + ' &bull; Morale: ' + p.home.MoraleTeam + '</small></div>' +
+            '<div class="fixture-score-num">' + (f.Played ? (f.HomeScore + ' - ' + f.AwayScore) : 'VS') + '</div>' +
+            '<div style="text-align:right;"><a class="hyperlink" onclick="openClubModal(\'' + p.away.ID_Club + '\')"><b>' + p.away.Nome + '</b></a><br><small style="color:var(--text-muted);">OVR ' + p.away.OVR_Tim + ' &bull; Morale: ' + p.away.MoraleTeam + '</small></div>' +
+          '</div>' +
+          '<div class="fixture-goals-container">' +
+            '<div class="fixture-goals-col">' + renderEvs(hEvs, true) + '</div>' +
+            '<div class="fixture-goals-col">' + renderEvs(aEvs, false) + '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      panel.innerHTML = '<div style="margin-bottom:12px;"><h3 style="color:var(--accent);">Fixtures &amp; Matchday Results &mdash; Round ' + viewW + '</h3></div><div class="fixtures-grid">' + fBoxes + '</div>';
+      return;
+    }
+
+    // SUB-TAB 4: SKUAD KLUB
+    if (activeSubTab === 4) {
+      if (!selectedClubId || !table.some(function(c){ return c.ID_Club === selectedClubId; })) {
+        selectedClubId = table.length > 0 ? table[0].ID_Club : null;
+      }
+      var cListHtml = table.map(function(t, i){
+        return '<div style="padding:6px 10px; cursor:pointer; background:var(--bg-hover); margin-bottom:4px; border-radius:4px;" onclick="showRosterTab(\'' + t.ID_Club + '\')">#' + (i+1) + ' <b>' + t.Nome + '</b></div>';
+      }).join('');
+
+      panel.innerHTML = '<div style="display:flex; gap:16px;"><div style="width:280px; max-height:520px; overflow-y:auto;">' + cListHtml + '</div><div id="roster-view-area" style="flex:1;"></div></div>';
+      if (selectedClubId) showRosterTab(selectedClubId);
+      return;
+    }
+
+    // SUB-TAB 5: KEUANGAN & STADION
+    if (activeSubTab === 5) {
+      var fRows = table.map(function(t, i){
+        var c = DB.clubById[t.ID_Club];
+        return '<tr><td>#' + (i+1) + '</td><td><a class="hyperlink" onclick="openClubModal(\'' + t.ID_Club + '\')"><b>' + t.Nome + '</b></a></td><td>' + c.Stadio + '</td><td>' + c.Capienza.toLocaleString() + '</td><td>£' + c.PrezzoBiglietto + '</td><td style="color:var(--success); font-weight:700;">£' + ((c.MatchdayRevenue||0)/1000).toFixed(0) + 'k</td><td style="color:var(--accent-bright); font-weight:700;">£' + (c.Budget/1000000).toFixed(2) + 'm</td></tr>';
+      }).join('');
+      panel.innerHTML = '<h3 style="color:var(--accent); margin-bottom:12px;">Ground Capacity &amp; Financial Ledger</h3><table><thead><tr><th>#</th><th>Club</th><th>Stadium Ground</th><th>Capacity</th><th>Ticket</th><th>Match Income</th><th>Balance Budget</th></tr></thead><tbody>' + fRows + '</tbody></table>';
+      return;
+    }
+
+    // SUB-TAB 6: TREN 10 LAGA
+    if (activeSubTab === 6) {
+      var formRows = table.map(function(t, i){
+        var badges = (t.Form || []).map(function(f){
+          var col = f === 'W' ? 'background:rgba(16,185,129,0.2); color:#10b981;' : (f === 'D' ? 'background:rgba(245,158,11,0.2); color:#f59e0b;' : 'background:rgba(239,68,68,0.2); color:#f87171;');
+          return '<span style="display:inline-block; width:20px; text-align:center; font-weight:bold; font-size:10px; border-radius:3px; margin-right:3px;' + col + '">' + f + '</span>';
+        }).join('') || '-';
+        return '<tr><td>#' + (i+1) + '</td><td><a class="hyperlink" onclick="openClubModal(\'' + t.ID_Club + '\')"><b>' + t.Nome + '</b></a></td><td>' + badges + '</td><td>' + t.P + '</td><td>' + t.W + '</td><td>' + t.D + '</td><td>' + t.L + '</td><td>' + t.GD + '</td><td><b>' + t.Pts + '</b></td></tr>';
+      }).join('');
+      panel.innerHTML = '<h3 style="color:var(--accent); margin-bottom:12px;">Last 10 Matches Form Guide</h3><table><thead><tr><th>#</th><th>Club</th><th>Recent Form</th><th>Pld</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead><tbody>' + formRows + '</tbody></table>';
+      return;
+    }
+
+    // SUB-TAB 7: REDAKSI MINGGUAN
+    if (activeSubTab === 7) {
+      var leader = table[0] || { Nome: "TBD", Pts: 0 };
+      var second = table[1] || { Nome: "TBD", Pts: 0 };
+      panel.innerHTML = '<div style="background:linear-gradient(135deg,#152037,#0d1322); padding:18px; border-left:4px solid var(--accent-gold); border-radius:8px; border:1px solid var(--border);">' +
+        '<span style="font-size:11px; color:var(--accent); font-weight:800; text-transform:uppercase;">THE OFFICIAL WIMBLEDON GAZETTE &bull; ROUND ' + browsingMatchday + '</span>' +
+        '<h2 style="color:#fff; margin:6px 0 10px 0;">' + leader.Nome + ' (#1) Sets the Pace in ' + TIER_CONFIG[activeTier].name + '</h2>' +
+        '<p style="color:#cbd5e1; line-height:1.6;">As the season progresses through matchday ' + browsingMatchday + ', ' + leader.Nome + ' stands tall at the summit with ' + leader.Pts + ' points, closely pursued by ' + second.Nome + ' (' + second.Pts + ' points). Squad fitness and tactical sharpness remain the ultimate deciders.</p>' +
+      '</div>';
+      return;
+    }
+
+    // SUB-TAB 8: RUANG MEDIS & KEBUGARAN
+    if (activeSubTab === 8) {
+      var zClubsMed = clubsByZoneCache[standKey] || [];
+      var fatigued = [];
+      zClubsMed.forEach(function(c){
+        (DB.rostersByClubId[c.ID_Club] || []).forEach(function(p){
+          if (p.Fitness < 75 || p.Infortunato > 0) fatigued.push(p);
+        });
+      });
+      var medRows = fatigued.slice(0, 15).map(function(p){
+        return '<tr><td><span class="number-badge">#' + (p.Numero||'-') + '</span></td><td><a class="hyperlink" onclick="openPlayerModal(\'' + p.ID_Giocatore + '\')"><b>' + p.Nome_Completo + '</b></a></td><td>' + p.Squadra + '</td><td><span style="color:' + (p.Fitness < 60 ? 'var(--danger)' : 'var(--accent-gold)') + '; font-weight:800;">' + p.Fitness + '%</span></td><td>' + (p.Infortunato > 0 ? ('<span style="color:var(--danger);">' + p.InjuryDesc + ' (' + p.Infortunato + ' wks)</span>') : '<span style="color:var(--success);">Available (Fatigued)</span>') + '</td></tr>';
+      }).join('');
+      panel.innerHTML = '<h3 style="color:var(--danger); margin-bottom:12px;">Medical Room &amp; Fitness Tracker</h3><table><thead><tr><th>No</th><th>Player</th><th>Club</th><th>Match Fitness</th><th>Medical Condition</th></tr></thead><tbody>' + (medRows || '<tr><td colspan=5>All players are fully rested and match-fit.</td></tr>') + '</tbody></table>';
+      return;
+    }
+
+    // SUB-TAB 9: BURSA TRANSFER
+    if (activeSubTab === 9) {
+      var zClubs3 = clubsByZoneCache[standKey] || [];
+      var allP = [];
+      zClubs3.forEach(function(c){ allP = allP.concat(DB.rostersByClubId[c.ID_Club] || []); });
+      allP.sort(function(a,b){ return b.OVR - a.OVR; });
+      var pValRows = allP.slice(0, 15).map(function(p, i){
+        var val = Math.round(Math.pow(p.OVR / 10, 3.8) * 15000);
+        return '<tr><td>#' + (i+1) + '</td><td><span class="number-badge">#' + (p.Numero||10) + '</span></td><td><a class="hyperlink" onclick="openPlayerModal(\'' + p.ID_Giocatore + '\')"><b>' + p.Nome_Completo + '</b></a></td><td><span class="pos-badge">' + p.Ruolo + '</span></td><td><span class="ovr-pill ' + getOvrClass(p.OVR) + '">' + p.OVR + '</span></td><td><span class="badge-trait">' + p.Trait + '</span></td><td>' + p.Squadra + '</td><td style="color:var(--accent-bright); font-weight:700;">£' + (val/1000000).toFixed(2) + 'm</td></tr>';
+      }).join('');
+      panel.innerHTML = '<h3 style="color:var(--accent); margin-bottom:12px;">Market Valuations &amp; Elite Players</h3><table><thead><tr><th>#</th><th>No</th><th>Player</th><th>Pos</th><th>OVR</th><th>Trait</th><th>Club</th><th>Est. Value</th></tr></thead><tbody>' + pValRows + '</tbody></table>';
+      return;
+    }
+
+    // SUB-TAB 10: TURNAMEN PIALA 64 KLUB
+    if (activeSubTab === 10) {
+      panel.innerHTML = renderKnockoutCupView(DB.faCup64, "The Wimbledon FA Cup (64 Clubs)") + '<div style="margin-top:20px;"></div>' + renderKnockoutCupView(DB.leagueCup64, "The Wimbledon League Cup (64 Pro Clubs)");
+      return;
+    }
+  }
+
+  // -------------------------------------------------------------
+  // MODE 2: MANAGER CAREER MODE (4 SUB-TABS)
+  // -------------------------------------------------------------
+  if (currentRootMode === 'career') {
+    if (!DB.career.clubId) {
+      panel.innerHTML = '<div style="text-align:center; padding:50px;">' +
+        '<h2 style="color:var(--accent-bright); margin-bottom:10px;">Select a Club to Manage</h2>' +
+        '<p style="color:var(--text-muted); max-width:540px; margin:0 auto 16px;">Take personal charge of any of the 370 British pyramid clubs. Manage tactical boards, match fitness, team morale, and budgets.</p>' +
+        '<button type="button" class="primary" onclick="switchRootMode(\'sim\')">Browse Standings &amp; Choose Club</button>' +
+      '</div>';
+      return;
+    }
+
+    var myClub = DB.clubById[DB.career.clubId];
+
+    // CAREER SUB-TAB 1: OFFICE & BOARD
+    if (activeCareerSubTab === 1) {
+      panel.innerHTML = '<div class="career-dashboard-grid">' +
+        '<div class="career-stat-card"><span>Board Confidence</span><b style="color:var(--accent-bright);">' + DB.career.rating + '%</b></div>' +
+        '<div class="career-stat-card"><span>Transfer Budget</span><b style="color:var(--success);">£' + (DB.career.balance/1000000).toFixed(2) + 'm</b></div>' +
+        '<div class="career-stat-card"><span>Weekly Wage Bill</span><b style="color:var(--accent);">£' + DB.career.weeklyWage.toLocaleString() + '/wk</b></div>' +
+        '<div class="career-stat-card"><span>Team Morale</span><b style="color:var(--accent-gold);">' + (myClub.MoraleTeam || 75) + '/100</b></div>' +
+        '<div class="career-stat-card"><span>Tactical Chemistry</span><b style="color:var(--purple);">' + (myClub.Chemistry || 80) + '%</b></div>' +
+        '<div class="career-stat-card"><span>Managed Club</span><b style="color:#fff;">' + myClub.Nome + '</b></div>' +
+      '</div>' +
+      '<div style="background:rgba(21,32,55,0.45); padding:16px; border-radius:8px; border:1px solid var(--border);">' +
+        '<h3 style="color:var(--accent-gold); margin-bottom:8px;">Board Directive &amp; Season Expectations</h3>' +
+        '<p style="color:#cbd5e1; line-height:1.6;">Maintain league stability in ' + TIER_CONFIG[myClub.Tier].name + ', protect squad morale through smart rotation, and ensure match fitness stays above 80% to avoid form drops.</p>' +
+      '</div>';
+      return;
+    }
+
+    // CAREER SUB-TAB 2: TACTICAL BOARD
+    if (activeCareerSubTab === 2) {
+      var sq = DB.rostersByClubId[DB.career.clubId] || [];
+      var sqRows = sq.map(function(p, i){
+        var effOvr = calculatePlayerEffectiveOVR(p);
+        return '<tr><td>#' + (p.Numero||i+1) + '</td><td><a class="hyperlink" onclick="openPlayerModal(\'' + p.ID_Giocatore + '\')"><b>' + p.Nome_Completo + '</b></a></td><td><span class="pos-badge">' + p.Ruolo + '</span></td><td><span class="ovr-pill ' + getOvrClass(p.OVR) + '">' + p.OVR + '</span></td><td><b style="color:var(--accent-bright);">' + effOvr + '</b></td><td><span style="color:' + (p.Fitness < 80 ? 'var(--danger)' : 'var(--success)') + '; font-weight:800;">' + p.Fitness + '%</span></td><td>' + p.Morale + '</td><td>' + p.Leadership + '</td><td><span class="badge-trait">' + p.Trait + '</span></td><td style="color:var(--accent-bright); font-weight:700;">' + ((DB.stats[p.ID_Giocatore]&&DB.stats[p.ID_Giocatore].goals)||0) + '</td></tr>';
+      }).join('');
+
+      panel.innerHTML = '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">' +
+        '<h3 style="color:var(--accent-bright);">Tactical Board &amp; Squad Depth Chart</h3>' +
+        '<div style="display:flex; gap:8px;">' +
+          '<select onchange="DB.career.tactics.mentality=this.value; saveLocalState();" style="background:#1e293b; color:var(--accent-bright); border:1px solid #334155; padding:5px 8px; border-radius:4px;">' +
+            '<option ' + (DB.career.tactics.mentality==='Balanced'?'selected':'') + '>Balanced</option>' +
+            '<option ' + (DB.career.tactics.mentality==='Attacking'?'selected':'') + '>Attacking (+3.5 OVR)</option>' +
+            '<option ' + (DB.career.tactics.mentality==='Defensive'?'selected':'') + '>Defensive (-2.0 OVR)</option>' +
+          '</select>' +
+        '</div>' +
+      '</div><table><thead><tr><th>No</th><th>Player</th><th>Pos</th><th>Base OVR</th><th>Effective OVR</th><th>Fitness</th><th>Morale</th><th>Leadership</th><th>Trait</th><th>Goals</th></tr></thead><tbody>' + sqRows + '</tbody></table>';
+      return;
+    }
+
+    // CAREER SUB-TAB 3: TOUCHLINE MATCHDAY
+    if (activeCareerSubTab === 3) {
+      panel.innerHTML = '<div style="text-align:center; padding:30px; background:rgba(21,32,55,0.45); border-radius:8px; border:1px solid var(--border);">' +
+        '<h3 style="color:#fff; margin-bottom:6px;">Matchday Operations</h3>' +
+        '<p style="color:var(--text-muted); margin-bottom:14px;">Current Round: <b>' + currentGlobalMatchday + '</b> &bull; Managed Club: <b>' + myClub.Nome + '</b></p>' +
+        '<button type="button" class="primary" onclick="triggerGlobalBatchSimulation(1)">⚽ Play Next Matchday</button>' +
+      '</div>';
+      return;
+    }
+
+    // CAREER SUB-TAB 4: TRANSFER & SCOUTING
+    if (activeCareerSubTab === 4) {
+      panel.innerHTML = '<h3 style="color:var(--accent); margin-bottom:12px;">Scouting &amp; Transfer Market</h3><p style="color:var(--text-muted);">Use the Club Rosters tab in Simulator mode to scout players and click on any player dossier to edit or manage contracts.</p>';
+      return;
+    }
+  }
+}
+
+function renderKnockoutCupView(cup, title) {
+  if (!cup) return '<div class="editorial-card"><p>Cup uninitialized.</p></div>';
+  var rounds = [
+    { k: 'r64', l: 'Round of 64' }, { k: 'r32', l: 'Round of 32' },
+    { k: 'r16', l: 'Round of 16' }, { k: 'qf', l: 'Quarter-Finals' },
+    { k: 'sf', l: 'Semi-Finals' }, { k: 'final', l: 'Grand Final' }
+  ];
+
+  var cols = rounds.map(function(rd){
+    var matches = cup[rd.k] || [];
+    var boxes = matches.map(function(m){
+      var hN = m.h ? (DB.clubById[m.h] ? DB.clubById[m.h].Nome : m.h) : 'TBD';
+      var aN = m.a ? (DB.clubById[m.a] ? DB.clubById[m.a].Nome : m.a) : 'TBD';
+      var sc = m.res ? (m.res.gh + ' - ' + m.res.ga) : 'VS';
+      return '<div style="background:#090e1a; border:1px solid #1e293b; padding:6px; border-radius:4px; margin-bottom:6px; font-size:11px;">' +
+        '<div>' + hN + '</div><div>' + aN + '</div>' +
+        '<div style="text-align:center; color:var(--accent-bright); font-family:\'JetBrains Mono\'; font-weight:700;">' + sc + '</div>' +
+      '</div>';
+    }).join('');
+    return '<div style="min-width:200px; background:#0d1322; border:1px solid #1e293b; padding:8px; border-radius:6px; flex-shrink:0;">' +
+      '<h4 style="color:var(--accent-gold); font-size:11.5px; margin-bottom:6px;">' + rd.l + '</h4>' + boxes +
+    '</div>';
+  }).join('');
+
+  return '<div class="editorial-card">' +
+    '<h3 style="color:var(--accent-bright); margin-bottom:10px;">' + title + '</h3>' +
+    '<div style="display:flex; gap:10px; overflow-x:auto; padding-bottom:8px;">' + cols + '</div>' +
+  '</div>';
+}
+
+function showRosterTab(cId) {
+  selectedClubId = cId;
+  var c = DB.clubById[cId];
+  var r = DB.rostersByClubId[cId] || [];
+  var el = document.getElementById("roster-view-area");
+  if (!el || !c) return;
+
+  var rows = r.map(function(p){
+    var st = DB.stats[p.ID_Giocatore] || { goals: 0, assists: 0, matches: 0 };
+    var effOvr = calculatePlayerEffectiveOVR(p);
+    return '<tr><td><span class="number-badge">#' + (p.Numero||'-') + '</span></td><td><a class="hyperlink" onclick="openPlayerModal(\'' + p.ID_Giocatore + '\')"><b>' + p.Nome_Completo + '</b></a></td><td><span class="pos-badge">' + p.Ruolo + '</span></td><td><span class="ovr-pill ' + getOvrClass(p.OVR) + '">' + p.OVR + '</span></td><td><b style="color:var(--accent-bright);">' + effOvr + '</b></td><td><span style="color:' + (p.Fitness < 80 ? 'var(--danger)' : 'var(--success)') + '; font-weight:700;">' + p.Fitness + '%</span></td><td>' + p.Morale + '</td><td><span class="badge-trait">' + p.Trait + '</span></td><td>' + st.matches + '</td><td style="color:var(--accent-bright); font-weight:700;">' + st.goals + '</td><td style="color:var(--accent); font-weight:700;">' + st.assists + '</td></tr>';
+  }).join('');
+
+  el.innerHTML = '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+    '<h4 style="color:var(--accent-gold); font-size:14px;">' + c.Nome + ' (OVR ' + c.OVR_Tim + ' &bull; Morale: ' + c.MoraleTeam + ') - 20 Players</h4>' +
+    '<button type="button" class="btn-sm" onclick="openClubModal(\'' + c.ID_Club + '\')">Edit Club Dossier</button>' +
+  '</div><table><thead><tr><th>No</th><th>Player</th><th>Pos</th><th>OVR</th><th>Eff OVR</th><th>Fitness</th><th>Morale</th><th>Trait</th><th>Pld</th><th>G</th><th>A</th></tr></thead><tbody>' + rows + '</tbody></table>';
+}
+
+// ==============================================================
+// 7. MODALS KLUB & PENYUNTINGAN PEMAIN DENGAN PERSISTENSI IDB
+// ==============================================================
+function openClubModal(cId) {
+  var c = DB.clubById[cId];
+  if (!c) return;
+  document.getElementById("modal-club-title").innerText = c.Nome + " Dossier";
+  document.getElementById("edit-club-id").value = c.ID_Club;
+  document.getElementById("edit-club-name").value = c.Nome;
+  document.getElementById("edit-club-stadium").value = c.Stadio;
+  document.getElementById("edit-club-capacity").value = c.Capienza;
+  document.getElementById("edit-club-ticket").value = c.PrezzoBiglietto;
+  document.getElementById("edit-club-budget").value = c.Budget;
+
+  var histHtml = (c.recentMatches || []).slice(0, 6).map(function(m){
+    var col = m.status === 'W' ? 'var(--success)' : (m.status === 'D' ? 'var(--accent-gold)' : 'var(--danger)');
+    return '<tr><td>Round ' + m.matchday + '</td><td>vs ' + m.opponent + ' (' + (m.isHome?'H':'A') + ')</td><td style="color:' + col + '; font-weight:700;">' + m.scoreText + '</td><td>' + m.status + '</td></tr>';
+  }).join('');
+
+  document.getElementById("modal-club-details").innerHTML = '<div style="background:#060911; padding:10px; border-radius:6px; border:1px solid var(--border); font-size:12px; margin-bottom:10px;">' +
+    'Division: <b>' + TIER_CONFIG[c.Tier].name + '</b> &bull; Base OVR: <b>' + c.OVR_Tim + '</b> &bull; Team Morale: <b>' + c.MoraleTeam + '</b><br>' +
+    'Recent Matches:<br><table><thead><tr><th>Round</th><th>Opponent</th><th>Score</th><th>Result</th></tr></thead><tbody>' + (histHtml || '<tr><td colspan=4>No matches played yet.</td></tr>') + '</tbody></table>' +
+  '</div>';
+
+  document.getElementById("club-modal").classList.add("open");
+}
+
+function closeClubModal() { document.getElementById("club-modal").classList.remove("open"); }
+
+function takeManagerPostFromModal() {
+  var cId = document.getElementById("edit-club-id").value;
+  var c = DB.clubById[cId];
+  if (!c) return;
+  DB.career.clubId = cId;
+  DB.career.balance = c.Budget;
+  DB.career.weeklyWage = Math.round(c.Budget * 0.007);
+  DB.career.rating = 80;
+  document.getElementById("mgr-badge-display").innerText = "👔 Manager: " + c.Nome;
+  saveLocalState();
+  closeClubModal();
+  switchRootMode('career');
+  alert("Congratulations! You have taken charge of " + c.Nome + ".");
+}
+
+function saveClubChanges(e) {
+  e.preventDefault();
+  var cId = document.getElementById("edit-club-id").value;
+  var c = DB.clubById[cId];
+  if (!c) return;
+  c.Nome = document.getElementById("edit-club-name").value.trim();
+  c.Stadio = document.getElementById("edit-club-stadium").value.trim();
+  c.Capienza = parseInt(document.getElementById("edit-club-capacity").value) || 20000;
+  c.PrezzoBiglietto = parseInt(document.getElementById("edit-club-ticket").value) || 20;
+  c.Budget = parseInt(document.getElementById("edit-club-budget").value) || 1000000;
+
+  var standKey = c.Tier === 'T1' || c.Tier === 'T2' ? c.Tier : (c.Tier + "_" + c.Zona);
+  var st = (DB.standings[standKey] || []).find(function(t){ return t.ID_Club === cId; });
+  if (st) st.Nome = c.Nome;
+
+  saveLocalState();
+  closeClubModal();
+  renderCurrentView();
+}
+
+function openPlayerModal(pId) {
+  var p = DB.playerById[pId];
+  if (!p) return;
+  var st = DB.stats[pId] || { goals: 0, assists: 0, matches: 0 };
+  var val = Math.round(Math.pow(p.OVR / 10, 3.8) * 15000);
+  var effOvr = calculatePlayerEffectiveOVR(p);
+
+  document.getElementById("modal-player-title").innerText = p.Nome_Completo + " (#" + (p.Numero||10) + " - " + p.Ruolo + ")";
+  document.getElementById("edit-player-id").value = p.ID_Giocatore;
+  document.getElementById("edit-player-name").value = p.Nome_Completo;
+  document.getElementById("edit-player-number").value = p.Numero || 10;
+  document.getElementById("edit-player-role").value = p.Ruolo;
+  document.getElementById("edit-player-ovr").value = p.OVR;
+  document.getElementById("edit-player-age").value = p.Eta;
+  document.getElementById("edit-player-fitness").value = p.Fitness;
+  document.getElementById("edit-player-morale").value = p.Morale;
+  document.getElementById("edit-player-leadership").value = p.Leadership;
+  document.getElementById("edit-player-trait").value = p.Trait || "Standard";
+
+  var logsHtml = (p.eventLogs || []).slice(0, 6).map(function(ev){
+    return '<tr><td>Round ' + ev.matchday + '</td><td>' + ev.minute + '\'</td><td>vs ' + ev.opponent + '</td><td style="color:var(--accent-bright); font-weight:700;">' + ev.type + '</td></tr>';
+  }).join('');
+
+  document.getElementById("modal-player-content").innerHTML = '<div style="background:#060911; padding:12px; border-radius:6px; border:1px solid var(--border); font-size:12px; margin-bottom:10px;">' +
+    '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">' +
+      '<div>Club: <b>' + p.Squadra + '</b></div>' +
+      '<div>Base OVR: <b>' + p.OVR + '</b> &bull; Effective: <b style="color:var(--accent-bright);">' + effOvr + '</b></div>' +
+      '<div>Match Fitness: <b style="color:' + (p.Fitness < 80 ? 'var(--danger)' : 'var(--success)') + ';">' + p.Fitness + '%</b></div>' +
+      '<div>Morale: <b>' + p.Morale + '/100</b> &bull; Leadership: <b>' + p.Leadership + '/20</b></div>' +
+      '<div>Player Trait: <span class="badge-trait">' + p.Trait + '</span></div>' +
+      '<div>Market Value: <b style="color:var(--accent-bright);">£' + (val/1000000).toFixed(2) + 'm</b></div>' +
+    '</div>' +
+    'Season Track: <b>' + st.matches + ' Apps &bull; ' + st.goals + ' Goals &bull; ' + st.assists + ' Assists</b><br>' +
+    'Goal &amp; Assist Timeline:<br><table><thead><tr><th>Round</th><th>Min</th><th>Opponent</th><th>Action</th></tr></thead><tbody>' + (logsHtml || '<tr><td colspan=4>No involvement records yet.</td></tr>') + '</tbody></table>' +
+  '</div>';
+
+  document.getElementById("player-modal").classList.add("open");
+}
+
+function closePlayerModal() { document.getElementById("player-modal").classList.remove("open"); }
+
+function savePlayerChanges(e) {
+  e.preventDefault();
+  var pId = document.getElementById("edit-player-id").value;
+  var p = DB.playerById[pId];
+  if (!p) return;
+
+  p.Nome_Completo = document.getElementById("edit-player-name").value.trim();
+  p.Numero = parseInt(document.getElementById("edit-player-number").value) || 10;
+  p.Ruolo = document.getElementById("edit-player-role").value;
+  p.OVR = parseInt(document.getElementById("edit-player-ovr").value) || 60;
+  p.Eta = parseInt(document.getElementById("edit-player-age").value) || 24;
+  p.Fitness = parseInt(document.getElementById("edit-player-fitness").value) || 100;
+  p.Morale = parseInt(document.getElementById("edit-player-morale").value) || 75;
+  p.Leadership = parseInt(document.getElementById("edit-player-leadership").value) || 10;
+  p.Trait = document.getElementById("edit-player-trait").value;
+
+  saveLocalState();
+  closePlayerModal();
+  renderCurrentView();
+}
+
+window.addEventListener("DOMContentLoaded", async function() {
+  var loaded = await loadLocalState();
+  if (loaded && DB.clubs && DB.clubs.length > 0) {
+    seasonNumber = DB.season || 1;
+    currentGlobalMatchday = DB.globalMatchday || 0;
+    browsingMatchday = currentGlobalMatchday > 0 ? currentGlobalMatchday : 1;
+    document.getElementById("current-season-display").innerText = seasonNumber;
+    document.getElementById("global-week-display").innerText = currentGlobalMatchday;
+    document.getElementById("browsing-week-display").innerText = browsingMatchday;
+    if (DB.career.clubId && DB.clubById[DB.career.clubId]) {
+      document.getElementById("mgr-badge-display").innerText = "👔 Manager: " + DB.clubById[DB.career.clubId].Nome;
+    }
+    document.getElementById("status-text").innerText = "Successfully loaded " + DB.clubs.length + " clubs from IndexedDB.";
+  }
+  renderTierNavigation();
+  renderZonaNavigation();
+  renderCurrentView();
+});
+</script>
+</body>
+</html>
