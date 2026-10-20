@@ -1514,11 +1514,34 @@
       }
     };
 
-    // Deep Permutation Engine Logic
+    //     // =========================================================================
+    // MODULAR REVISED GENERATOR ENGINE (NO TRUNCATION & CONTEXT-AWARE)
+    // =========================================================================
     function generateLocalHeuristic(seed, focus) {
-      const matrix = EXPANDED_LEXICON_MATRIX[focus] || EXPANDED_LEXICON_MATRIX.atmospheric;
+      const fullSeed = seed.trim();
+      const lowerSeed = fullSeed.toLowerCase();
+
+      // 1. SMART INTENT DETECTION (Deteksi kata kunci otomatis dari input Anda)
+      let activeFocus = focus;
       
-      // Seed-based dynamic deterministic index selector to prevent identical sequences
+      const biologicalKeywords = [
+        'wanita', 'perempuan', 'gadis', 'tubuh', 'fisik', 'ranjang', 'intim', 
+        'seks', 'bersetubuh', 'feromon', 'biologis', 'kasta', 'rahim', 'teknokrat'
+      ];
+      const tacticalKeywords = [
+        'tembak', 'bunuh', 'senjata', 'peluru', 'karbin', 'letnan', 'patroli', 
+        'eksekusi', 'kredit', 'culling', 'granat', 'ledakan', 'proyektil'
+      ];
+
+      if (biologicalKeywords.some(keyword => lowerSeed.includes(keyword))) {
+        activeFocus = 'biological';
+      } else if (tacticalKeywords.some(keyword => lowerSeed.includes(keyword))) {
+        activeFocus = 'tactical';
+      }
+
+      const matrix = EXPANDED_LEXICON_MATRIX[activeFocus] || EXPANDED_LEXICON_MATRIX.atmospheric;
+
+      // 2. DETERMINISTIC HASH GENERATOR (Mencegah repetisi kalimat antar-sekuens)
       const hashStr = (str) => {
         let hash = 0;
         for (let i = 0; i < str.length; i++) {
@@ -1528,35 +1551,41 @@
         return Math.abs(hash);
       };
 
-      const baseHash = hashStr(seed + storyHistory.length.toString() + currentCharacter.name);
-      
+      // Indeks digeser secara dinamis oleh nomor sekuens aktif (storyHistory.length)
+      const currentSeqOffset = storyHistory.length * 3;
+      const baseHash = hashStr(fullSeed + currentCharacter.name) + currentSeqOffset;
+
       const pick = (arr, offset) => {
-        const idx = (baseHash + offset) % arr.length;
-        return arr[idx];
+        const index = (baseHash + offset) % arr.length;
+        return arr[index];
       };
 
-      // Clean snippet of user seed
-      const seedContext = seed.length > 70 ? seed.substring(0, 67) + "..." : seed;
+      // 3. SUSUNAN 5 PARAGRAF NATURAL (FLOWING PROSE, TANPA FORMULA ROBOTIK)
 
-      // Compose 5 distinct, highly-detailed paragraphs
-      const p1 = `${pick(matrix.phase1, 1)} Di tengah latar dingin tersebut, situasi yang diawali dari peristiwa "${escapeHtml(seedContext)}" menempatkan atmosfer sektor industri Planet Vanderson ini pada titik didih yang senyap. ${pick(matrix.phase1, 7)}`;
-      
-      const p2 = `${pick(matrix.phase2, 3)} Status inang aktif ${currentCharacter.name} (${currentCharacter.generation}) beresonansi dengan matriks sistem purba; ${pick(matrix.phase2, 9)} Kondisi ini memaksa sirkulasi biometriknya beradaptasi secara instan dengan lingkungan gravitasi lokal.`;
-      
-      const p3 = `${pick(matrix.phase3, 2)} Melalui pemetaan spasial terarah, ${pick(matrix.phase3, 5)} ${pick(matrix.phase3, 11)}`;
-      
-      const p4 = `${pick(matrix.phase4, 4)} Gerakan fisik berlanjut dengan kehati-hatian mutlak: ${pick(matrix.phase4, 8)} ${pick(matrix.phase4, 10)}`;
-      
-      const p5 = `${pick(matrix.phase5, 0)} ${pick(matrix.phase5, 6)}`;
+      // Paragraf 1: Mengalirkan Seed asli Anda langsung ke atmosfer lingkungan
+      const p1 = `${fullSeed} ${pick(matrix.phase1, 1)} Di Lower Docklands Planet Vanderson, kepadatan gravitasi satu g menekan partikel jelaga dan kabut amonia menempel erat pada mantel tebalnya. ${pick(matrix.phase1, 5)}`;
+
+      // Paragraf 2: Biometrik & adaptasi nanit internal inang
+      const p2 = `${pick(matrix.phase2, 2)} Di balik kesadarannya, status ${currentCharacter.name} (${currentCharacter.generation}) bergetar selaras dengan frekuensi sistem purba di sumsum tulang belakangnya. ${pick(matrix.phase2, 7)}`;
+
+      // Paragraf 3: Observasi sasaran / pemetaan ketegangan sektoral
+      const p3 = `${pick(matrix.phase3, 0)} ${pick(matrix.phase3, 4)} ${pick(matrix.phase3, 8)}`;
+
+      // Paragraf 4: Tindakan fisik mikro yang hati-hati
+      const p4 = `${pick(matrix.phase4, 3)} ${pick(matrix.phase4, 6)} ${pick(matrix.phase4, 9)}`;
+
+      // Paragraf 5: Eskalasi menggantung (Cliffhanger sistem)
+      const p5 = `${pick(matrix.phase5, 1)} ${pick(matrix.phase5, 7)}`;
 
       return [
         `[Atmosfer Sektor Vanderson] ${p1}`,
         `[Biometrik & Nanit Purba] ${p2}`,
-        `[Analisis Ketegangan & Ancaman] ${p3}`,
-        `[Tindakan Kinetik Mikro] ${p4}`,
+        `[Analisis Ketegangan & Sasaran] ${p3}`,
+        `[Tindakan Mikro Bertahap] ${p4}`,
         `[Eskalasi Ambang Sistemik] ${p5}`
       ];
     }
+
   </script>
 </body>
 </html>
