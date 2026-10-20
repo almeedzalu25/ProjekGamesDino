@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bestherax Narrative Genesis Engine - Extended Edition</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Cinzel:wght@600;700;900&family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #080c14;
+      color: #94a3b8;
+    }
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .font-cinzel {
+      font-family: 'Cinzel', serif;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b0f19;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+
+    /* Print styling for PDF export */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #print-mount, #print-mount * {
+        visibility: visible;
+      }
+      #print-mount {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        color: #000;
+        background: #fff;
+        padding: 20mm;
+        font-family: 'Times New Roman', serif;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-amber-500/30 selection:text-amber-300">
+
+  <!-- Main Application Header -->
+  <header class="border-b border-slate-800/80 bg-slate-950/90 backdrop-blur sticky top-0 z-40 px-6 py-2.5 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="w-3 h-3 rounded-full bg-amber-500 animate-pulse shadow-[0_0_12px_rgba(245,158,11,0.6)]"></div>
+      <h1 class="text-sm font-bold tracking-wider text-slate-100 uppercase font-cinzel">Bestherax // Narrative Engine</h1>
+      <span class="text-[11px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-mono-code">Tier 2 Interstellar</span>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="flex items-center space-x-1 bg-slate-900/90 p-1 rounded-lg border border-slate-800 text-xs font-mono-code">
+      <button onclick="switchTab('workspace')" id="tab-btn-workspace" class="px-3.5 py-1.5 rounded-md font-medium text-amber-400 bg-slate-800 border border-slate-700/80 transition shadow-sm">
+        1. Workspace Narasi
+      </button>
+      <button onclick="switchTab('baseline')" id="tab-btn-baseline" class="px-3.5 py-1.5 rounded-md font-medium text-slate-400 hover:text-slate-200 transition">
+        2. Baseline Lore Lengkap
+      </button>
+      <button onclick="switchTab('characters')" id="tab-btn-characters" class="px-3.5 py-1.5 rounded-md font-medium text-slate-400 hover:text-slate-200 transition">
+        3. Karakter & Editor Array
+      </button>
+      <button onclick="switchTab('backup')" id="tab-btn-backup" class="px-3.5 py-1.5 rounded-md font-medium text-slate-400 hover:text-slate-200 transition">
+        4. Backup & Ekspor
+      </button>
+    </nav>
+
+    <!-- Right Global Status / Actions -->
+    <div class="flex items-center space-x-3 text-xs font-mono-code">
+      <span class="hidden md:inline text-slate-500">PLANET: <strong class="text-slate-300">VANDERSON (14B)</strong></span>
+      <button onclick="toggleConfigModal()" class="px-2.5 py-1 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition">
+        Kunci API
+      </button>
+    </div>
+  </header>
+
+  <!-- Global Content Container -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- ========================================================================= -->
+    <!-- TAB 1: WORKSPACE NARASI (CONTINUOUS GENERATION)                           -->
+    <!-- ========================================================================= -->
+    <section id="tab-workspace" class="flex-1 flex overflow-hidden">
+      
+      <!-- Left Sidebar: Active Host HUD & Quick Stats -->
+      <aside class="w-72 border-r border-slate-800/80 bg-slate-900/30 p-4 flex flex-col space-y-5 overflow-y-auto hidden lg:flex">
+        
+        <div class="rounded-lg border border-slate-800 bg-slate-950/70 p-4 space-y-3 shadow-inner">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] uppercase tracking-wider text-slate-500 font-mono-code">Inang Aktif</span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono-code" id="hud-host-gen">GEN 01</span>
+          </div>
+          <div>
+            <div class="text-sm font-bold text-slate-100 font-cinzel" id="hud-host-name">Morgan James</div>
+            <div class="text-[11px] text-slate-400" id="hud-host-desc">Humanoid Kaukasia (185 cm) • Kelas Bawah</div>
+          </div>
+          
+          <div class="pt-2 border-t border-slate-800/80 space-y-2 text-xs font-mono-code">
+            <div class="flex justify-between">
+              <span class="text-slate-500">Flesh Matrix</span>
+              <span class="text-amber-400 font-semibold" id="hud-flesh-lvl">Tingkat 1 (Latent)</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Saldo Kredit</span>
+              <span class="text-emerald-400 font-semibold" id="hud-credits">1.250 Imperial</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Dewan Kesadaran</span>
+              <span class="text-cyan-400 font-semibold" id="hud-pantheon-count">1 Jiwa (Inisiasi)</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Total Sekuens</span>
+              <span class="text-slate-300 font-semibold" id="hud-seq-count">0 Terbit</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pacing Focus Controls -->
+        <div class="space-y-2.5">
+          <label class="text-[11px] uppercase tracking-wider text-slate-400 font-mono-code block">Fokus Pacing 5 Paragraf</label>
+          <div class="space-y-1.5 text-xs">
+            <label class="flex items-center p-2 rounded-md border border-slate-800 bg-slate-950/40 hover:border-slate-700 cursor-pointer transition">
+              <input type="radio" name="pacing-focus" value="atmospheric" checked class="text-amber-500 focus:ring-0 h-3.5 w-3.5 bg-slate-900 border-slate-700">
+              <div class="ml-2.5">
+                <span class="block text-slate-200 font-medium">Sensorik & Dingin</span>
+                <span class="block text-slate-500 text-[10px]">Polusi industri Vanderson & tekanan atmosfer 1G.</span>
+              </div>
+            </label>
+            <label class="flex items-center p-2 rounded-md border border-slate-800 bg-slate-950/40 hover:border-slate-700 cursor-pointer transition">
+              <input type="radio" name="pacing-focus" value="biological" class="text-amber-500 focus:ring-0 h-3.5 w-3.5 bg-slate-900 border-slate-700">
+              <div class="ml-2.5">
+                <span class="block text-slate-200 font-medium">Biologis & Feromon</span>
+                <span class="block text-slate-500 text-[10px]">Dorongan nanit purba, sentuhan fisik & pertukaran vital.</span>
+              </div>
+            </label>
+            <label class="flex items-center p-2 rounded-md border border-slate-800 bg-slate-950/40 hover:border-slate-700 cursor-pointer transition">
+              <input type="radio" name="pacing-focus" value="tactical" class="text-amber-500 focus:ring-0 h-3.5 w-3.5 bg-slate-900 border-slate-700">
+              <div class="ml-2.5">
+                <span class="block text-slate-200 font-medium">Taktis & Kinetik</span>
+                <span class="block text-slate-500 text-[10px]">Kalkulasi eliminasi musuh & pemanenan senjata.</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-800/80 text-[11px] text-slate-500 space-y-2">
+          <span class="uppercase tracking-wider font-mono-code text-slate-400 block font-semibold">Prinsip Slow-Burn:</span>
+          <p class="leading-relaxed">
+            Paragraf 1 memperdalam atmosfer; Paragraf 2 merekam saraf/biometrik; Paragraf 3 mengamati ancaman; Paragraf 4 eksekusi gerak lambat; Paragraf 5 mengunci cliffhanger.
+          </p>
+        </div>
+
+      </aside>
+
+      <!-- Center Writing Canvas -->
+      <main class="flex-1 flex flex-col bg-slate-950 overflow-hidden">
+        
+        <!-- Input Seed Deck -->
+        <div class="p-5 border-b border-slate-800/80 bg-slate-900/20 space-y-3">
+          <div class="flex items-center justify-between text-xs font-mono-code">
+            <span class="text-slate-300 uppercase tracking-wider flex items-center space-x-2">
+              <span class="text-amber-500">▶</span>
+              <span>Paragraf Pemicu Awal (Seed Input)</span>
+            </span>
+            <div class="flex space-x-2">
+              <button onclick="carryOverLastCliffhanger()" class="px-2.5 py-1 text-slate-300 hover:text-amber-400 bg-slate-800 hover:bg-slate-700/80 rounded border border-slate-700 transition flex items-center space-x-1" title="Jadikan paragraf ke-5 terakhir sebagai pemicu adegan berikutnya">
+                <span>⚡ Ambil Cliffhanger Terakhir</span>
+              </button>
+              <button onclick="insertSamplePrompt()" class="px-2.5 py-1 text-slate-400 hover:text-slate-200 bg-slate-800/60 rounded border border-slate-700/60 transition">
+                Contoh Adegan
+              </button>
+              <button onclick="clearWorkspace()" class="px-2.5 py-1 text-rose-400/80 hover:text-rose-300 bg-rose-950/20 rounded border border-rose-900/40 transition">
+                Reset Naskah
+              </button>
+            </div>
+          </div>
+
+          <div class="relative">
+            <textarea id="user-prompt" rows="3" placeholder="Ketik 1 paragraf pemicu untuk memulai sekuens baru, atau klik 'Ambil Cliffhanger Terakhir' untuk melanjutkan kontinuitas cerita..." class="w-full bg-slate-900/90 border border-slate-700/80 rounded-lg p-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500/80 focus:ring-1 focus:ring-amber-500/50 transition resize-none"></textarea>
+            
+            <div class="absolute right-3 bottom-3 flex items-center space-x-2">
+              <button id="btn-generate" onclick="handleGenerate()" class="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs tracking-wider uppercase rounded-md transition shadow-[0_0_15px_rgba(217,119,6,0.3)] flex items-center space-x-2">
+                <span id="btn-text">Ekspansi 5 Paragraf (Bersambung)</span>
+                <svg id="btn-spinner" class="animate-spin -ml-1 mr-2 h-4 w-4 text-slate-950 hidden" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Continuous Story Feed Container -->
+        <div class="flex-1 p-6 overflow-y-auto space-y-6" id="story-viewport">
+          
+          <!-- Empty State Indicator -->
+          <div id="empty-state" class="h-full flex flex-col items-center justify-center text-center p-8 space-y-3">
+            <div class="w-12 h-12 rounded-full border border-dashed border-slate-700 flex items-center justify-center text-slate-600 font-mono-code text-lg">
+              §
+            </div>
+            <div class="space-y-1">
+              <h3 class="text-sm font-semibold text-slate-300">Ruang Penulisan Siap Dijalankan</h3>
+              <p class="text-xs text-slate-500 max-w-md">
+                Ketikkan satu paragraf awal di panel atas. Mesin akan mendiversifikasi aksi menjadi 5 paragraf mikro tanpa terburu-buru. Setiap hasil baru akan otomatis disambung ke bawah membentuk bab berkelanjutan.
+              </p>
+            </div>
+          </div>
+
+          <!-- Dynamic Cumulative Story Blocks -->
+          <div id="story-container" class="max-w-3xl mx-auto space-y-8 hidden"></div>
+
+        </div>
+
+        <!-- Bottom Narrative Engine Status Bar -->
+        <footer class="border-t border-slate-800/80 bg-slate-950 px-6 py-2 text-[11px] font-mono-code text-slate-500 flex justify-between items-center">
+          <div class="flex items-center space-x-3">
+            <span id="engine-status" class="text-amber-400/90 font-medium">Status: Standby</span>
+            <span>•</span>
+            <span id="word-count-badge">0 Kata Total</span>
+            <span>•</span>
+            <span id="scenes-count-badge">0 Sekuens Terkumpul</span>
+          </div>
+          <div class="flex items-center space-x-3">
+            <button onclick="copyGeneratedStory()" class="hover:text-slate-300 transition">Salin Semua Teks</button>
+            <span>•</span>
+            <button onclick="switchTab('backup')" class="hover:text-amber-400 text-slate-400 transition">Opsi Ekspor (PDF/HTML/JSON)</button>
+          </div>
+        </footer>
+
+      </main>
+
+    </section>
+
+   <!-- ========================================================================= -->
+    <!-- TAB 2: BASELINE LORE LENGKAP (DILENGKAPI TABEL DISTRIBUSI LENGKAP)        -->
+    <!-- ========================================================================= -->
+    <section id="tab-baseline" class="flex-1 overflow-y-auto p-8 bg-slate-950 hidden">
+      <div class="max-w-5xl mx-auto space-y-8">
+        
+        <div class="border-b border-slate-800 pb-4">
+          <div class="text-xs font-mono-code text-amber-500 uppercase tracking-widest">Dokumentasi Baseline Semesta</div>
+          <h2 class="text-2xl font-bold text-slate-100 font-cinzel mt-1">Galaksi Metronova, Demografi Peradaban & Ras Bestherax</h2>
+          <p class="text-xs text-slate-400 mt-1">Arsip kosmologi, demografi 328 sekstiliun biosfer, sensus 25 spektrum pra-stellar, 15 level interstellar, serta mekanika artefak purba.</p>
+        </div>
+
+        <!-- Astrofisika Metronova -->
+        <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-6 space-y-4">
+          <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider font-mono-code">
+            I. Astrofisika Galaksi Metronova
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono-code">
+            <div class="bg-slate-950/70 p-3.5 rounded-lg border border-slate-800/80 space-y-1">
+              <div class="text-slate-500">Diameter Cakram</div>
+              <div class="text-slate-200 font-bold text-sm">54,00 Miliar Tahun Cahaya</div>
+              <div class="text-[11px] text-slate-500">Tebal: 540 Juta ly | Luas: 2,29 Sekstiliun ly² | Volume: 1,24 Noniliun ly³</div>
+            </div>
+            <div class="bg-slate-950/70 p-3.5 rounded-lg border border-slate-800/80 space-y-1">
+              <div class="text-slate-500">Populasi Bintang</div>
+              <div class="text-slate-200 font-bold text-sm">39,40 Oktiliun Sistem Bintang</div>
+              <div class="text-[11px] text-slate-500">Total Planet: 315,00 Oktiliun (Rasio 8:1) | Massa: 19,70 Oktiliun M☉</div>
+            </div>
+            <div class="bg-slate-950/70 p-3.5 rounded-lg border border-slate-800/80 space-y-1">
+              <div class="text-slate-500">Total Planet Layak Huni</div>
+              <div class="text-emerald-400 font-bold text-sm">328,00 Sekstiliun Planet</div>
+              <div class="text-[11px] text-slate-500">Rasio: 1 per 120.000 sistem bintang | SMBH: 630 Sekstiliun M☉</div>
+            </div>
+            <div class="bg-slate-950/70 p-3.5 rounded-lg border border-slate-800/80 space-y-1">
+              <div class="text-slate-500">Hukum Fisika Ruang-Waktu</div>
+              <div class="text-amber-400 font-bold text-sm">Non-FTL & Deterministik Fisik</div>
+              <div class="text-[11px] text-slate-500">Kecepatan cahaya mutlak, tanpa lintas dimensi atau transfer instan</div>
+            </div>
+          </div>
+          
+          <div class="text-xs text-slate-300 leading-relaxed bg-slate-950/40 p-4 rounded-lg border border-slate-800">
+            <strong>Distribusi Tripartit Biosfer:</strong>
+            <ul class="list-disc pl-5 mt-1 space-y-1 text-slate-400">
+              <li><strong>Biosfer Murni (Flora & Fauna):</strong> <span class="text-slate-200">327,51 Sekstiliun (99,85%)</span> — Ekosistem biologis tanpa peradaban berakal pembangun alat.</li>
+              <li><strong>Planet Asal Pra-Stellar:</strong> <span class="text-slate-200">488,72 Kuintiliun (0,149%)</span> — Peradaban terikat pada sistem bintang induk (S-01 s/d S-25).</li>
+              <li><strong>Planet Asal Interstellar:</strong> <span class="text-slate-200">3,28 Kuintiliun / 3.280 Kuadriliun (0,001%)</span> — Dunia asal ras penjelajah bintang fisik (L-01 s/d L-15).</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- TABEL LENGKAP 25 SPEKTRUM PRA-STELLAR -->
+        <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider font-mono-code">
+              II. Sensus 25 Spektrum Peradaban Pra-Stellar (Total: 488,72 Kuintiliun)
+            </h3>
+            <span class="text-[11px] text-slate-500 font-mono-code">6000 SM – 2200 M (Ambang Interstellar)</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs font-mono-code border-collapse">
+              <thead>
+                <tr class="border-b border-slate-800 bg-slate-950/80 text-slate-400">
+                  <th class="py-2.5 px-3">Kode</th>
+                  <th class="py-2.5 px-3">Ekuivalen Era Bumi</th>
+                  <th class="py-2.5 px-3">Karakteristik Fondasi Teknologi</th>
+                  <th class="py-2.5 px-3 text-right">Jumlah Planet Asal</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 text-slate-300">
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-01</td><td class="py-2 px-3">~6000 SM</td><td class="py-2 px-3 text-slate-400">Pertanian neolitikum terencana, gerabah bakar, desa permanen</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">53,04 Kuintiliun</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-02</td><td class="py-2 px-3">~4000 SM</td><td class="py-2 px-3 text-slate-400">Metalurgi tembaga dasar, bajak binatang, kanal hidrologi lembah</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">47,15 Kuintiliun</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-03</td><td class="py-2 px-3">~3000 SM</td><td class="py-2 px-3 text-slate-400">Paduan perunggu, aksara piktografis/simbolik, arsitektur bata lumpur</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">41,25 Kuintiliun</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-04</td><td class="py-2 px-3">~2000 SM</td><td class="py-2 px-3 text-slate-400">Perunggu terstandar, kodifikasi hukum, transportasi beroda</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">37,72 Kuintiliun</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-05</td><td class="py-2 px-3">~1200 SM</td><td class="py-2 px-3 text-slate-400">Ekstraksi bijih besi awal, rute dagang pesisir, barter terstandar</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">35,36 Kuintiliun</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-06</td><td class="py-2 px-3">~800 SM</td><td class="py-2 px-3 text-slate-400">Besi tempa meluas, koin mata uang cetak, mekanika katrol dasar</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">33,00 Kuintiliun</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-07</td><td class="py-2 px-3">~500 SM</td><td class="py-2 px-3 text-slate-400">Geometri deduktif formal, saluran air gravitasi, teknologi baja awal</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">30,65 Kuintiliun</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-08</td><td class="py-2 px-3">~0 M</td><td class="py-2 px-3 text-slate-400">Jalan perkerasan antarwilayah, kubah batu alam, semen hidrolik</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">28,29 Kuintiliun</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-09</td><td class="py-2 px-3">~500 M</td><td class="py-2 px-3 text-slate-400">Bajak singkal berat, rotasi tanam tiga lahan, kincir air vertikal</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">25,93 Kuintiliun</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-10</td><td class="py-2 px-3">~1000 M</td><td class="py-2 px-3 text-slate-400">Kincir angin poros horizontal, kompas pelayaran, optik cembung</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">23,57 Kuintiliun</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-11</td><td class="py-2 px-3">~1300 M</td><td class="py-2 px-3 text-slate-400">Piroteknik bubuk mesiu awal, jam mekanik gir, tanur tiup lebur</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">21,22 Kuintiliun</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-12</td><td class="py-2 px-3">~1500 M</td><td class="py-2 px-3 text-slate-400">Percetakan bergerak, navigasi trans-oseanik, astrolab pelayaran</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">18,86 Kuintiliun</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-13</td><td class="py-2 px-3">~1650 M</td><td class="py-2 px-3 text-slate-400">Metode saintifik empiris, teleskop astronomis, kalkulus diferensial</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">16,50 Kuintiliun</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-14</td><td class="py-2 px-3">~1780 M</td><td class="py-2 px-3 text-slate-400">Revolusi Industri 1.0 (mesin uap batubara, rel besi, tekstil mekanik)</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">14,14 Kuintiliun</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-15</td><td class="py-2 px-3">~1870 M</td><td class="py-2 px-3 text-slate-400">Revolusi Industri 2.0 (elektrifikasi massal, mesin pembakaran dalam)</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">11,79 Kuintiliun</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-16</td><td class="py-2 px-3">~1945 M</td><td class="py-2 px-3 text-slate-400">Fisi nuklir terinduksi, tabung hampa elektronika, roket balistik</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">9,43 Kuintiliun</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-17</td><td class="py-2 px-3">~1969 M</td><td class="py-2 px-3 text-slate-400">Pendaratan berawak satelit alami, satelit relai telekomunikasi</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">8,25 Kuintiliun</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-18</td><td class="py-2 px-3">~1995 M</td><td class="py-2 px-3 text-slate-400">Transmisi data serat optik global, mikroprosesor silikon massal</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">7,07 Kuintiliun</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-19</td><td class="py-2 px-3">~2010 M</td><td class="py-2 px-3 text-slate-400">Komputasi seluler terdistribusi, jaringan nirkabel, sensor global</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">5,89 Kuintiliun</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-20</td><td class="py-2 px-3">~2026 M</td><td class="py-2 px-3 text-slate-400">Kecerdasan buatan terapan, material nano komposit, robotika otonom</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">4,71 Kuintiliun</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-21</td><td class="py-2 px-3">~2050 M</td><td class="py-2 px-3 text-slate-400">Reaktor fusi D-T komersial, pangkalan riset kutub satelit alami</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">3,54 Kuintiliun</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-22</td><td class="py-2 px-3">~2080 M</td><td class="py-2 px-3 text-slate-400">Ekstraksi logam asteroid sabuk dalam, habitat gravitasi sentrifugal</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">2,36 Kuintiliun</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-23</td><td class="py-2 px-3">~2120 M</td><td class="py-2 px-3 text-slate-400">Megastruktur silinder O'Neill, rekayasa geo-atmosfer planet tetangga</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">1,77 Kuintiliun</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-24</td><td class="py-2 px-3">~2160 M</td><td class="py-2 px-3 text-slate-400">Infrastruktur heliosentris sistem (Dyson swarm parsial, penggerak plasma)</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">1,18 Kuintiliun</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">S-25</td><td class="py-2 px-3">~2200 M</td><td class="py-2 px-3 text-slate-400">Gerbang Interstellar Awal (layar foton laser gigawatt, wahana generasi 0,1c)</td><td class="py-2 px-3 text-right text-emerald-400 font-medium">0,59 Kuintiliun</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TABEL LENGKAP 15 LEVEL INTERSTELLAR ORGANIK -->
+        <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider font-mono-code">
+              III. Hierarki 15 Level Interstellar & Yurisdiksi Administratif Organik
+            </h3>
+            <span class="text-[11px] text-slate-500 font-mono-code">Total: 3,28 Kuintiliun Entitas (3.280 Kuadriliun)</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs font-mono-code border-collapse">
+              <thead>
+                <tr class="border-b border-slate-800 bg-slate-950/80 text-slate-400">
+                  <th class="py-2.5 px-3">Level</th>
+                  <th class="py-2.5 px-3">Entitas Peradaban</th>
+                  <th class="py-2.5 px-3">Koloni Inti</th>
+                  <th class="py-2.5 px-3">Sektor Admin/Entitas</th>
+                  <th class="py-2.5 px-3">Akumulasi Teritori</th>
+                  <th class="py-2.5 px-3">Karakteristik Propulsi & Kedaulatan</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 text-slate-300">
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">L-01</td><td class="py-2 px-3">1.049,60 Kuadriliun</td><td class="py-2 px-3">1 - 3</td><td class="py-2 px-3 text-amber-300 font-semibold">15 sistem</td><td class="py-2 px-3 text-emerald-400">15,74 Kuintiliun</td><td class="py-2 px-3 text-slate-400">Kapal generasi fusi lambat (0,15c); gelembung sabuk Oort & tetangga</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">L-02</td><td class="py-2 px-3">688,80 Kuadriliun</td><td class="py-2 px-3">4 - 10</td><td class="py-2 px-3 text-amber-300 font-semibold">80 sistem</td><td class="py-2 px-3 text-emerald-400">55,10 Kuintiliun</td><td class="py-2 px-3 text-slate-400">Pendorong layar laser statis (0,25c); koridor transit optik lokal</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">L-03</td><td class="py-2 px-3">492,00 Kuadriliun</td><td class="py-2 px-3">11 - 25</td><td class="py-2 px-3 text-amber-300 font-semibold">350 sistem</td><td class="py-2 px-3 text-emerald-400">172,20 Kuintiliun</td><td class="py-2 px-3 text-slate-400">Fusi antimateri terkurung; sabuk tambang es antarbintang sub-sektor</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">L-04</td><td class="py-2 px-3">344,40 Kuadriliun</td><td class="py-2 px-3">26 - 60</td><td class="py-2 px-3 text-amber-300 font-semibold">1.500 sistem</td><td class="py-2 px-3 text-emerald-400">516,60 Kuintiliun</td><td class="py-2 px-3 text-slate-400">Pabrikasi von Neumann sub-relativistik; distrik pertambangan otomatis</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">L-05</td><td class="py-2 px-3">229,60 Kuadriliun</td><td class="py-2 px-3">61 - 150</td><td class="py-2 px-3 text-amber-300 font-semibold">8.000 sistem</td><td class="py-2 px-3 text-emerald-400">1,84 Sekstiliun</td><td class="py-2 px-3 text-slate-400">Reaktor fusi kompresi medan tinggi (0,40c); prefektur otonom mandiri</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">L-06</td><td class="py-2 px-3">157,44 Kuadriliun</td><td class="py-2 px-3">151 - 400</td><td class="py-2 px-3 text-amber-300 font-semibold">40.000 sistem</td><td class="py-2 px-3 text-emerald-400">6,30 Sekstiliun</td><td class="py-2 px-3 text-slate-400">Jalur pendorong laser permanen; teritori dagang multi-sistem teratur</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">L-07</td><td class="py-2 px-3">104,96 Kuadriliun</td><td class="py-2 px-3">401 - 1.000</td><td class="py-2 px-3 text-amber-300 font-semibold">200.000 sistem</td><td class="py-2 px-3 text-emerald-400">20,99 Sekstiliun</td><td class="py-2 px-3 text-slate-400">Dyson swarm lengkap sistem asal; proyeksi daya dan pertahanan sektor</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">L-08</td><td class="py-2 px-3">72,16 Kuadriliun</td><td class="py-2 px-3">1.001 - 2.500</td><td class="py-2 px-3 text-amber-300 font-semibold">1,00 Juta sistem</td><td class="py-2 px-3 text-emerald-400">72,16 Sekstiliun</td><td class="py-2 px-3 text-slate-400">Fragmentasi tata kelola kluster; kedaulatan desentralisasi permanen</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">L-09</td><td class="py-2 px-3">49,20 Kuadriliun</td><td class="py-2 px-3">2.501 - 6.000</td><td class="py-2 px-3 text-amber-300 font-semibold">6,00 Juta sistem</td><td class="py-2 px-3 text-emerald-400">295,20 Sekstiliun</td><td class="py-2 px-3 text-slate-400">Pengupasan materi bintang (star lifting); armada perintis otonom</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">L-10</td><td class="py-2 px-3">32,80 Kuadriliun</td><td class="py-2 px-3">6.001 - 15.000</td><td class="py-2 px-3 text-amber-300 font-semibold">40,00 Juta sistem</td><td class="py-2 px-3 text-emerald-400">1,31 Septiliun</td><td class="py-2 px-3 text-slate-400">Mesin singularitas mikro Kugelblitz (0,85c); perimeter relativistik</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">L-11</td><td class="py-2 px-3">22,96 Kuadriliun</td><td class="py-2 px-3">15.001 - 35.000</td><td class="py-2 px-3 text-amber-300 font-semibold">250,00 Juta sistem</td><td class="py-2 px-3 text-emerald-400">5,74 Septiliun</td><td class="py-2 px-3 text-slate-400">Rekayasa iklim dan megastruktur cincin; cadangan materi baku luas</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">L-12</td><td class="py-2 px-3">16,40 Kuadriliun</td><td class="py-2 px-3">35.001 - 80.000</td><td class="py-2 px-3 text-amber-300 font-semibold">1,50 Miliar sistem</td><td class="py-2 px-3 text-emerald-400">24,60 Septiliun</td><td class="py-2 px-3 text-slate-400">Rel massa antarbintang; magistrat administratif regional terdistribusi</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">L-13</td><td class="py-2 px-3">9,84 Kuadriliun</td><td class="py-2 px-3">80.001 - 180.000</td><td class="py-2 px-3 text-amber-300 font-semibold">4,00 Miliar sistem</td><td class="py-2 px-3 text-emerald-400">39,36 Septiliun</td><td class="py-2 px-3 text-slate-400">Armada nomad raksasa mandiri seukuran bulan (World-ships)</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">L-14</td><td class="py-2 px-3">6,56 Kuadriliun</td><td class="py-2 px-3">180.001 - 400.000</td><td class="py-2 px-3 text-amber-300 font-semibold">8,00 Miliar sistem</td><td class="py-2 px-3 text-emerald-400">52,48 Septiliun</td><td class="py-2 px-3 text-slate-400">Konfederasi arkipelagos sektor; koordinasi traktat asinkron multi-milenium</td></tr>
+                <tr class="hover:bg-slate-900/50"><td class="py-2 px-3 text-amber-500 font-bold">L-15</td><td class="py-2 px-3">3,28 Kuadriliun</td><td class="py-2 px-3">400.001 - 1.000.000</td><td class="py-2 px-3 text-amber-300 font-semibold">12,00 Miliar sistem</td><td class="py-2 px-3 text-emerald-400">39,36 Septiliun</td><td class="py-2 px-3 text-slate-400">Super-Sektor Arkipelagos Maksimum berbasis suar perbatasan otonom</td></tr>
+                <tr class="border-t-2 border-slate-700 bg-slate-950 font-bold text-amber-400">
+                  <td class="py-2.5 px-3">TOTAL</td>
+                  <td class="py-2.5 px-3">3.280,00 Kuadriliun</td>
+                  <td class="py-2.5 px-3">—</td>
+                  <td class="py-2.5 px-3">—</td>
+                  <td class="py-2.5 px-3 text-emerald-400">163,20 Septiliun</td>
+                  <td class="py-2.5 px-3 text-slate-300">Total Kedaulatan Aktif (~0,41% Galaksi; Sisa 99,59% Ruang Liar)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Bangsa Bestherax & Planet Vanderson -->
+        <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-6 space-y-4">
+          <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider font-mono-code">
+            IV. Peradaban Bestherax & Setting Planet Vanderson
+          </h3>
+          <div class="space-y-3 text-xs leading-relaxed text-slate-300">
+            <p>
+              <strong>Bangsa Bestherax (Tier 2 Interstellar):</strong> Peradaban humanoid Kaukasia tegap dengan tinggi rata-rata 180 hingga 210 cm dan rentang usia biologis mencapai 150 tahun. Struktur sosial mereka dibangun di atas oligarki militer, korporatokrasi galaktik, dan persaingan kasta genetik yang kejam.
+            </p>
+            <p>
+              <strong>Planet Vanderson:</strong> Salah satu koloni industri dan manufaktur strategis Bestherax berdiameter 16.000 km dengan gravitasi 1G dan populasi padat mencapai 14 miliar jiwa. Permukaan dipenuhi megakota bertingkat (*arcology*), pabrik pengolah logam berat, dan distrik kumuh bergaya industri Anglo-Amerika retro-futuristik.
+            </p>
+          </div>
+        </div>
+
+        <!-- Sistem Kuno & Dewan Kesadaran -->
+        <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-6 space-y-4">
+          <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider font-mono-code">
+            V. Mekanika Sistem Purba & Dewan Kesadaran Eks-Host
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div class="bg-slate-950/70 p-4 rounded-lg border border-slate-800 space-y-2">
+              <span class="text-amber-400 font-bold font-mono-code uppercase block">1. Flesh Matrix (Biologis)</span>
+              <p class="text-slate-300 leading-relaxed">
+                Persetubuhan dengan target memicu asimilasi energi vital dan rekombinasi hormonal. Sistem memperkuat densitas massa tulang, kecepatan transmisi saraf, ketahanan benturan, dan regenerasi jaringan inang. Pasangan dengan status kasta genetik tinggi Bestherax memberikan amplifikasi eksponensial.
+              </p>
+            </div>
+            <div class="bg-slate-950/70 p-4 rounded-lg border border-slate-800 space-y-2">
+              <span class="text-emerald-400 font-bold font-mono-code uppercase block">2. Culling Economy (Kinetik)</span>
+              <p class="text-slate-300 leading-relaxed">
+                Setiap eliminasi target mengkonversi materi dan rekam jejak korban menjadi likuiditas Kredit Imperial ke akun bayangan inang, sekaligus membuka cetak biru senjata kinetik atau plasma purba yang dirakit langsung oleh nanit sistem.
+              </p>
+            </div>
+          </div>
+          <div class="bg-slate-950/70 p-4 rounded-lg border border-slate-800 text-xs space-y-2">
+            <span class="text-cyan-400 font-bold font-mono-code uppercase block">3. Suksesi Antargenerasi & Majelis Kesadaran</span>
+            <p class="text-slate-300 leading-relaxed">
+              Sistem tidak terikat garis darah; ia menyeleksi inang baru secara mandiri saat inang aktif binasa atau menua. Ketika inang wafat, seluruh memori taktis, insting bertarung, dan kepribadiannya diserap ke dalam *Dewan Kesadaran*. Eks-host dapat berbisik, meminjamkan refleks otot, memberi hak veto, atau bahkan meneror inang penerus di generasi mendatang.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 3: KARAKTER & EDITOR ARRAY HEURISTIK                                  -->
+    <!-- ========================================================================= -->
+    <section id="tab-characters" class="flex-1 overflow-y-auto p-8 bg-slate-950 hidden">
+      <div class="max-w-4xl mx-auto space-y-8">
+        
+        <div class="border-b border-slate-800 pb-4">
+          <div class="text-xs font-mono-code text-amber-500 uppercase tracking-widest">Modifikasi Parameter</div>
+          <h2 class="text-2xl font-bold text-slate-100 font-cinzel mt-1">Editor Karakter, Variabel & Array Narasi</h2>
+          <p class="text-xs text-slate-400 mt-1">Ubah profil inang aktif, sesuaikan nilai stat, dan perbarui bank kalimat heuristik generator lokal.</p>
+        </div>
+
+        <!-- Active Character Settings Form -->
+        <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-6 space-y-4">
+          <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider font-mono-code">1. Parameter Profil Inang Aktif</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono-code">
+            <div class="space-y-1">
+              <label class="text-slate-400">Nama Inang</label>
+              <input type="text" id="edit-char-name" value="Morgan James" class="w-full bg-slate-950 border border-slate-700 rounded p-2 text-slate-100 focus:outline-none focus:border-amber-500">
+            </div>
+            <div class="space-y-1">
+              <label class="text-slate-400">Generasi Inang</label>
+              <input type="text" id="edit-char-gen" value="Gen 1 (Perintis)" class="w-full bg-slate-950 border border-slate-700 rounded p-2 text-slate-100 focus:outline-none focus:border-amber-500">
+            </div>
+            <div class="space-y-1">
+              <label class="text-slate-400">Tinggi Badan (cm)</label>
+              <input type="number" id="edit-char-height" value="185" class="w-full bg-slate-950 border border-slate-700 rounded p-2 text-slate-100 focus:outline-none focus:border-amber-500">
+            </div>
+            <div class="space-y-1">
+              <label class="text-slate-400">Tingkat Flesh Matrix</label>
+              <input type="text" id="edit-char-flesh" value="Tingkat 1 (Latent)" class="w-full bg-slate-950 border border-slate-700 rounded p-2 text-slate-100 focus:outline-none focus:border-amber-500">
+            </div>
+            <div class="space-y-1">
+              <label class="text-slate-400">Saldo Kredit Imperial</label>
+              <input type="number" id="edit-char-credits" value="1250" class="w-full bg-slate-950 border border-slate-700 rounded p-2 text-slate-100 focus:outline-none focus:border-amber-500">
+            </div>
+            <div class="space-y-1">
+              <label class="text-slate-400">Status Dewan Kesadaran</label>
+              <input type="text" id="edit-char-pantheon" value="1 Jiwa (Inisiasi)" class="w-full bg-slate-950 border border-slate-700 rounded p-2 text-slate-100 focus:outline-none focus:border-amber-500">
+            </div>
+          </div>
+          <div class="flex justify-end">
+            <button onclick="saveCharacterProfile()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs rounded transition">
+              Terapkan Perubahan Karakter
+            </button>
+          </div>
+        </div>
+
+        <!-- Array Generator JSON Editor -->
+        <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider font-mono-code">2. Bank Array Narasi Heuristik (JSON Editor)</h3>
+            <button onclick="resetHeuristicPatternsToDefault()" class="text-xs text-rose-400 hover:text-rose-300">Reset ke Default</button>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Anda dapat memodifikasi struktur 5 paragraf lokal di bawah ini. Pastikan format JSON tetap valid (berisi kunci <code>atmospheric</code>, <code>biological</code>, dan <code>tactical</code> dengan masing-masing 5 baris kalimat).
+          </p>
+          <textarea id="edit-heuristic-json" rows="12" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs font-mono-code text-slate-300 focus:outline-none focus:border-amber-500"></textarea>
+          <div class="flex justify-end">
+            <button onclick="saveHeuristicPatterns()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs rounded transition">
+              Simpan Perubahan Array
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 4: BACKUP & EKSPOR LENGKAP (JSON, PDF, HTML, MD)                     -->
+    <!-- ========================================================================= -->
+    <section id="tab-backup" class="flex-1 overflow-y-auto p-8 bg-slate-950 hidden">
+      <div class="max-w-4xl mx-auto space-y-8">
+        
+        <div class="border-b border-slate-800 pb-4">
+          <div class="text-xs font-mono-code text-amber-500 uppercase tracking-widest">Manajemen Penyimpanan & Berkas</div>
+          <h2 class="text-2xl font-bold text-slate-100 font-cinzel mt-1">Backup, Restore & Multi-Format Export</h2>
+          <p class="text-xs text-slate-400 mt-1">Simpan progres novel Anda ke media lokal atau konversikan ke PDF, berkas HTML mandiri, dan Markdown.</p>
+        </div>
+
+        <!-- Export Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          
+          <!-- JSON Project Backup -->
+          <div class="p-5 rounded-xl border border-slate-800 bg-slate-900/40 space-y-3">
+            <div class="flex items-center space-x-2 text-amber-400 font-mono-code font-bold text-xs uppercase">
+              <span>[JSON] Simpan Proyek Penuh</span>
+            </div>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Mengekspor seluruh sekuens bab, profil karakter, riwayat prompt, dan pengaturan ke berkas <code>.json</code> yang dapat dimuat kembali kapan saja.
+            </p>
+            <div class="flex space-x-2 pt-2">
+              <button onclick="exportProjectJSON()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs rounded transition flex-1">
+                Unduh Cadangan JSON
+              </button>
+            </div>
+          </div>
+
+          <!-- JSON Restore -->
+          <div class="p-5 rounded-xl border border-slate-800 bg-slate-900/40 space-y-3">
+            <div class="flex items-center space-x-2 text-cyan-400 font-mono-code font-bold text-xs uppercase">
+              <span>[RESTORE] Muat Proyek JSON</span>
+            </div>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Pulihkan proyek penulisan sebelumnya dari komputer Anda ke dalam engine kerja ini.
+            </p>
+            <div class="pt-2">
+              <label class="block text-center px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs rounded cursor-pointer transition">
+                <span>Pilih Berkas JSON</span>
+                <input type="file" id="input-import-json" accept=".json" onchange="importProjectJSON(event)" class="hidden">
+              </label>
+            </div>
+          </div>
+
+          <!-- PDF Export -->
+          <div class="p-5 rounded-xl border border-slate-800 bg-slate-900/40 space-y-3">
+            <div class="flex items-center space-x-2 text-rose-400 font-mono-code font-bold text-xs uppercase">
+              <span>[PDF] Cetak Naskah / Simpan PDF</span>
+            </div>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Mengompilasi seluruh bab cerita ke tata letak manuskrip buku standar novel siap cetak atau simpan ke PDF melalui dialog cetak browser.
+            </p>
+            <div class="pt-2">
+              <button onclick="exportToPDF()" class="w-full px-4 py-2 bg-rose-600 hover:bg-rose-500 text-slate-950 font-bold text-xs rounded transition">
+                Cetak / Simpan Sebagai PDF
+              </button>
+            </div>
+          </div>
+
+          <!-- Standalone HTML Export -->
+          <div class="p-5 rounded-xl border border-slate-800 bg-slate-900/40 space-y-3">
+            <div class="flex items-center space-x-2 text-emerald-400 font-mono-code font-bold text-xs uppercase">
+              <span>[HTML] Reader File Mandiri</span>
+            </div>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Mengekspor naskah menjadi berkas <code>.html</code> buku digital mandiri (*dark mode e-reader*) yang siap dibaca tanpa koneksi internet.
+            </p>
+            <div class="pt-2">
+              <button onclick="exportStandaloneHTML()" class="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs rounded transition">
+                Unduh Buku Digital (.HTML)
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Markdown Quick Export -->
+        <div class="p-5 rounded-xl border border-slate-800 bg-slate-900/30 flex items-center justify-between">
+          <div class="space-y-1">
+            <div class="text-xs font-bold font-mono-code text-slate-300">Format Penulis Markdown (.MD)</div>
+            <div class="text-[11px] text-slate-500">Kompatibel untuk Obsidian, Scrivener, atau editor naskah lainnya.</div>
+          </div>
+          <button onclick="exportToMarkdown()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-mono-code rounded transition">
+            Ekspor .MD
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+
+  <!-- API Key Modal -->
+  <div id="config-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-lg max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-semibold text-slate-100 font-mono-code">Konfigurasi API Model</h3>
+        <button onclick="toggleConfigModal()" class="text-slate-500 hover:text-slate-300 text-lg">&times;</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <p class="text-slate-400 leading-relaxed">
+          Engine secara otomatis menjalankan <strong>Generator Heuristik Internal (Offline)</strong> tanpa biaya atau kunci. Jika ingin variasi AI murni tak terbatas, masukkan Gemini API Key di bawah:
+        </p>
+        <div class="space-y-1.5">
+          <label class="text-slate-300 font-medium">Gemini API Key</label>
+          <input type="password" id="input-api-key" placeholder="AIzaSy..." class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 font-mono-code">
+        </div>
+        <div class="space-y-1.5">
+          <label class="text-slate-300 font-medium">Model Engine</label>
+          <select id="select-model" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 font-mono-code">
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash (Cepat & Responsif)</option>
+            <option value="gemini-2.5-pro">Gemini 2.5 Pro (Kedalaman Narasi Maksimal)</option>
+            <option value="local-heuristic">Internal Heuristic Engine (Tanpa API Key)</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex justify-end space-x-2 pt-3 border-t border-slate-800">
+        <button onclick="toggleConfigModal()" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded transition">Tutup</button>
+        <button onclick="saveApiConfig()" class="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-semibold text-xs rounded transition">Simpan Pengaturan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden Mount for Native Print / PDF Engine -->
+  <div id="print-mount" class="hidden"></div>
+
+  <!-- ========================================================================= -->
+  <!-- JAVASCRIPT STATE ENGINE & CORE CONTROLLERS                               -->
+  <!-- ========================================================================= -->
+  <script>
+    // System Baseline Lore embedded in memory
+    const BASELINE_LORE = `
+      Semesta: Galaksi Metronova (54 Miliar LY, Non-FTL murni, Deterministik Fisik).
+      Peradaban Dominan: Bestherax (Tier 2 Interstellar, Humanoid Kaukasia tinggi 180-210 cm, usia maks 150 tahun).
+      Setting Planet: Vanderson (Koloni industri-militer, diameter 16.000 km, gravitasi 1G, 14 Miliar jiwa).
+      Protagonis: Morgan James (185 cm, ras Kaukasia kelas bawah, dingin, oportunis).
+      Sistem: Artefak biokinetik purba non-biologis. Sistem menyeleksi inang mandiri dan menyimpan konsensus kesadaran eks-inang.
+      Mekanika:
+      1. Flesh Matrix: Hubungan intim meningkatkan densitas otot, regenerasi, dan batas tempur fisik.
+      2. Culling Economy: Membunuh musuh menghasilkan kredit Imperial dan materialisasi senjata.
+      3. Dewan Kesadaran: Memori eks-inang membimbing atau memberi tekanan mental pada inang aktif.
+      Aturan Penulisan Slow-Burn 5 Paragraf:
+      - Paragraf 1: Penajaman atmosfer sensorik, bau kimia sulfur, dinginnya Vanderson.
+      - Paragraf 2: Respons biometrik tubuh Morgan, sirkulasi darah, dorongan nanit.
+      - Paragraf 3: Observasi lingkungan mikroskopis, kalkulasi jarak atau ancaman musuh Bestherax.
+      - Paragraf 4: Tindakan fisik bertahap, sentuhan kain/logam senjata, gerak perlahan.
+      - Paragraf 5: Eskalasi menggantung (cliffhanger) yang memicu Flesh Matrix atau Culling Economy.
+    `;
+
+    // Default Patterns for Heuristic Array Engine
+    const DEFAULT_HEURISTICS = {
+      atmospheric: [
+        "Kabut industri Vanderson menggantung rendah seperti timah cair yang dipadatkan, menempel pada permukaan jaket sintetis Morgan dengan kelembapan berbau tembaga dan belerang. Di atas kepalanya, siluet pipa ventilasi raksasa setinggi tiga ratus meter berdengung konstan, mengalirkan residu reaktor ke langit distrik bawah yang tak pernah melihat matahari murni Galaksi Metronova.",
+        "Udara dingin bersuhu empat derajat menembus celah serat pelindungnya yang koyak, namun serat saraf di tengkuknya justru berdenyut hangat. Di bawah tempurung kepalanya, getaran asing artefak itu merayap di sepanjang saraf tulang belakang—bukan rasa sakit biasa, melainkan sensasi seperti ribuan jarum mikro yang sedang mengukur volume eritrosit dan laju denyut nadinya.",
+        "Tiga puluh meter di depannya, siluet pengawal korporasi bertubuh tegap khas bangsa Bestherax dengan tinggi melampaui dua meter berdiri memunggungi lorong pipa limbah. Mantel antipeluru mereka berkilau basah terkena tetesan hidrolik, sementara senjata karbin kinetik tergantung santai di pinggang mereka, sebuah arogansi khas kasta atas yang menganggap warga distrik kumuh tak lebih berbahaya daripada hama pengerat.",
+        "Morgan menahan napasnya, menarik diri masuk ke bayangan rangka derek berkarat. Jemarinya yang kasar mengencang pada silinder purba di balik saku; tekstur obsidian artefak itu terasa dingin di luar namun membakar di dalam, seolah menuntut sirkulasi energi biologis yang lebih pekat daripada sekadar sisa kalori tubuhnya yang kelaparan.",
+        "Suara langkah sepatu berujung baja terdengar semakin dekat, memecah kesunyian dengungan mesin ventilasi. Saat salah satu prajurit itu memicingkan mata menatap celah kegelapan tempat Morgan bersembunyi, sebuah notifikasi monolitik berwarna darah mendadak terpatri di retina mata kirinya—sebuah desakan naluriah murni yang menuntut pembunuhan pertama untuk membuka likuiditas kredit perdananya."
+      ],
+      biological: [
+        "Aroma parfum sintetis berpadu tajam dengan sengatan ozon dari kabel terbuka di lantai kamar bordir murahan itu. Tirai plastik kotor bergetar pelan tertiup hembusan angin dari kisi ventilasi luar, membawa deru monoton armada kargo yang melintas di lapisan stratosfer Planet Vanderson.",
+        "Morgan menatap wanita di depannya—seorang pelarian dari distrik administrasi dengan garis rahang tegas dan tinggi mendekati seratus sembilan puluh sentimeter, ciri biologis murni kasta teknokrat Bestherax. Jantung Morgan berdegup dengan ritme yang tak wajar; lapisan nanit di dalam sumsum tulangnya menggeliat agresif, mendeteksi potensi rekombinasi hormon yang mampu memicu lonjakan metabolisme tubuhnya ke tingkat berikutnya.",
+        "Setiap sentuhan kulit terasa bagai pelepasan arus statis tegangan rendah yang langsung merambat ke sistem saraf simpatiknya. Sistem purba itu tidak meminta izin; ia membedah setiap sekresi feromon dan komposisi genetik sang wanita dengan kalkulasi analitis yang dingin, memproyeksikan efisiensi penyerapan daya tahan fisik yang bisa diserap ke dalam serat otot Morgan.",
+        "Keringat dingin mengalir di punggungnya saat ambang batas toleransi tubuhnya dipaksa melebar. Matriks biologis di dadanya berpendar samar di bawah lapisan dermis, memproses pertukaran energi vital menjadi kepadatan massa tulang baru yang membuat tulang rusuknya berderak halus seolah sedang ditempa ulang oleh pandai besi tak kasat mata.",
+        "Ketika napas mereka saling berkejaran di tengah kesunyian ruangan kumuh tersebut, Morgan merasakan kekuatan kinetik baru mengalir ke ujung jari-jarinya—refleks tempurnya melonjak tajam, sementara di sudut matanya, antarmuka sistem mulai memproyeksikan target-target bersenjata di koridor bawah dengan kejelasan lintasan yang mematikan."
+      ],
+      tactical: [
+        "Hujan asam tipis memercik pada kaca jendela pecah di lantai empat gudang logistik terlantar itu, membakar cat pelapis baja hingga berdesis pelan. Di bawah sana, konvoi lapis baja sindikat Black-Ochre terparkir dengan mesin menyala, lampu sorotnya menyapu tumpukan kontainer paduan titanium yang siap diselundupkan keluar orbit Vanderson.",
+        "Morgan memeriksa tuas pengunci pada pistol kinetik model lama di genggamannya. Senjata usang itu hanya memiliki empat butir peluru tersisa—sama sekali tidak cukup untuk menembus rompi balistik polimer komposit yang dikenakan enam tentara bayaran Bestherax di bawah. Namun, sistem purba di kepalanya sudah mulai memetakan vektor pantulan proyektil pada dinding baja di hadapannya.",
+        "Pemberitahuan hening menyala di pupil matanya: sebuah cetak biru senjata kaliber berat tier tinggi telah terkunci di dalam memori arsip sistem, menunggu likuidasi materi dari nyawa perwira pengawal berpangkat letnan yang sedang berdiri di dekat kabin kemudi.",
+        "Morgan merendahkan tubuhnya, melangkah tanpa decit pada balok baja penyangga atap dengan kelenturan otot yang baru saja diperolehnya beberapa jam lalu. Udara terasa begitu pekat oleh kepulan solar reaktor, namun persepsi visualnya kini mampu membedakan getaran frekuensi mikro dari detak jantung target di tengah deru bising konvoi.",
+        "Jemari kanannya mengendap di pelatuk, menunggu letnan bertubuh dua meter itu melangkah keluar dari radius perlindungan kubah energi portabel. Satu letusan di momen yang tepat bukan hanya akan mengakhiri hidup sang perwira, melainkan akan memicu konversi nanit seketika untuk merakit senapan peredam getaran langsung ke telapak tangannya."
+      ]
+    };
+
+    // State Variables
+    let storyHistory = [];
+    let currentCharacter = {
+      name: "Morgan James",
+      generation: "Gen 1 (Perintis)",
+      height: 185,
+      fleshMatrix: "Tingkat 1 (Latent)",
+      credits: 1250,
+      pantheon: "1 Jiwa (Inisiasi)"
+    };
+    let heuristicPatterns = JSON.parse(JSON.stringify(DEFAULT_HEURISTICS));
+
+    // Initialize Engine
+    window.addEventListener('DOMContentLoaded', () => {
+      loadSavedState();
+      updateHUD();
+      renderHeuristicJsonEditor();
+    });
+
+    function loadSavedState() {
+      const savedKey = localStorage.getItem('bestherax_api_key');
+      const savedModel = localStorage.getItem('bestherax_model');
+      const savedStory = localStorage.getItem('bestherax_story_history');
+      const savedChar = localStorage.getItem('bestherax_character');
+      const savedHeuristics = localStorage.getItem('bestherax_heuristics');
+
+      if (savedKey) document.getElementById('input-api-key').value = savedKey;
+      if (savedModel) document.getElementById('select-model').value = savedModel;
+      
+      if (savedStory) {
+        try {
+          storyHistory = JSON.parse(savedStory);
+          renderAllScenes();
+        } catch (e) {
+          console.error("Gagal memuat riwayat cerita tersimpan:", e);
+        }
+      }
+
+      if (savedChar) {
+        try {
+          currentCharacter = JSON.parse(savedChar);
+          document.getElementById('edit-char-name').value = currentCharacter.name;
+          document.getElementById('edit-char-gen').value = currentCharacter.generation;
+          document.getElementById('edit-char-height').value = currentCharacter.height;
+          document.getElementById('edit-char-flesh').value = currentCharacter.fleshMatrix;
+          document.getElementById('edit-char-credits').value = currentCharacter.credits;
+          document.getElementById('edit-char-pantheon').value = currentCharacter.pantheon;
+        } catch (e) {
+          console.error("Gagal memuat profil karakter:", e);
+        }
+      }
+
+      if (savedHeuristics) {
+        try {
+          heuristicPatterns = JSON.parse(savedHeuristics);
+        } catch (e) {
+          console.error("Gagal memuat pola heuristik tersimpan:", e);
+        }
+      }
+    }
+
+    function saveStateToLocalStorage() {
+      localStorage.setItem('bestherax_story_history', JSON.stringify(storyHistory));
+      localStorage.setItem('bestherax_character', JSON.stringify(currentCharacter));
+      localStorage.setItem('bestherax_heuristics', JSON.stringify(heuristicPatterns));
+    }
+
+    function switchTab(tabId) {
+      const tabs = ['workspace', 'baseline', 'characters', 'backup'];
+      tabs.forEach(t => {
+        const section = document.getElementById(`tab-${t}`);
+        const btn = document.getElementById(`tab-btn-${t}`);
+        if (t === tabId) {
+          section.classList.remove('hidden');
+          btn.className = "px-3.5 py-1.5 rounded-md font-medium text-amber-400 bg-slate-800 border border-slate-700/80 transition shadow-sm";
+        } else {
+          section.classList.add('hidden');
+          btn.className = "px-3.5 py-1.5 rounded-md font-medium text-slate-400 hover:text-slate-200 transition";
+        }
+      });
+    }
+
+    function toggleConfigModal() {
+      const modal = document.getElementById('config-modal');
+      modal.classList.toggle('hidden');
+    }
+
+    function saveApiConfig() {
+      const key = document.getElementById('input-api-key').value.trim();
+      const model = document.getElementById('select-model').value;
+      localStorage.setItem('bestherax_api_key', key);
+      localStorage.setItem('bestherax_model', model);
+      toggleConfigModal();
+      updateStatus(`Engine terhubung ke ${model}`);
+    }
+
+    function updateStatus(text) {
+      document.getElementById('engine-status').innerText = `Status: ${text}`;
+    }
+
+    function updateHUD() {
+      document.getElementById('hud-host-name').innerText = currentCharacter.name;
+      document.getElementById('hud-host-gen').innerText = currentCharacter.generation.toUpperCase();
+      document.getElementById('hud-host-desc').innerText = `Humanoid Kaukasia (${currentCharacter.height} cm) • Vanderson`;
+      document.getElementById('hud-flesh-lvl').innerText = currentCharacter.fleshMatrix;
+      document.getElementById('hud-credits').innerText = `${Number(currentCharacter.credits).toLocaleString()} Imperial`;
+      document.getElementById('hud-pantheon-count').innerText = currentCharacter.pantheon;
+      document.getElementById('hud-seq-count').innerText = `${storyHistory.length} Sekuens`;
+    }
+
+    // Generator & Scene Progression
+    async function handleGenerate() {
+      const promptInput = document.getElementById('user-prompt').value.trim();
+      if (!promptInput) {
+        alert("Harap masukkan paragraf pemicu terlebih dahulu.");
+        return;
+      }
+
+      const apiKey = localStorage.getItem('bestherax_api_key');
+      const model = localStorage.getItem('bestherax_model') || 'local-heuristic';
+      const focus = document.querySelector('input[name="pacing-focus"]:checked').value;
+
+      setLoading(true);
+      updateStatus('Mengekspansi narasi 5 paragraf bertahap...');
+
+      try {
+        let paragraphs = [];
+        
+        // Context carry-over from preceding scene
+        const lastSceneContext = storyHistory.length > 0 
+          ? storyHistory[storyHistory.length - 1].paragraphs.join("\n\n") 
+          : "";
+
+        if (apiKey && model !== 'local-heuristic') {
+          paragraphs = await generateViaGemini(promptInput, lastSceneContext, apiKey, model, focus);
+        } else {
+          await new Promise(r => setTimeout(r, 700));
+          paragraphs = generateLocalHeuristic(promptInput, focus);
+        }
+
+        const newScene = {
+          sceneIndex: storyHistory.length + 1,
+          seed: promptInput,
+          focus: focus,
+          paragraphs: paragraphs,
+          timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+        };
+
+        storyHistory.push(newScene);
+        saveStateToLocalStorage();
+        renderAllScenes();
+
+        // Scroll to the latest scene
+        const viewport = document.getElementById('story-viewport');
+        viewport.scrollTop = viewport.scrollHeight;
+
+        document.getElementById('user-prompt').value = '';
+        updateStatus(`Sekuens #${newScene.sceneIndex} berhasil disambung`);
+      } catch (err) {
+        console.error(err);
+        alert(`Gagal mengekspansi: ${err.message}. Menggunakan generator lokal.`);
+        const fallbackParagraphs = generateLocalHeuristic(promptInput, focus);
+        const fallbackScene = {
+          sceneIndex: storyHistory.length + 1,
+          seed: promptInput,
+          focus: focus,
+          paragraphs: fallbackParagraphs,
+          timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+        };
+        storyHistory.push(fallbackScene);
+        saveStateToLocalStorage();
+        renderAllScenes();
+        updateStatus(`Sekuens #${fallbackScene.sceneIndex} diterbitkan via engine lokal`);
+      } finally {
+        setLoading(false);
+        updateHUD();
+      }
+    }
+
+    function generateLocalHeuristic(seed, focus) {
+      const template = heuristicPatterns[focus] || heuristicPatterns.atmospheric;
+      return [
+        `[Atmosfer Vanderson] Menindaklanjuti aksi tersebut, ${template[0]} Kepadatan gravitasi 1G di Planet Vanderson membuat setiap embusan sulfur terasa semakin berat di rongga dada.`,
+        `[Biometrik Inang] ${template[1]} ${currentCharacter.name} merasakan denyut nanit purba di tulang belakangnya merespons situasi dengan frekuensi getaran yang kian intens.`,
+        `[Observasi Ancaman] ${template[2]} Melalui sensorik yang terasah, ia memperhitungkan tiap celah di lorong korporasi Bestherax tanpa membuat gesekan suara sekecil apa pun.`,
+        `[Tindakan Mikro] ${template[3]} Jarinya bergeser perlahan pada permukaan logam dingin, mengunci momentum sebelum keputusan taktis dieksekusi.`,
+        `[Cliffhanger Sistem] ${template[4]}`
+      ];
+    }
+
+    async function generateViaGemini(seed, previousContext, apiKey, model, focus) {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      
+      const systemInstruction = `
+        Anda adalah Mesin Narasi Dark Sci-Fi Metronova.
+        BASELINE LENGKAP:
+        ${BASELINE_LORE}
+        
+        STATUS INANG AKTIF:
+        Nama: ${currentCharacter.name} (${currentCharacter.height} cm)
+        Generasi: ${currentCharacter.generation}
+        Flesh Matrix: ${currentCharacter.fleshMatrix}
+        Kredit: ${currentCharacter.credits} Imperial
+        Dewan Kesadaran: ${currentCharacter.pantheon}
+
+        ATURAN STRUKTUR 5 PARAGRAF (SLOW-BURN):
+        - Anda DILARANG menyelesaikan resolusi konflik sekaligus atau melompat tergesa-gesa.
+        - Paragraf 1: Penajaman atmosfer dingin, bau ozon/sulfur Vanderson, dan lingkungan fisik.
+        - Paragraf 2: Biometrik internal inang, sirkulasi darah, getaran saraf nanit purba.
+        - Paragraf 3: Observasi mikroskopis terhadap target bangsa Bestherax atau perimeter bahaya.
+        - Paragraf 4: Tindakan fisik mikro bertahap (sentuhan, tarikan pelatuk, gesekan mantel).
+        - Paragraf 5: Eskalasi menggantung (cliffhanger) yang memicu Flesh Matrix atau Culling Economy.
+
+        KONTEKS ADEGAN SEBELUMNYA (JIKA ADA):
+        ${previousContext || "Tidak ada, ini adalah adegan awal."}
+
+        Keluarkan HANYA format JSON valid tanpa markdown fence pembungkus:
+        {
+          "paragraphs": [
+            "Paragraf 1...",
+            "Paragraf 2...",
+            "Paragraf 3...",
+            "Paragraf 4...",
+            "Paragraf 5..."
+          ]
+        }
+      `;
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `Paragraf Pemicu Pengguna:\n"${seed}"\n\nFokus Pacing: ${focus.toUpperCase()}. Kembangkan menjadi 5 paragraf berurutan.` }] }],
+          generationConfig: {
+            temperature: 0.75,
+            responseMimeType: "application/json"
+          },
+          systemInstruction: { parts: [{ text: systemInstruction }] }
+        })
+      });
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      const parsed = JSON.parse(text);
+      return parsed.paragraphs;
+    }
+
+    function renderAllScenes() {
+      const container = document.getElementById('story-container');
+      const emptyState = document.getElementById('empty-state');
+
+      if (storyHistory.length === 0) {
+        emptyState.classList.remove('hidden');
+        container.classList.add('hidden');
+        container.innerHTML = '';
+        document.getElementById('word-count-badge').innerText = '0 Kata Total';
+        document.getElementById('scenes-count-badge').innerText = '0 Sekuens Terkumpul';
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      container.classList.remove('hidden');
+      container.innerHTML = '';
+
+      let grandTotalWords = 0;
+
+      const phaseLabels = [
+        "Fase I: Penetrasi Atmosferik Vanderson",
+        "Fase II: Respons Biometrik & Nanit Purba",
+        "Fase III: Observasi Ancaman & Ketegangan Mikro",
+        "Fase IV: Tindakan Kinetik / Fisik Bertahap",
+        "Fase V: Eskalasi Ambang Sistemik (Cliffhanger)"
+      ];
+
+      storyHistory.forEach((scene, sIdx) => {
+        const sceneCard = document.createElement('div');
+        sceneCard.className = "border-b border-slate-800/90 pb-8 space-y-4";
+
+        // Scene Header Banner
+        const header = document.createElement('div');
+        header.className = "flex items-center justify-between bg-slate-900/70 px-4 py-2.5 rounded-lg border border-slate-800 text-xs font-mono-code";
+        header.innerHTML = `
+          <div class="flex items-center space-x-2">
+            <span class="text-amber-500 font-bold uppercase tracking-wider">§ SEKUENS #${scene.sceneIndex}</span>
+            <span class="text-slate-600">•</span>
+            <span class="text-slate-400 capitalize">${scene.focus} Mode</span>
+          </div>
+          <div class="flex items-center space-x-3 text-slate-500">
+            <span>Pukul ${scene.timestamp}</span>
+            <button onclick="deleteScene(${sIdx})" class="text-rose-400 hover:text-rose-300 transition" title="Hapus Sekuens Ini">&times;</button>
+          </div>
+        `;
+        sceneCard.appendChild(header);
+
+        // Seed reminder
+        const seedNote = document.createElement('div');
+        seedNote.className = "text-[11px] text-slate-500 font-mono-code italic px-1";
+        seedNote.innerHTML = `Pemicu: "${escapeHtml(scene.seed)}"`;
+        sceneCard.appendChild(seedNote);
+
+        // 5 Paragraphs Render
+        scene.paragraphs.forEach((pText, pIdx) => {
+          const cleanText = pText.replace(/^\[.*?\]\s*/, '');
+          grandTotalWords += cleanText.split(/\s+/).length;
+
+          const pBox = document.createElement('div');
+          pBox.className = "p-4 rounded-lg bg-slate-900/40 border border-slate-800/70 space-y-1.5 transition hover:border-slate-700";
+          pBox.innerHTML = `
+            <div class="flex items-center justify-between text-[10px] font-mono-code text-slate-500">
+              <span class="text-amber-400/80 font-medium">${phaseLabels[pIdx]}</span>
+              <span>Paragraf ${sIdx + 1}.${pIdx + 1}</span>
+            </div>
+            <p class="text-sm leading-relaxed text-slate-200 text-justify font-light tracking-wide">${escapeHtml(cleanText)}</p>
+          `;
+          sceneCard.appendChild(pBox);
+        });
+
+        container.appendChild(sceneCard);
+      });
+
+      document.getElementById('word-count-badge').innerText = `${grandTotalWords.toLocaleString()} Kata Total`;
+      document.getElementById('scenes-count-badge').innerText = `${storyHistory.length} Sekuens Terkumpul`;
+    }
+
+    function carryOverLastCliffhanger() {
+      if (storyHistory.length === 0) {
+        alert("Belum ada sekuens yang digenerasi untuk dilanjutkan.");
+        return;
+      }
+      const lastScene = storyHistory[storyHistory.length - 1];
+      const lastParagraph = lastScene.paragraphs[lastScene.paragraphs.length - 1].replace(/^\[.*?\]\s*/, '');
+      document.getElementById('user-prompt').value = lastParagraph;
+      document.getElementById('user-prompt').focus();
+    }
+
+    function insertSamplePrompt() {
+      const samples = [
+        "Morgan melangkah terseok-seok menembus kabut sulfur di Lower Docklands Planet Vanderson, meraba silinder obsidian purba di balik mantelnya saat langkah patroli dua tentara Bestherax setinggi dua meter mulai mendekati lorong buntu itu.",
+        "Di dalam kamar berkarat di Sektor 14, Morgan menatap perwira teknokrat wanita Bestherax yang tengah membersihkan luka bakar plasma di lengannya; sumsum tulang belakang Morgan mulai bergetar saat sistem mendeteksi kemurnian kasta genetik wanita tersebut.",
+        "Bercak oli dan darah dingin membeku di lantai dermaga kargo saat Morgan membidik leher letnan pengawal sindikat; antarmuka merah menyala di retina matanya, mengunci nilai likuidasi kepala sang letnan ke saldo kredit Imperial."
+      ];
+      document.getElementById('user-prompt').value = samples[Math.floor(Math.random() * samples.length)];
+    }
+
+    function clearWorkspace() {
+      if (storyHistory.length > 0 && !confirm("Yakin ingin menghapus seluruh sekuens cerita di naskah saat ini?")) return;
+      storyHistory = [];
+      saveStateToLocalStorage();
+      renderAllScenes();
+      document.getElementById('user-prompt').value = '';
+      updateHUD();
+      updateStatus('Naskah telah direset');
+    }
+
+    function deleteScene(idx) {
+      if (!confirm(`Hapus Sekuens #${storyHistory[idx].sceneIndex}?`)) return;
+      storyHistory.splice(idx, 1);
+      // Re-index remaining scenes
+      storyHistory.forEach((s, i) => s.sceneIndex = i + 1);
+      saveStateToLocalStorage();
+      renderAllScenes();
+      updateHUD();
+    }
+
+    function setLoading(isLoading) {
+      const btn = document.getElementById('btn-generate');
+      const spinner = document.getElementById('btn-spinner');
+      const btnText = document.getElementById('btn-text');
+
+      if (isLoading) {
+        btn.disabled = true;
+        btn.classList.add('opacity-70');
+        spinner.classList.remove('hidden');
+        btnText.innerText = "Mengekspansi Narasi...";
+      } else {
+        btn.disabled = false;
+        btn.classList.remove('opacity-70');
+        spinner.classList.add('hidden');
+        btnText.innerText = "Ekspansi 5 Paragraf (Bersambung)";
+      }
+    }
+
+    // TAB 3: Character & Array Management Controllers
+    function saveCharacterProfile() {
+      currentCharacter.name = document.getElementById('edit-char-name').value.trim();
+      currentCharacter.generation = document.getElementById('edit-char-gen').value.trim();
+      currentCharacter.height = parseInt(document.getElementById('edit-char-height').value) || 185;
+      currentCharacter.fleshMatrix = document.getElementById('edit-char-flesh').value.trim();
+      currentCharacter.credits = parseInt(document.getElementById('edit-char-credits').value) || 0;
+      currentCharacter.pantheon = document.getElementById('edit-char-pantheon').value.trim();
+      
+      saveStateToLocalStorage();
+      updateHUD();
+      alert("Profil karakter inang aktif berhasil diperbarui.");
+    }
+
+    function renderHeuristicJsonEditor() {
+      document.getElementById('edit-heuristic-json').value = JSON.stringify(heuristicPatterns, null, 2);
+    }
+
+    function saveHeuristicPatterns() {
+      try {
+        const parsed = JSON.parse(document.getElementById('edit-heuristic-json').value);
+        if (!parsed.atmospheric || !parsed.biological || !parsed.tactical) {
+          throw new Error("JSON harus memiliki kunci 'atmospheric', 'biological', dan 'tactical'.");
+        }
+        heuristicPatterns = parsed;
+        saveStateToLocalStorage();
+        alert("Bank array heuristik berhasil disimpan.");
+      } catch (err) {
+        alert(`Format JSON tidak valid: ${err.message}`);
+      }
+    }
+
+    function resetHeuristicPatternsToDefault() {
+      if (!confirm("Kembalikan seluruh bank kalimat heuristik ke pengaturan bawaan?")) return;
+      heuristicPatterns = JSON.parse(JSON.stringify(DEFAULT_HEURISTICS));
+      renderHeuristicJsonEditor();
+      saveStateToLocalStorage();
+      alert("Array heuristik telah direset ke default.");
+    }
+
+    // TAB 4: Export and Backup Controllers
+    function exportProjectJSON() {
+      const payload = {
+        metadata: {
+          app: "Bestherax Narrative Genesis Engine",
+          version: "2.0-Extended",
+          timestamp: new Date().toISOString()
+        },
+        character: currentCharacter,
+        heuristics: heuristicPatterns,
+        storyHistory: storyHistory
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      downloadBlob(blob, `Bestherax_Project_${Date.now()}.json`);
+    }
+
+    function importProjectJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (data.character) currentCharacter = data.character;
+          if (data.heuristics) heuristicPatterns = data.heuristics;
+          if (data.storyHistory) storyHistory = data.storyHistory;
+
+          saveStateToLocalStorage();
+          loadSavedState();
+          updateHUD();
+          renderHeuristicJsonEditor();
+          alert("Proyek berhasil dipulihkan secara penuh.");
+          switchTab('workspace');
+        } catch (err) {
+          alert(`Gagal membaca berkas JSON: ${err.message}`);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function exportToMarkdown() {
+      if (storyHistory.length === 0) {
+        alert("Belum ada cerita yang dibuat.");
+        return;
+      }
+      let md = `# KRONIK VANDERSON: BESTHERAX TIER 2\n\n`;
+      md += `**Inang Aktif:** ${currentCharacter.name} (${currentCharacter.generation})\n`;
+      md += `**Flesh Matrix:** ${currentCharacter.fleshMatrix} | **Kredit:** ${currentCharacter.credits} Imperial\n\n---\n\n`;
+
+      storyHistory.forEach(s => {
+        md += `## Sekuens #${s.sceneIndex} [${s.focus.toUpperCase()}]\n\n`;
+        md += `*Pemicu Awal: ${s.seed}*\n\n`;
+        s.paragraphs.forEach((p, i) => {
+          md += `### Bagian ${i+1}\n${p.replace(/^\[.*?\]\s*/, '')}\n\n`;
+        });
+        md += `---\n\n`;
+      });
+
+      const blob = new Blob([md], { type: 'text/markdown' });
+      downloadBlob(blob, `Bestherax_Chronicles_${Date.now()}.md`);
+    }
+
+    function exportToPDF() {
+      if (storyHistory.length === 0) {
+        alert("Belum ada teks untuk dicetak.");
+        return;
+      }
+      const printMount = document.getElementById('print-mount');
+      let html = `
+        <div style="font-family: serif; line-height: 1.8; color: #111;">
+          <h1 style="font-size: 24pt; text-align: center; margin-bottom: 4px; text-transform: uppercase;">Kronik Vanderson</h1>
+          <p style="text-align: center; font-size: 10pt; color: #555; margin-bottom: 24pt;">
+            Semesta Metronova • Koloni Bestherax • Inang: ${currentCharacter.name} (${currentCharacter.generation})
+          </p>
+          <hr style="border: 0; border-top: 1px solid #ccc; margin-bottom: 24pt;" />
+      `;
+
+      storyHistory.forEach(s => {
+        html += `<h2 style="font-size: 14pt; margin-top: 18pt; margin-bottom: 8pt; border-bottom: 1px solid #ddd; padding-bottom: 4pt;">Sekuens #${s.sceneIndex}</h2>`;
+        html += `<p style="font-style: italic; font-size: 10pt; color: #666; margin-bottom: 12pt;">Pemicu: "${escapeHtml(s.seed)}"</p>`;
+        s.paragraphs.forEach(p => {
+          html += `<p style="text-align: justify; text-indent: 2em; margin-bottom: 12pt; font-size: 11pt;">${escapeHtml(p.replace(/^\[.*?\]\s*/, ''))}</p>`;
+        });
+      });
+
+      html += `</div>`;
+      printMount.innerHTML = html;
+      printMount.classList.remove('hidden');
+
+      window.print();
+
+      printMount.classList.add('hidden');
+      printMount.innerHTML = '';
+    }
+
+    function exportStandaloneHTML() {
+      if (storyHistory.length === 0) {
+        alert("Belum ada cerita untuk diekspor.");
+        return;
+      }
+
+      let contentHtml = '';
+      storyHistory.forEach(s => {
+        contentHtml += `
+          <div class="scene-card">
+            <h2>Sekuens #${s.sceneIndex} <span class="tag">${s.focus}</span></h2>
+            <div class="seed-text">Pemicu: "${escapeHtml(s.seed)}"</div>
+        `;
+        s.paragraphs.forEach((p, idx) => {
+          contentHtml += `<p><strong>${idx+1}.</strong> ${escapeHtml(p.replace(/^\[.*?\]\s*/, ''))}</p>`;
+        });
+        contentHtml += `</div>`;
+      });
+
+      const standalone = `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Bestherax Reader - ${escapeHtml(currentCharacter.name)}</title>
+  <style>
+    body { background: #0b0f19; color: #cbd5e1; font-family: 'Georgia', serif; line-height: 1.8; margin: 0; padding: 40px 20px; }
+    .reader-container { max-width: 800px; margin: auto; }
+    h1 { font-family: 'Helvetica Neue', sans-serif; text-transform: uppercase; color: #f59e0b; text-align: center; margin-bottom: 4px; letter-spacing: 2px; }
+    .subtitle { text-align: center; color: #64748b; font-size: 0.9em; margin-bottom: 40px; font-family: sans-serif; }
+    .scene-card { background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 25px; margin-bottom: 30px; }
+    h2 { font-size: 1.2em; color: #f1f5f9; border-bottom: 1px solid #1f2937; padding-bottom: 10px; margin-top: 0; font-family: sans-serif; display: flex; justify-content: space-between; }
+    .tag { font-size: 0.7em; background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.2); }
+    .seed-text { font-style: italic; color: #64748b; font-size: 0.9em; margin-bottom: 20px; }
+    p { text-align: justify; margin-bottom: 16px; font-size: 1.05em; color: #e2e8f0; }
+  </style>
+</head>
+<body>
+  <div class="reader-container">
+    <h1>Bestherax Chronicles</h1>
+    <div class="subtitle">Planet Vanderson • Inang: ${escapeHtml(currentCharacter.name)} (${escapeHtml(currentCharacter.generation)})</div>
+    ${contentHtml}
+  </div>
+</body>
+</html>`;
+
+      const blob = new Blob([standalone], { type: 'text/html' });
+      downloadBlob(blob, `Bestherax_Reader_${Date.now()}.html`);
+    }
+
+    function copyGeneratedStory() {
+      if (storyHistory.length === 0) {
+        alert("Belum ada cerita yang digenerasi.");
+        return;
+      }
+      let fullText = "";
+      storyHistory.forEach(s => {
+        fullText += `=== SEKUENS #${s.sceneIndex} ===\n\n`;
+        s.paragraphs.forEach(p => {
+          fullText += `${p.replace(/^\[.*?\]\s*/, '')}\n\n`;
+        });
+      });
+      navigator.clipboard.writeText(fullText).then(() => {
+        alert("Seluruh naskah cerita berhasil disalin ke clipboard!");
+      });
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;'
+      }[tag] || tag));
+    }
+  </script>
+<!-- ========================================================================= -->
+  <!-- MODULAR EXPANDED SENTENCE BANK & PERMUTATION ENGINE (OFFLINE SYSTEM)       -->
+  <!-- ========================================================================= -->
+  <script>
+    // Master Matrix Vocabulary & Granular Sentence Arrays
+    const EXPANDED_LEXICON_MATRIX = {
+      atmospheric: {
+        phase1: [
+          "Kabut timah cair khas Lower Docklands Planet Vanderson menggantung statis setinggi lutut, memerangkap bau tajam tembaga teroksidasi dan sulfur dingin dari reaktor pengolahan logam berat.",
+          "Hujan asam berdensitas rendah turun miring terdorong hembusan turbin ventilasi raksasa di Sektor 09, mendesis pelan saat tetesannya menyapu pelat baja dek dok yang telah berkarat selama tiga dekade.",
+          "Langit malam Vanderson tidak pernah benar-benar gelap; kubah kabut polusi membiaskan pendaran merah redup dari cerobong pembakaran kilang minyak sintetik yang berdiri monolitik membelah cakrawala megakota.",
+          "Deru mesin sentrifugasi bijih besi berkekuatan megawatt berdentum melalui fondasi beton tebal tempat berpijak, mentransmisikan getaran frekuensi rendah yang membuat baut-baut pipa drainase bergetar ritmis.",
+          "Uap bertekanan tinggi menyembur berkala dari celah paking katup pipa primer berdiameter empat meter, menyebarkan kabut panas berbau amonia yang langsung membakar dinding hidung dalam hitungan detik.",
+          "Dinding-dinding arcology bergaya brutalis Anglo-Amerika menjulang vertikal menembus lapisan troposfer, menghalangi seluruh sirkulasi udara alami dan membiarkan distrik kumuh terperangkap dalam perangkap gravitasi satu g yang terasa menindas.",
+          "Genangan minyak pelumas hidrokarbon membentuk lapisan warna-warni kusam di atas kisi-kisi pembuangan limbah, memantulkan lampu sorot menara pengawas korporasi yang menyapu dermaga kargo setiap delapan belas detik.",
+          "Angin dingin berkecepatan rendah membawa partikel debu silika kasar dari sabuk penambangan terluar Vanderson, menabrak kaca jendela pecah gudang penyimpanan kontainer dengan bunyi gemerisik konstan.",
+          "Di kejauhan, siluet kran pengangkat antariksa setinggi satu kilometer meraba batas awan rendah, membongkar peti kemas paduan titanium dari pesawat ulang-alik kargo yang baru saja turun dari orbit rendah.",
+          "Bongkahan es kotor bercampur jelaga industri menumpuk di sudut-sudut lorong buntu, mencair lambat akibat kebocoran kabel transmisi listrik tegangan tinggi yang mendesis di balik dinding beton retak.",
+          "Udara di kedalaman dermaga kapal barang ini terasa sepuluh kali lipat lebih padat dari batas normal, sarat dengan sisa pembakaran partikel bahan bakar fusi yang gagal terbakar sempurna pada roket pendorong.",
+          "Cahaya neon kuning usang dari papan reklame sindikat penyelundup berkedip-kedip sekarat di ujung gang, menghasilkan dengungan listrik statis yang memecah dinginnya malam tanpa bintang di Galaksi Metronova."
+        ],
+        phase2: [
+          "Di bawah lapisan jaket kanvas tebalnya, serat nanit purba di sepanjang tulang belakang Morgan menggeliat bagai sulur parasit dingin yang sedang menyelaraskan diri dengan medan gravitasi lokal.",
+          "Denyut nadi di pergelangan tangannya berdetak pada frekuensi abnormal; matriks purba menyaring racun partikulat sulfur dari alveolus paru-parunya, mengubah rasa sesak menjadi sengatan adrenalin dingin.",
+          "Tengkorak belakangnya berdenyut tumpul saat cetak biru neurologis sistem memindai kapasitas fisik tubuhnya—seorang pria kasta bawah berketinggian 185 sentimeter yang mencoba menantang standar biologis elit Bestherax.",
+          "Sensasi seperti tusukan ratusan kawat mikro merambat dari tengkuk hingga ke lumbar bawahnya, mendistribusikan cadangan energi biokinetik yang sebelumnya tersimpan pasif di dasar sumsum tulangnya.",
+          "Parut luka sayatan lama di tulang rusuk kirinya berdenyut ngilu; sistem purba tidak hanya mendeteksi kerusakan jaringan lama tersebut, melainkan mulai memetakan rekombinasi kalsium yang dibutuhkan untuk menutup kerapuhannya.",
+          "Di sudut tergelap kesadarannya, lapisan memori sistem memutar dengungan statis yang aneh—sebuah firasat samar dari jejak biologis inang pertama yang mengisyaratkan bahwa kelemahan fisik adalah undangan menuju kematian.",
+          "Suhu tubuh inti Morgan merosot satu koma dua derajat sebelum kembali melonjak drastis saat nanit mengonsumsi cadangan glukosa darah untuk mempercepat transduksi sinapsis saraf motoriknya.",
+          "Penglihatan periferal mata kirinya berkedut samar, digantikan oleh hamparan kisi-kisi data monokrom redup yang mengukur ketebalan udara serta titik-titik tumpu kinetik terkuat di lantai beton.",
+          "Otot-otot trapezius dan betisnya mengeras secara involunter; stimulasi biokinetik purba menuntut pemanasan seluler, seolah tubuh fisiknya sedang dipaksa menjadi wadah senjata sebelum waktunya tiba.",
+          "Hawa dingin yang menusuk kulit luarnya terisolasi seketika saat pembuluh darah kapilernya menyempit atas instruksi sistem, memusatkan sirkulasi darah teroksigenasi penuh ke jantung dan lobus frontal otak.",
+          "Resonansi rendah terdengar langsung di saluran eustachius telinganya; sistem menguji batas getaran koklea, memastikan pendengarannya mampu membedakan desis kebocoran gas dari tarikan pelatuk senjata.",
+          "Morgan menarik napas teratur dan dangkal; ia tahu betul batas tubuh manusianya belum melampaui separuh dari daya tahan perwira Bestherax, namun arsitektur purba di dadanya terus menuntut pembuktian."
+        ],
+        phase3: [
+          "Tiga puluh meter di mulut persimpangan dok, dua sosok patroli korporasi berdiri tegap dengan siluet khas Bestherax berpostur dua ratus lima sentimeter, dibalut baju zirah polimer berbalistik tinggi.",
+          "Laras karbin kinetik kaliber berat yang tergantung di dada para penjaga itu mengarah tepat ke sudut lintasan yang harus dilewati, mempersempit koridor gerak hingga kurang dari satu koma lima meter.",
+          "Morgan mengamati tempo pergantian langkah kaki mereka; setiap ayunan sepatu bot lapis keramik itu memiliki presisi mekanis tentara profesional yang terlatih menumpas kerusuhan buruh distrik pabrik.",
+          "Sensor pengawas optik portabel yang tertancap di dada salah satu perwira memancarkan garis inframerah tipis yang terus menyapu area penumpukan kontainer, mendeteksi fluktuasi panas sekecil apa pun.",
+          "Dari postur bahu yang rileks dan tawa tertahan yang terdengar di antara deru generator, para pengawal itu jelas menganggap sektor bawah ini aman dari ancaman yang memerlukan kesiagaan penuh.",
+          "Salah satu prajurit bertubuh paling jangkung menyalakan rokok sintetis beraroma cengkeh kimiawi, membuka pelindung leher pada zirah antipelurunya selama beberapa detik yang sangat krusial.",
+          "Sistem di kepala Morgan membedah struktur sambungan pelindung bahu musuh, memproyeksikan kerentanan celah sebesar dua sentimeter di antara pelat servikal dan pelindung klavikula baja paduan.",
+          "Dua unit drone intai berukuran bola tangan berputar lambat di atas kepala mereka, mendengung pelan bagai lebah baja yang siap menembakkan suar penanda target jika mendeteksi anomali biometrik tak terdaftar.",
+          "Tumpukan kontainer kargo yang bertuliskan logo korporasi pemurnian Bestherax menjadi satu-satunya penghalang visual antara posisi persembunyian Morgan dengan lintasan tembak laras ganda musuh.",
+          "Pantulan lampu natrium pada pelat helm visor hitam pengawal itu menyamarkan arah tatapan matanya, memaksa Morgan membaca pergeseran mikro dari sudut kemiringan senjatanya.",
+          "Jarak tembak efektif di koridor sempit ini tidak lebih dari dua puluh langkah; dalam ruang sepadat ini, kecepatan reaksi pelatuk akan menentukan siapa yang bertahan sebelum sinyal darurat terkirim.",
+          "Morgan memperhitungkan sudut pantulan proyektil jika ia menembak pelat lantai kisi-kisi; material kisi baja cor tersebut memiliki sudut defleksi tajam yang mampu merobek arteri femoralis lawan."
+        ],
+        phase4: [
+          "Morgan menurunkan titik gravitasinya secara perlahan, menempelkan punggungnya pada permukaan dingin kontainer tanpa membiarkan gesekan ritsleting mantelnya menimbulkan decitan sekecil apa pun.",
+          "Jemari tangan kanannya meraba pelatuk logam dingin pistol rakitan di balik sakunya, menguji ketegangan pegas pemukul yang telah ia modifikasi menggunakan kawat baja berkekuatan tarik tinggi.",
+          "Kakinya bergeser beberapa milimeter ke depan, menapak tepat di atas balok penopang lantai cor untuk menghindari suara retakan genangan air tipis yang membeku di bawah sol sepatunya.",
+          "Ia menahan napas di rongga dada, membiarkan tubuhnya berada dalam kondisi hening mutlak saat bayangan monolitik salah satu penjaga melintas hanya beberapa jengkal di balik celah kontainer.",
+          "Ujung jari kirinya menekan permukaan silinder obsidian artefak purba di saku dalam; permukaan batu itu seketika merespons dengan memancarkan panas mikroskopis yang menyedot kelembapan telapak tangannya.",
+          "Setiap sendi di pergelangan kakinya mengunci secara sadar; ia menghitung mundur siklus sapuan lampu sorot menara pengawas, menunggu interval gelap selama dua koma empat detik yang berulang konstan.",
+          "Sebuah tetesan kondensasi jatuh dari pipa di atas tepat mengenai kerah jaketnya, namun tidak ada satu otot pun di wajahnya yang berkedut; insting membunuh purba telah membekukan refleks kagetnya.",
+          "Ia menarik tuas pengunci senjata tanpa suara, membiarkan satu butir peluru berinti tungsten meluncur masuk ke kamar tembak dengan presisi mekanis yang sangat rapat.",
+          "Saat angin turbin ventilasi bertiup paling kencang dan menyamarkan kebisingan sekitar, Morgan melangkah keluar dari sudut gelap dengan gerakan menyusur tanah yang menyerupai predator malam.",
+          "Matanya tidak berkedip; retina kirinya terus memperbarui lintasan gerak sendi leher pengawal Bestherax yang kini hanya berjarak lima langkah di depan moncong senjatanya.",
+          "Ia merasakan beban berat pistol di genggamannya mendadak terasa seringan kayu kering saat impuls motorik dari sistem purba melipatgandakan daya cengkeram lima jemari tangannya.",
+          "Kain mantelnya berkibar pelan tersapu aliran udara bertekanan, namun postur tubuhnya tetap tegak stabil bagai patung perunggu yang siap melepaskan ledakan gaya pegas dalam sekejap mata."
+        ],
+        phase5: [
+          "Tepat ketika prajurit Bestherax itu memutar tumitnya dan pupil matanya membesar menyadari kehadiran manusia di zona terlarang, moncong senjata Morgan telah terkunci kaku pada celah kerah zirahnya—menunggu satu hentakan jari untuk memicu kalkulasi likuidasi kredit sistemik pertama.",
+          "Suara logam beradu pelan terdengar di ujung lorong saat rekan penjaga itu berteriak menanyakan situasi; waktu seolah membeku di ruang hampa satu g ini, meninggalkan Morgan pada ambang eksekusi berdarah yang tak dapat dibatalkan.",
+          "Notifikasi monolitik berwarna merah membakar saraf optik Morgan dengan desakan biner tanpa suara: target berstatus perwira tempur Bestherax terkonfirmasi, menjanjikan pencairan seribu dua ratus kredit dan cetak biru modul senjata kinetik purba begitu nyawa target padam.",
+          "Sebelum peringatan radio musuh sempat terhubung ke menara induk, sistem purba di tengkuk Morgan bergetar hebat—sebuah sinyal intervensi yang menuntut aliran darah segar untuk mengaktifkan siklus metamorfosis nanit tahap kedua.",
+          "Mata letnan Bestherax itu memancarkan kepanikan purba saat ia melihat pendaran aneh di pupil mata Morgan; di detik yang menentukan tersebut, pelatuk ditarik setengah jalan dan dentuman mekanis pertama siap mengguncang kesunyian dok.",
+          "Layar antarmuka internal di benak Morgan mendadak mengunci frekuensi transmisi musuh, menawarkan opsi instan: eliminasi frontal untuk konversi ekonomi kilat, atau kelumpuhan taktis demi memburu komandan kasta atas yang mengendalikannya.",
+          "Jari Morgan menekan pelatuk hingga titik resistensi terakhir; di saat yang sama, dengungan artefak obsidian di sakunya melonjak ke frekuensi tinggi, siap melahap residu bioelektrik korban dalam pecahan milidetik.",
+          "Lampu sorot menara pengawas mendadak bergeser cepat menuju koordinat mereka; satu tarikan pelatuk kini bukan hanya tentang membunuh satu orang, melainkan menyalakan sumbu perang terbuka melawan korporasi penguasa Vanderson.",
+          "Letnan setinggi dua meter itu berusaha mengangkat karbin laras gandanya, namun koordinat gerak senjatanya telah terbaca penuh oleh kalkulasi sistem purba—kematian telah dipatok, tinggal menunggu konfirmasi pelepasan proyektil.",
+          "Udara di antara moncong senjata dan leher sang penjaga terasa terionisasi seketika; sebuah kepastian brutal merayapi benak Morgan bahwa begitu peluru ini menembus daging, tidak ada jalan kembali ke kehidupan lamanya sebagai rakyat jelata.",
+          "Sebuah bisikan asing bernada dingin dan menuntut bergema di dalam tempurung kepala Morgan—suara matriks purba yang menyetujui eksekusi ini dengan satu perintah mutlak: bunuh dan klaim hak penaklukan.",
+          "Peluru melesat keluar dari laras bersama kilatan api pendek tanpa asap; waktu merambat lambat saat proyektil menembus celah pelindung leher, membuka babak baru penaklukan berdarah di lantai terdingin Planet Vanderson."
+        ]
+      },
+
+      biological: {
+        phase1: [
+          "Kamar persembunyian di lantai tujuh belas kompleks blok apartemen Sektor 12 berbau apek campuran desinfektan murah, debu karpet basah, dan aroma ozon dari unit pendingin udara yang bocor.",
+          "Cahaya remang-remang dari tabung neon vertikal yang dipasang darurat di sudut ruangan membiaskan bayangan panjang furnitur logam berkarat pada dinding partisi berperedam suara usang.",
+          "Dari celah ventilasi jendela yang ditutup papan fiber, terdengar dengung sirene patroli atmosferik melintas di ketinggian tiga ribu meter, menyebarkan gelombang kejut frekuensi tinggi yang menggetarkan kaca retak.",
+          "Suhu ruangan terasa hangat dan lembap secara ganjil; uap air kondensasi mengalir lambat menuruni dinding beton tanpa cat, mengumpulkan kotoran industri di celah lantai linoleum yang terkelupas.",
+          "Aroma parfum sintetis bunga nightshade yang pekat bercampur dengan bau besi dari tetesan darah segar di wastafel keramik, menandakan tempat pelarian yang baru saja dimasuki secara tergesa-gesa.",
+          "Udara statis di dalam ruangan sempit berukuran empat kali empat meter ini dipenuhi partikel mikro pembersih kimiawi yang sengaja disemprotkan untuk mengaburkan jejak feromon dari anjing pelacak korporasi.",
+          "Di atas kasur busa tipis tanpa sprei, selembar selimut termal berbahan mylar berkilau keperakan tertimpa cahaya redup, berdesir halus setiap kali ada hembusan angin dari kisi sirkulasi udara luar.",
+          "Getaran mekanik dari lift kargo di lorong luar merambat melalui pilar-pilar penyangga utama gedung, menciptakan irama detak monoton yang menekan ketegangan di antara dua pasang mata di ruangan itu.",
+          "Tirai jendela plastik tembus pandang yang telah menguning bergoyang pelan tertiup angin celah dinding, memperlihatkan siluet megakota Vanderson yang membentang tanpa batas di balik kabut industri.",
+          "Sebuah pemanas radiasi kecil di sudut ruangan mendesis pelan dengan pendaran kawat tembaga merah membara, menyebarkan bau hangus debu organik yang terbakar di atas kisi pelindungnya.",
+          "Keheningan di dalam kamar itu begitu pekat hingga suara tarikan napas pendek dan gesekan pakaian sintetis di atas kasur terdengar sejelas dentang lonceng di ruang hampa.",
+          "Lantai ruangan bergetar samar saat armada konvoi kargo militer kelas berat lepas landas dari pangkalan orbit terdekat, mengguncang gravitasi mikro di sekitar struktur hunian padat tersebut."
+        ],
+        phase2: [
+          "Lapisan nanit biokinetik di sumsum tulang belakang Morgan mulai bereaksi secara agresif; bukan sensasi penolakan mekanis, melainkan dorongan hormonal primal yang melipatgandakan laju denyut jantungnya hingga seratus empat puluh bpm.",
+          "Kulit di sepanjang lengan bawah Morgan terasa gatal dan panas saat pori-porinya merespons partikel feromon kasta tinggi yang mengapung di udara, memicu sekresi endorfin dalam kadar yang memabukkan.",
+          "Sistem purba di tempurung kepalanya membedah matriks genetika target dengan kecepatan ribuan instruksi per detik, memancarkan sensasi lapar biologis yang menuntut kontak fisik langsung tanpa kompromi.",
+          "Otot-otot di dada dan bahunya berkontraksi kuat secara ritmis; ia merasakan kerapatan jaringan serat dagingnya mendadak melunak sesaat, mempersiapkan diri untuk menyerap muatan biokinetik asing.",
+          "Darah panas bergolak di pembuluh arteri karotisnya; dorongan naluriah dari artefak obsidian itu membanjiri lobus limbiknya dengan insting dominasi dan penaklukan seksual yang sangat dingin dan terencana.",
+          "Tulang-tulang jemarinya bergetar halus saat lapisan kolagen di persendiannya mengalami polarisasi mikro; sistem sedang mengkalibrasi ulang batas elastisitas fisiknya berdasarkan potensi kekuatan lawan di hadapannya.",
+          "Pandangan matanya menajam secara drastis hingga ia mampu melihat butiran keringat mikro yang merembes di permukaan kulit leher wanita itu, serta irama getaran denyut nadi di bawah vena jugularisnya.",
+          "Suhu permukaan kulit Morgan melonjak naik hingga mendekati batas demam tinggi; namun anehnya, pikirannya justru tetap jernih dan kalkulatif, bebas dari kabut kepanikan biologis biasa.",
+          "Di dasar sumsum tulangnya, struktur nanit mulai memecah cadangan lipid kompleks menjadi energi biokinetik murni, menciptakan sensasi perih membakar yang menuntut pelepasan melalui sentuhan kulit.",
+          "Sistem saraf simpatiknya terkunci pada mode resonansi seksual; antarmuka purba memproyeksikan diagram heliks DNA yang berputar cepat di sudut matanya, menunggu konfirmasi persetubuhan untuk memulai sintesis.",
+          "Setiap tarikan napasnya terasa mengisi paru-parunya dengan muatan ion positif; ia menyadari bahwa tubuhnya bukan lagi milik seorang manusia jelata, melainkan pabrik perombak biomassa yang buas.",
+          "Keringat dingin menetes di pelipisnya saat ia menahan gejolak otot-otot pinggul dan punggungnya yang menegang tegang; dorongan untuk menundukkan wanita di hadapannya kini bercampur dengan kalkulasi bertahan hidup."
+        ],
+        phase3: [
+          "Wanita di hadapannya memiliki tinggi seratus delapan puluh delapan sentimeter—postur elegan khas kasta teknokrat Bestherax—dengan struktur tulang pipi tinggi dan mata biru pucat yang memancarkan kewaspadaan seekor serigala terluka.",
+          "Baju terusan keramik antipelurunya telah robek di bagian bahu kiri, memperlihatkan kulit putih pucat berlumur jelaga hitam dan luka bakar plasma yang masih mengeluarkan cairan bening jaringan.",
+          "Napas wanita itu memburu pendek-pendek; tangannya yang ramping namun berotot kencang mencengkeram pecahan bilah pisau monomolekuler berlumur darah kering di atas pahanya.",
+          "Meskipun tubuhnya gemetar akibat kehilangan darah dan kelelahan ekstrem, sorot matanya tidak menunjukkan ketakutan seorang korban, melainkan arogansi dingin dari ras penguasa yang terbiasa memerintah miliaran nyawa.",
+          "Garis rahangnya yang tegas dan proporsi otot lehernya yang sempurna menandakan manipulasi eugenika kasta atas Bestherax sejak dalam tabung embrio, sebuah kemurnian genetik yang sangat langka di distrik kumuh ini.",
+          "Ia menatap Morgan dari ujung kaki hingga kepala dengan tatapan menilai yang tajam; bagi wanita itu, seorang pria kelas bawah berukuran seratus delapan puluh lima sentimeter adalah anomali yang mencurigakan di sarang persembunyian ini.",
+          "Pakaian dalam taktis berbahan polimer elastis yang membungkus tubuhnya memperlihatkan lekuk otot perut dan pinggul yang terlatih untuk pertempuran gravitasi tinggi di stasiun tempur luar angkasa.",
+          "Jari-jarinya yang panjang berlumur noda oli mesin sesekali mengencang pada pegangan pisau, sementara pupil matanya yang melebar menunjukkan bahwa efek obat stimulan tempurnya mulai habis terkuras.",
+          "Di balik tatapannya yang keras, Morgan menangkap kerentanan fisik yang mematikan; suhu tubuh wanita itu turun drastis dan ritme napasnya yang tidak teratur menandakan syok traumatis stadium awal.",
+          "Aroma tubuh alaminya yang tajam dan murni—kombinasi feromon bangsa Bestherax murni tanpa kontaminasi udara jalanan—menguar semakin kuat seiring meningkatnya intensitas ketegangan di antara mereka.",
+          "Wanita itu tidak bergerak mundur saat Morgan melangkah mendekat; arogansi aristokrat militernya menolak untuk memperlihatkan kelemahan, bahkan ketika lututnya bergetar menahan berat tubuhnya sendiri.",
+          "Bilah pisau monomolekuler di tangannya bergetar halus membentuk sudut pertahanan jarak dekat, sebuah refleks terlatih yang siap menggorok tenggorokan siapa pun yang mencoba menyentuh batas integritas tubuhnya."
+        ],
+        phase4: [
+          "Morgan melangkah maju satu langkah tanpa bersuara, mencondongkan tubuhnya ke depan hingga bayangan bahunya menutupi seluruh sosok wanita yang sedang bersandar di dinding kasur tersebut.",
+          "Tangannya yang kasar bergerak perlahan tanpa ragu, bukan untuk merebut senjata di tangan wanita itu, melainkan mencengkeram pergelangan tangannya yang dingin dengan kekuatan cengkeraman baja yang tak tergoyahkan.",
+          "Wanita itu tersentak kaget dan berusaha menarik lengannya, namun cengkeraman jemari Morgan yang diperkuat nanit purba mengunci persendian tulangnya dengan tekanan presisi yang mematikan gerak motoriknya.",
+          "Pecahan pisau monomolekuler terlepas dari jari-jari sang wanita dan berdenting jatuh ke lantai vinil; tatapan mata mereka terkunci rapat dalam jarak kurang dari sepuluh sentimeter.",
+          "Morgan menarik tubuh wanita itu mendekat ke dadanya; ia merasakan detak jantung sang teknokrat Bestherax berdegup kencang membentur dinding dadanya dengan ritme panik yang liar.",
+          "Sentuhan kulit pertama di bahu wanita yang terluka itu memicu pelepasan gelombang arus statis mikro yang merambat langsung ke sumsum tulang belakang Morgan dengan intensitas membakar.",
+          "Wanita itu mendesah tertahan di antara kemarahan dan rasa sakit; bibirnya yang kering terbuka sedikit saat jemari Morgan yang lain menyentuh tengkuk lehernya, menekan simpul saraf penenang biologisnya.",
+          "Baju pelindung polimer yang koyak itu meluncur jatuh dari pundak wanita tersebut, memperlihatkan punggung mulus berotot yang kini basah oleh keringat dingin bercampur minyak feromon pekat.",
+          "Morgan menundukkan kepalanya, membiarkan hembusan napas hangatnya menyapu lekuk leher wanita itu; desakan biokinetik di dalam tubuhnya kini menuntut penyerahan total dari kasta genetik yang selama ini menginjak bangsanya.",
+          "Wanita Bestherax itu berusaha memberontak dengan menekan telapak tangannya ke dada Morgan, namun kekakuan otot dan kekuatan absolut pria di depannya menahan seluruh tenaganya tanpa bergeser satu milimeter pun.",
+          "Napas sang wanita berubah menjadi desah berat yang terputus-putus saat jemari Morgan menelusuri garis pinggulnya, memicu respons hormonal biologis yang mengkhianati kehendak rasionalitas aristokratnya.",
+          "Ruangan itu seakan menyusut menjadi hanya sebatas ruang peraduan sempit tempat dua tubuh dari kasta berlawanan saling menekan dengan intensitas kinetik yang siap meledak menjadi badai penaklukan biologis."
+        ],
+        phase5: [
+          "Ketika tubuh mereka akhirnya menyatu di atas kasur berkarat tersebut, sebuah ledakan gelombang energi biologis melesat dari panggul Morgan menembus seluruh jaringan saraf tulang belakangnya—matriks Flesh Matrix menyala penuh, menandai awal asimilasi materi genetik kasta elit Bestherax ke dalam sel-sel tubuhnya.",
+          "Desahan dan rintihan wanita teknokrat itu berbaur dengan dengung alarm pemrosesan di mata kiri Morgan; sistem purba mulai menyerap kemurnian hormonal target secara rakus, mentransmisikannya menjadi lonjakan massa kalsium pada struktur tulang rangkanya.",
+          "Setiap penetrasi fisik memicu pertukaran arus bioelektrik yang menyengat saraf mereka berdua; di retina Morgan, deretan kode heksadesimal purba bergulir liar, mengonfirmasi peningkatan batas tempur fisik sebesar empat puluh persen dari batas manusia normal.",
+          "Otot-otot di sekujur tubuh Morgan membesar dan mengeras dengan rasa sakit ekstasi yang luar biasa saat sistem merombak jaringan ligamennya secara instan di tengah keintiman berdarah tersebut.",
+          "Wanita itu mencengkeram punggung Morgan dengan kuku-kukunya yang tajam, tenggelam dalam pusaran rekombinasi hormonal yang mematikan pertahanan akal sehatnya dan menyerahkan seluruh kode biologisnya kepada sang penakluk kelas bawah.",
+          "Sistem purba mengunci status inang baru: kompatibilitas genetik kasta teknokrat berhasil diserap seutuhnya, membuka gerbang menuju ambang mutasi kekuatan fisik monster kinetik yang belum pernah dicapai spesies manusia mana pun di Planet Vanderson.",
+          "Kilatan cahaya biru redup berpendar sesaat di bawah kulit dada mereka berdua, menyegel ikatan parasit biologis yang akan selamanya merombak kapasitas metabolisme Morgan melampaui standar kasta militer tertinggi.",
+          "Dengungan sirene patroli korporasi di luar jendela mendadak terdengar sangat lambat dan terdistorsi; persepsi waktu di otak Morgan telah terakselerasi secara permanen akibat pelepasan neurotoksin penguat refleks.",
+          "Saat klimaks penaklukan tercapai di tengah keheningan kamar kumuh itu, sebuah notifikasi emas kuno terukir di retinanya: Flesh Matrix Tingkat Satu tuntas diasimilasi—fondasi fisik sang algojo antargenerasi kini telah kokoh.",
+          "Napas wanita di pelukannya melemah dalam ketidaksadaran penuh kelelahan biologis; sementara Morgan bangkit berdiri dengan serat otot baru yang berderak padat, siap menghancurkan tulang musuh dengan tangan kosongnya.",
+          "Di dalam tempurung kepalanya, sebuah gaung kesadaran pertama berbisik dengan nada dingin yang puas: penaklukan ranjang telah selesai, saatnya menumpahkan darah untuk membuka pilar persenjataan berikutnya.",
+          "Morgan memandang kedua tangannya yang kini tampak lebih kokoh dan memancarkan panas kinetik samar; ia tahu era penindasan terhadap dirinya telah berakhir malam ini di atas puing-puing kehormatan sang elit Bestherax."
+        ]
+      },
+
+      tactical: {
+        phase1: [
+          "Gudang logistik amunisi terbengkalai di tepi Sektor Industri 04 dipenuhi kontainer pelindung isotop bertumpuk setinggi lima belas meter, dengan bau sengatan asam nitrat dan bubuk propelan padat yang menusuk mata.",
+          "Lantai gudang yang terbuat dari lempengan baja bertulang dilumuri oli transformator hitam yang telah mengering menjadi kerak licin, berbahaya bagi pergerakan cepat tanpa alas sepatu bergerigi baja.",
+          "Kabel-kabel transmisi energi plasma tegangan ekstra tinggi menjuntai putus dari langit-langit setinggi tiga puluh meter, sesekali melepaskan percikan api listrik biru terang yang diiringi suara letupan tajam.",
+          "Hujan asam tipis memercik melalui atap seng polimer yang berlubang-lubang, membasahi peti-peti amunisi kaliber lima puluh milimeter yang tertata rapi di bawah terpal militer bertuliskan lambang kompi bayaran.",
+          "Sebuah derek kargo otomatis yang rusak tergantung miring di atas lintasan rel gantung, menciptakan bayangan monolitik besar yang bergoyang pelan tertiup angin kencang dari gerbang bongkar muat yang terbuka separuh.",
+          "Udara di dalam ruang penyimpanan ini terasa kering dan dingin, disirkulasikan oleh kipas buang berdiameter enam meter yang berputar lambat dengan suara derit bantalan logam yang aus.",
+          "Tumpukan selongsong peluru bekas uji tembak berserakan di parit drainase lantai, berkilau kekuningan tertimpa lampu darurat bercahaya jingga yang berkedip setiap lima detik.",
+          "Keheningan di dalam kompleks gudang senjata ini terasa mencekam; setiap hembusan angin yang masuk melalui celah pintu geser membawa dengungan radio militer yang bocor dari pangkalan pertahanan terdekat.",
+          "Sebuah kendaraan tempur lapis baja roda enam terparkir di tengah hanggar dengan pintu belakang terbuka, memamerkan kompartemen senjata internal yang dipenuhi senapan kinetik bermoncong ganda.",
+          "Bau tajam ozon terionisasi mengapung pekat di dekat generator pelindung deflektor yang mendengung di sudut ruangan, menandakan kubah perisai taktis sedang beroperasi pada kapasitas siaga rendah.",
+          "Genangan cairan pendingin kriogenik yang tumpah di sudut dermaga pemuatan membekukan lantai beton di sekitarnya, menghasilkan kabut putih tebal yang merayap di atas permukaan pelat baja.",
+          "Di luar gerbang, konvoi truk pengangkut bijih uranium melintas di jalan layang beton, menyebarkan getaran berat yang menggoyang rantai-rantai penambat kontainer dengan gemerincing logam beruntun."
+        ],
+        phase2: [
+          "Matriks Culling Economy di dalam saraf okulomotor Morgan mengunci enam titik tumpu anatomi musuh, melapisi pandangan matanya dengan garis bidik merah yang mengkalkulasi ketebalan pelat pelindung leher dan dada lawan.",
+          "Jantung Morgan memompa darah dengan tekanan tinggi yang sangat terkontrol; efek adaptasi biologis dari Flesh Matrix sebelumnya membuat otot bisep dan fleksor jarinya terasa seringan serat karbon namun sepadat titanium.",
+          "Sebuah cetak biru senjata kinetik berlabel 'Mag-Rifle Purba Model VII' berputar dalam resolusi 3D di retina matanya, menunjukkan bilah komponen yang masih terkunci dan membutuhkan konversi energi dari tiga nyawa musuh.",
+          "Saraf di ujung jemarinya berdenyut dengan getaran mikro berfrekuensi tinggi; sistem mempersiapkan refleks motoriknya untuk merespons tarikan pelatuk lawan dalam rentang waktu di bawah enam puluh milidetik.",
+          "Cadangan saldo di antarmuka retinanya berkedip hijau pucat: 1.250 Kredit Imperial—jumlah yang terlalu kecil untuk membeli pengaruh di Vanderson, namun cukup untuk memicu rasa lapar tak terpuaskan akan akumulasi likuiditas darah.",
+          "Di dasar tulang tengkoraknya, sensasi seperti desisan logam cair merambat turun ke tulang belikat; sistem sedang menghitung konversi materi yang akan dilepaskan begitu proyektil pertama berhasil memadamkan sinyal bioelektrik musuh.",
+          "Toleransi rasa sakitnya melonjak tajam saat nanit purba memblokir reseptor nosiseptif di saraf perifer, memastikan bahwa luka serpihan atau peluru nyasar tidak akan menghentikan momentum serangannya.",
+          "Ia merasakan koordinasi spasial tubuhnya meluas ke ruang tiga dimensi di sekelilingnya; persepsi pendengarannya kini mampu mengisolasi suara napas tiga pengawal di balik tumpukan kontainer baja.",
+          "Lapisan keratin di ujung-ujung jarinya mengeras secara mikroskopis, memberikan daya lekat gesekan yang sempurna pada pegangan senjata tanpa risiko tergelincir oleh keringat atau lumuran minyak mesin.",
+          "Sistem purba mendengungkan nada otorisasi pertempuran; sebuah protokol likuidasi telah diaktifkan, memutus seluruh keraguan moral manusiawi di otaknya dan menyisakan kalkulasi efisiensi pembunuhan murni.",
+          "Hawa dingin di ruang gudang itu tak lagi memengaruhi suhu tangannya; panas metabolisme yang diproduksi oleh nanit menjaga fleksibilitas sendi jarinya tetap berada pada efisiensi puncak seratus persen.",
+          "Morgan merasakan kepastian mutlak yang belum pernah ia miliki seumur hidupnya: setiap langkah yang ia ambil saat ini bukan lagi upaya bertahan hidup seorang gelandangan, melainkan perburuan aset ekonomi berskala galaktik."
+        ],
+        phase3: [
+          "Enam tentara bayaran elit kompi Black-Ochre—seluruhnya ras Bestherax bertubuh raksasa di atas dua meter—bergerak dalam formasi baji taktis melintasi koridor kontainer, senapan serbu terkokang di dada masing-masing.",
+          "Komandan regu, seorang veteran berwajah penuh parut luka bakar laser setinggi dua ratus delapan sentimeter, mengenakan rompi balistik komposit generasi terbaru yang kebal terhadap peluru timbal konvensional.",
+          "Lampu senter taktis berdaya seribu lumen yang terpasang di bawah laras senjata mereka memotong kegelapan gudang dengan berkas cahaya putih menusuk, menyapu sudut-sudut persembunyian dengan disiplin patroli tanpa celah.",
+          "Komunikasi mereka berlangsung lewat ketukan mikro pada mikrofon tenggorokan; tidak ada suara teriakan amatir, hanya isyarat tangan dan desis radio terenkripsi yang berderak pelan di saluran frekuensi tertutup.",
+          "Dua pengawal penembak jitu di barisan belakang mengarahkan bidikan optik termal ke arah catwalk baja di lantai atas, mendeteksi tanda-tanda panas sekecil apa pun di antara tumpukan pipa drainase.",
+          "Di tangan kanan komandan regu tergantung sebuah senapan plasma portabel dengan tabung pendingin berpendar biru—senjata tier tinggi bernilai puluhan ribu kredit yang mampu melumatkan pelat baja dalam satu tembakan.",
+          "Langkah kaki mereka yang berirama konstan menciptakan pola gema yang membingungkan di dinding gudang, namun sistem purba di kepala Morgan dengan mudah mengurai posisi akurat masing-masing sumber suara.",
+          "Prajurit paling depan membawa perisai kinetik balistik transparan selebar satu meter yang mampu menyerap energi impak hingga puluhan ribu joule sebelum integritas strukturalnya runtuh.",
+          "Morgan mengamati celah rotasi patroli mereka; setiap kali penembak depan bergeser ke kiri untuk memeriksa lorong kontainer, ada jeda buta selama satu koma delapan detik di sektor kanan formasi.",
+          "Aroma keringat prajurit yang bercampur dengan senyawa stimulan tempur sintetis tercium tajam di udara dingin, menandakan sistem saraf musuh sedang terpacu pada tingkat kewaspadaan maksimal.",
+          "Dua granat kejut berdaya ledak terarah tergantung di sabuk taktis prajurit kedua; sebuah sasaran sekunder yang sangat ideal untuk menciptakan kekacauan berantai di ruang tertutup berdinding baja ini.",
+          "Komandan regu Bestherax itu tiba-tiba mengangkat tinjunya, memberi aba-aba berhenti; naluri tempur veterannya mencium anomali di udara, tepat sepuluh meter di depan posisi persembunyian Morgan."
+        ],
+        phase4: [
+          "Morgan bergeser ke balik rangka derek baja dengan kelenturan tubuh yang melampaui batas biomekanik manusia biasa, memosisikan moncong senjatanya sejajar dengan sudut kontainer yang berkarat.",
+          "Jemari kanannya mengunci pelatuk senjata dengan ketenangan es batu; di retina matanya, indikator lintasan pantulan proyektil berpendar hijau solid, menandakan vektor tembakan pantul telah terhitung sempurna.",
+          "Ia tidak membidik rompi antipeluru sang komandan yang tebal, melainkan mata engsel penahan kabel derek gantung seberat tiga ton yang tergantung tepat di atas kepala regu tempur musuh.",
+          "Napasnya diembuskan perlahan hingga paru-parunya kosong sepenuhnya, menghilangkan getaran mikro pada laras senjata saat jari telunjuknya mulai memberikan tekanan seberat dua pon pada pelatuk.",
+          "Secara bersamaan, tangan kirinya meraba granat fragmentasi usang di saku celananya, menarik cincin pengamannya dengan gigitan gigi tanpa menimbulkan bunyi logam beradu.",
+          "Prajurit Bestherax pembawa perisai melangkah satu jengkal ke depan, menempatkan tubuhnya tepat di bawah bayangan balok penopang kargo yang telah berkarat parah akibat tetesan asam.",
+          "Morgan memiringkan tubuhnya sebesar lima derajat ke kanan, memanfaatkan bayangan tumpukan peti amunisi untuk menyembunyikan siluet moncong senjatanya dari sorotan senter taktis musuh.",
+          "Otot-otot di kedua lengannya mengunci dalam konfigurasi peredam kejut biologis, siap menyerap hentakan balik kaliber berat senjata tanpa membiarkan larasnya terangkat dari garis bidik.",
+          "Ketika komandan regu membuka mulutnya untuk memberikan perintah pengecekan lorong, suara derak engsel derek yang aus berbaur sempurna dengan tarikan pelatuk senjata Morgan.",
+          "Proyektil berinti tungsten meledak keluar dari laras dengan raungan teredam, melesat menembus udara dingin gudang dengan kecepatan hipersonik menuju titik tumpu baja derek di langit-langit.",
+          "Granat fragmentasi di tangan kirinya dilemparkan dengan lintasan rendah melengkung, memantul di lantai pelat baja dan meluncur mulus tepat di antara kedua kaki sang komandan regu.",
+          "Morgan langsung melompat memutar ke koridor cadangan sebelum kilatan tembakan pertama memicu deteksi sensor optik musuh, memanfaatkan momentum gravitasi satu g untuk meluncur di lantai licin."
+        ],
+        phase5: [
+          "Dentuman ledakan kabel derek dan serpihan granat menggelegar serempak, menimpa formasi regu Black-Ochre di bawah reruntuhan kontainer seberat puluhan ton; dalam pecahan detik berikutnya, notifikasi hijau menyala liar di mata Morgan—tiga sinyal bioelektrik musuh padam seketika, mencairkan transfer likuiditas sebesar tiga ribu enam ratus Kredit Imperial ke rekening terenkripsi sistemnya.",
+          "Gelombang kejut ledakan menyapu lorong gudang saat sistem purba mulai menyedot partikel materi dari sisa-sisa korban yang tewas, memulai materialisasi kilat nanit pada telapak tangan kiri Morgan: cetak biru Mag-Rifle Purba Model VII bergetar hebat saat tabung akselerator magnetiknya mengkristal menjadi senjata fisik nyata berlumuran oli plasma.",
+          "Dua prajurit Bestherax yang selamat terlempar ke lantai dengan zirah compang-camping dan darah biru-kehitaman mengucur dari pelipis mereka; mereka berusaha meraih senjata mereka yang terpental, namun di tengah kabut debu beton yang pekat, sesosok bayangan manusia melangkah keluar dengan laras senapan purba yang telah membara siap memuntahkan petir kinetik.",
+          "Suara dentang logam senjata baru yang selesai dirakit berpadu dengan alarm kegagalan sistem di helm para prajurit yang sekarat; komandan regu Bestherax yang tertindih balok baja menatap Morgan dengan teror murni saat menyadari bahwa pemuda distrik kumuh di hadapannya memegang persenjataan peradaban yang seharusnya telah punah jutaan tahun lalu.",
+          "Sistem purba bergetar di pangkal tengkorak Morgan dengan kepuasan dingin yang mengerikan; modal ekonomi perang telah diperoleh, gudang amunisi musuh kini berada di bawah kendalinya, dan perburuan terhadap oligarki korporasi Planet Vanderson baru saja dimulai dengan pembantaian taktis tanpa ampun.",
+          "Indikator saldo kredit di retinanya terus melonjak naik melampaui lima ribu kredit saat residu peralatan canggih para prajurit yang mati diurai menjadi bahan baku nanit, memberi Morgan kekuatan finansial instan yang setara dengan upah buruh dok selama dua puluh tahun kerja paksa.",
+          "Sebuah transmisi darurat dari pangkalan militer Vanderson berderak panik di radio komunikasi mayat sang letnan, menuntut laporan situasi; Morgan menginjak unit komunikator itu hingga hancur berkeping-keping, membiarkan keheningan malam menelan jejak pembantaian pertamanya.",
+          "Senapan magnetik purba di genggamannya berdesis dingin saat sistem pendingin termalnya melepaskan uap es ke udara; senjata ini bukan lagi barang rakitan sampah jalanan, melainkan instrumen pemusnah kasta yang siap merobek hegemoni antarbintang Bestherax.",
+          "Di kejauhan, pintu gerbang utama gudang mulai digedor dari luar oleh pasukan bantuan korporasi; namun Morgan tidak lagi berniat melarikan diri, tatapan matanya kini dipenuhi kalkulasi dingin tentang berapa banyak kredit yang bisa ia panen dari regu berikutnya.",
+          "Kilatan petir magnetik biru melompat-lompat di sepanjang rel laras senapannya; sistem purba telah menandai seluruh kompleks gudang amunisi ini sebagai zona panen sumber daya pertamanya di Planet Vanderson.",
+          "Sebuah suara berat dan berwibawa bergema di kedalaman alam bawah sadar Morgan—gaung dari kesadaran inang purba yang menuntut agar pembantaian ini dijadikan fondasi pertama dari dinasti penakluk yang akan menembus batas langit antarbintang.",
+          "Dengan langkah mantap yang digerakkan oleh otot-otot baru yang telah bermutasi, Morgan membidik pintu gerbang baja yang mulai meleleh diterobos obor pemotong musuh; jarinya mengunci pelatuk senjata purbanya, menyambut babak perang terbuka dengan senyuman dingin yang tak kenal ampun."
+        ]
+      }
+    };
+
+    // Deep Permutation Engine Logic
+    function generateLocalHeuristic(seed, focus) {
+      const matrix = EXPANDED_LEXICON_MATRIX[focus] || EXPANDED_LEXICON_MATRIX.atmospheric;
+      
+      // Seed-based dynamic deterministic index selector to prevent identical sequences
+      const hashStr = (str) => {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+          hash = ((hash << 5) - hash) + str.charCodeAt(i);
+          hash |= 0;
+        }
+        return Math.abs(hash);
+      };
+
+      const baseHash = hashStr(seed + storyHistory.length.toString() + currentCharacter.name);
+      
+      const pick = (arr, offset) => {
+        const idx = (baseHash + offset) % arr.length;
+        return arr[idx];
+      };
+
+      // Clean snippet of user seed
+      const seedContext = seed.length > 70 ? seed.substring(0, 67) + "..." : seed;
+
+      // Compose 5 distinct, highly-detailed paragraphs
+      const p1 = `${pick(matrix.phase1, 1)} Di tengah latar dingin tersebut, situasi yang diawali dari peristiwa "${escapeHtml(seedContext)}" menempatkan atmosfer sektor industri Planet Vanderson ini pada titik didih yang senyap. ${pick(matrix.phase1, 7)}`;
+      
+      const p2 = `${pick(matrix.phase2, 3)} Status inang aktif ${currentCharacter.name} (${currentCharacter.generation}) beresonansi dengan matriks sistem purba; ${pick(matrix.phase2, 9)} Kondisi ini memaksa sirkulasi biometriknya beradaptasi secara instan dengan lingkungan gravitasi lokal.`;
+      
+      const p3 = `${pick(matrix.phase3, 2)} Melalui pemetaan spasial terarah, ${pick(matrix.phase3, 5)} ${pick(matrix.phase3, 11)}`;
+      
+      const p4 = `${pick(matrix.phase4, 4)} Gerakan fisik berlanjut dengan kehati-hatian mutlak: ${pick(matrix.phase4, 8)} ${pick(matrix.phase4, 10)}`;
+      
+      const p5 = `${pick(matrix.phase5, 0)} ${pick(matrix.phase5, 6)}`;
+
+      return [
+        `[Atmosfer Sektor Vanderson] ${p1}`,
+        `[Biometrik & Nanit Purba] ${p2}`,
+        `[Analisis Ketegangan & Ancaman] ${p3}`,
+        `[Tindakan Kinetik Mikro] ${p4}`,
+        `[Eskalasi Ambang Sistemik] ${p5}`
+      ];
+    }
+  </script>
+</body>
+</html>
