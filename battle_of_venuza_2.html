@@ -575,7 +575,7 @@
             </span>
           </div>
           <div class="text-[11px] font-black text-slate-200 leading-tight line-clamp-2">${lvl.title}</div>
-          <div class="text-[8px] text-slate-500 font-mono truncate">${levelTotal(lvl)} Musuh${best ? ' // ' + best : ''}</div>
+          <div class="text-[8px] text-slate-500 font-mono truncate">${levelTotal(lvl)} Musuh${window.sectorInfo ? ' • ' + sectorInfo(lvl.id) : ''}${best ? ' // ' + best : ''}</div>
         `;
 
         btn.onclick = () => {
@@ -1668,11 +1668,14 @@
       },
       roadX(z) { const a = (8 - z) * this.roadF; return Math.sin(a) * this.roadAmp + Math.sin(a * 2.2) * this.roadAmp * 0.3; },
       raw(x, z) {
-        const st = this.st, A = st.amp * (1 + (this.tier - 1) * 0.08), s = this.seed;
-        let h = (fbmN(x * 0.01, z * 0.01, s, 5) - 0.5) * 2 * A;
-        const rg = 1 - Math.abs(fbmN(x * 0.018 + 31, z * 0.018 - 17, s + 101, 4) * 2 - 1);
-        h += rg * rg * A * 0.8 - A * 0.3;
+        const st = this.st, A = st.amp * (1 + (this.tier - 1) * 0.08), s = this.seed, pf = this.pf || { base: 1, ridge: 1, freq: 1 }, fq = pf.freq;
+        let h = (fbmN(x * 0.01 * fq, z * 0.01 * fq, s, 5) - 0.5) * 2 * A * pf.base;
+        const rg = 1 - Math.abs(fbmN(x * 0.018 * fq + 31, z * 0.018 * fq - 17, s + 101, 4) * 2 - 1);
+        h += (rg * rg * A * 0.8 - A * 0.3) * pf.ridge;
+        if (pf.terrace) { const q = h / pf.terrace, fl = Math.floor(q); h = (fl + sstep(0.55, 1.0, q - fl)) * pf.terrace; }
+        if (pf.dune) { const dd = x * Math.cos(pf.dir) + z * Math.sin(pf.dir), wv = Math.sin(dd * pf.dune + fbmN(x * 0.02, z * 0.02, s + 5, 2) * 7); h += (wv * 0.5 + 0.5) * pf.duneAmp - pf.duneAmp * 0.5; }
         h *= lerp(0.12, 1, sstep(8, 40, Math.abs(x - this.roadX(z))));
+        if (pf.bowl) { const bd = Math.hypot(x, z - (this.zTop + this.zBot) / 2) / pf.bowl; h += pf.bowlAmp * (sstep(0, 1.15, bd) - 0.55); }
         for (let i = 0; i < this.craters.length; i++) {
           const c = this.craters[i], d = Math.hypot(x - c.x, z - c.z);
           if (d < c.r * 1.6) { const q = d / c.r; h += (q < 1 ? -c.d * (1 - q * q) : 0) + c.d * 0.25 * Math.exp(-Math.pow((q - 1.05) / 0.25, 2)); }
@@ -1722,7 +1725,7 @@
       },
       buildMesh(mat) {
         const C = 24, nx = this.nx, nz = this.nz, S = this.STEP, H = this.H, T = this.st.terr, seed = this.seed;
-        const cl = new THREE.Color(T.low), cm = new THREE.Color(T.mid), ch = new THREE.Color(T.high), cs = new THREE.Color(T.slope), cp = new THREE.Color(T.path), cc = new THREE.Color();
+        const cl = new THREE.Color(T.low), cm = new THREE.Color(T.mid), ch = new THREE.Color(T.high), cs = new THREE.Color(T.slope), cp = new THREE.Color(T.path), cc = new THREE.Color(), tintK = (this.pf && this.pf.tint !== undefined) ? this.pf.tintK : 0, tintC = new THREE.Color(tintK ? this.pf.tint : 0xffffff);
         const hAt = (i, j) => H[clamp(j, 0, nz - 1) * nx + clamp(i, 0, nx - 1)];
         for (let cj = 0; cj < nz - 1; cj += C) for (let ci = 0; ci < nx - 1; ci += C) {
           const iw = Math.min(C, nx - 1 - ci), jw = Math.min(C, nz - 1 - cj), vw = iw + 1, vc = vw * (jw + 1);
@@ -1738,6 +1741,7 @@
             const hn = clamp((y + 4) / 34, 0, 1);
             if (hn < 0.5) cc.copy(cl).lerp(cm, hn * 2); else cc.copy(cm).lerp(ch, (hn - 0.5) * 2);
             cc.lerp(cs, sstep(0.5, 1.05, slope) * 0.85);
+            if (tintK) cc.lerp(tintC, tintK);
             cc.lerp(cp, (1 - sstep(2.6, 6.5, Math.abs(x - this.roadX(z)))) * 0.75);
             col[k * 3] = cc.r; col[k * 3 + 1] = cc.g; col[k * 3 + 2] = cc.b;
           }
@@ -3045,6 +3049,40 @@
       return _layoutMap[id - 1] || 'CAMP';
     }
 
+    // ==================================================================
+    // PROFIL TERRAIN (berbeda tiap sektor, dipasangkan dengan layout)
+    // ==================================================================
+    const TERRAIN_PROFILES = {
+      PLAINS:   { name: 'DATARAN LANDAI', short: 'Dataran', base: 0.45, ridge: 0.35, freq: 0.8 },
+      HILLS:    { name: 'PERBUKITAN BERGELOMBANG', short: 'Bukit', base: 1.1, ridge: 1.0, freq: 1.0 },
+      MESA:     { name: 'MESA BERTERAS', short: 'Mesa', base: 1.25, ridge: 0.9, freq: 0.85, terrace: 6.5, tint: 0xb7794d, tintK: 0.22 },
+      DUNES:    { name: 'BUKIT PASIR', short: 'Dune', base: 0.45, ridge: 0.3, freq: 0.9, dune: 0.085, duneAmp: 6.5, dir: 0, tint: 0xd6b77a, tintK: 0.35 },
+      RIDGES:   { name: 'PUNGGUNGAN TAJAM', short: 'Punggung', base: 0.85, ridge: 1.55, freq: 1.15 },
+      BASIN:    { name: 'CEKUNGAN RAKSASA', short: 'Cekungan', base: 0.7, ridge: 0.6, freq: 1.0, bowl: 230, bowlAmp: 15, tint: 0x8a93a3, tintK: 0.12 },
+      BADLANDS: { name: 'LEMBAH BERPARIT', short: 'Parit', base: 1.3, ridge: 1.2, freq: 1.4 }
+    };
+    const TERRAIN_BY_ENV = {
+      STATION: ['HILLS', 'PLAINS', 'MESA', 'RIDGES', 'BASIN', 'BADLANDS'],
+      MOON: ['BASIN', 'PLAINS', 'HILLS', 'BADLANDS', 'RIDGES'],
+      ASTEROID: ['BADLANDS', 'RIDGES', 'MESA', 'HILLS', 'BASIN'],
+      SOLAR: ['DUNES', 'MESA', 'DUNES', 'BADLANDS', 'PLAINS', 'DUNES', 'HILLS'],
+      NEBULA: ['RIDGES', 'BASIN', 'HILLS', 'MESA', 'PLAINS']
+    };
+    let _terrainMap = null;
+    function terrainFor(id) {
+      if (!_terrainMap) {
+        _terrainMap = []; let p1 = null, p2 = null;
+        CAMPAIGN_50_LEVELS.forEach((l, i) => {
+          const pool = (TERRAIN_BY_ENV[l.env] || TERRAIN_BY_ENV.STATION).filter(k => k !== p1 && k !== p2);
+          const k = pool[(Math.imul(i + 7, 2654435761) >>> 8) % pool.length];
+          _terrainMap.push(k); p2 = p1; p1 = k;
+        });
+      }
+      return _terrainMap[id - 1] || 'HILLS';
+    }
+    const LAYOUT_SHORT = { CAMP: 'Kamp', CITY: 'Kota', CANYON: 'Ngarai', INDUSTRIAL: 'Industri', CRATERS: 'Kawah', FORTRESS: 'Benteng', YARD: 'Pelabuhan' };
+    window.sectorInfo = id => LAYOUT_SHORT[layoutFor(id)] + ' · ' + TERRAIN_PROFILES[terrainFor(id)].short;
+
     window.loadEngineLevel = function (n) {
       const lvl = CAMPAIGN_50_LEVELS[n - 1]; if (!lvl || !scene) return;
       currentLevelNumber = n;
@@ -3070,6 +3108,9 @@
       applySky(); buildCelestial(lvl);
 
       Terrain.begin(lvl, st, startZ, endZ, rnd);
+      const TPK = terrainFor(n), TP = Object.assign({}, TERRAIN_PROFILES[TPK]);
+      if (TP.dune) TP.dir = rnd() * Math.PI;
+      Terrain.pf = TP; WORLD.terrainKey = TPK;
       Terrain.roadAmp = rrange(rnd, LY.road[0], LY.road[1]) * (rnd() < 0.5 ? -1 : 1);
       Terrain.roadF = rrange(rnd, LY.road[2], LY.road[3]);
       const dockZ = endZ + 25;
@@ -3153,7 +3194,7 @@
       document.getElementById('hud-act-title').textContent = lvl.act;
       document.getElementById('hud-level-title').textContent = `LVL ${String(n).padStart(2, '0')}: ${lvl.title}`;
       updateObjectiveText(); updateLandonHUD();
-      showToast(`SEKTOR ${String(n).padStart(2, '0')} // ${lvl.title.toUpperCase()} • LAYOUT: ${LY.name}`, 3200, '#38bdf8');
+      showToast(`SEKTOR ${String(n).padStart(2, '0')} // ${lvl.title.toUpperCase()} • ${LY.name} • ${TP.name}`, 3600, '#38bdf8');
     };
 
 
@@ -4334,6 +4375,8 @@
       const c = $('orb-canvas'); if (c) c.getContext('2d').clearRect(0, 0, c.width, c.height);
     },
     cancel() { this.finish(false); },
+    zoomBy(d) { if (this.mode === 'aim') this.alt = clamp(this.alt - d * 20, 120, 320); },
+    cycleView() {},
     frame() {
       const now = performance.now(), dt = Math.min(0.05, (now - this.lt) / 1000); this.lt = now;
       if (Game.over || !isPlaying()) { this.finish(false); return; }
@@ -4382,6 +4425,12 @@
     }
   };
   window.Orbital = Orbital;
+  window.VZ = {
+    mode() { return Orbital.active ? 'orbital' : null; },
+    primaryClick() { if (Orbital.active && Orbital.mode === 'aim') Orbital.launch(); },
+    cancelMode() {},
+    sp() { return null; }
+  };
 
   // ---------------- RESET / HOOK LEVEL ----------------
   window.ModBeforeLoad = function () {
@@ -4461,6 +4510,293 @@
     if (hi) hi.addEventListener('click', () => setPerf(false));
     if (lo) lo.addEventListener('click', () => setPerf(true));
   });
+})();
+
+</script>
+<script>
+(function venuzaMobileUI() {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const touchCap = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  const coarse = !!(window.matchMedia && matchMedia('(pointer:coarse)').matches);
+  const MOBILE = touchCap && (coarse || Math.min(innerWidth, innerHeight) < 700);
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, String(v)); } catch (e) {} }
+  };
+  const SIZES = MOBILE ? [0.5, 0.6, 0.75, 0.9] : [0.8, 1];
+  let hs = parseInt(store.get('vz_hs', MOBILE ? '1' : '0'), 10); if (!(hs >= 0 && hs <= 2)) hs = 0;   // 0 penuh, 1 ringkas, 2 sembunyi
+  let hudz = parseFloat(store.get('vz_hudz', MOBILE ? '0.6' : '1')); if (!(hudz > 0.3 && hudz <= 1.2)) hudz = MOBILE ? 0.6 : 1;
+  const toast = (m, ms) => { try { showToast(m, ms || 2200, '#7dd3fc'); } catch (e) {} };
+  window.VZ_MOBILE = MOBILE;
+
+  // ---------- meta untuk layar penuh di HP ----------
+  (function metas() {
+    const vp = document.querySelector('meta[name=viewport]');
+    if (vp && vp.content.indexOf('viewport-fit') < 0) vp.content += ', viewport-fit=cover';
+    [['apple-mobile-web-app-capable', 'yes'], ['mobile-web-app-capable', 'yes'], ['apple-mobile-web-app-status-bar-style', 'black-translucent'], ['theme-color', '#010409']].forEach(([n, c]) => {
+      if (document.querySelector(`meta[name="${n}"]`)) return;
+      const m = document.createElement('meta'); m.name = n; m.content = c; document.head.appendChild(m);
+    });
+  })();
+
+  // ---------- CSS ----------
+  const css = `
+  :root{--hudz:1}
+  html,body{height:100%;overscroll-behavior:none}
+  #vz-toolbar{position:absolute;z-index:60;top:70px;right:12px;display:flex;gap:6px;pointer-events:auto}
+  #vz-toolbar button{width:34px;height:34px;border-radius:10px;background:rgba(2,6,23,.82);border:1px solid rgba(56,189,248,.5);color:#bae6fd;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;font-family:inherit;cursor:pointer}
+  #vz-toolbar button.on{background:rgba(14,116,144,.85)}
+  #mini-hud{position:absolute;z-index:21;left:8px;top:8px;display:none;pointer-events:none;font:800 11px 'Courier New',monospace;color:#e2e8f0;text-shadow:0 0 4px #000,0 0 2px #000}
+  #mini-hud .mh-row{display:flex;align-items:center;gap:7px}
+  #mini-hud .mh-hp{display:inline-block;width:92px;height:7px;background:rgba(2,6,23,.75);border:1px solid #334155;border-radius:4px;overflow:hidden}
+  #mini-hud .mh-hp i{display:block;height:100%;background:#22c55e;width:100%}
+  #mini-hud .mh-detail{margin-top:2px;font-size:10px;color:#bae6fd}
+  body.hs-1 #mini-hud,body.hs-2 #mini-hud{display:block}
+  body.hs-1 #wave-panel,body.hs-1 #hud-bottom,body.hs-1 #hud-side,body.hs-1 #hud-top,
+  body.hs-2 #wave-panel,body.hs-2 #hud-bottom,body.hs-2 #hud-side,body.hs-2 #hud-top{display:none!important}
+  body.hs-2 #mini-hud .mh-detail,body.hs-2 #mini-hud #mh-ammo{display:none}
+  body.hs-2 #mini-hud .mh-hp{width:60px;height:4px;opacity:.7}
+  /* ---- mode HP ---- */
+  body.mobile #mobile-controls{display:block!important}
+  body.mobile .vignette-overlay{opacity:.35}
+  body.mobile #hud-top{zoom:var(--hudz);padding:4px 6px;padding-top:max(4px,env(safe-area-inset-top));padding-left:max(6px,env(safe-area-inset-left));padding-right:max(6px,env(safe-area-inset-right));gap:6px;flex-wrap:nowrap}
+  body.mobile #hud-top>div:nth-child(1)>div>div:last-child{display:none}
+  body.mobile #hud-top>div:nth-child(2){max-width:calc(36vw / var(--hudz))}
+  body.mobile #hud-top>div:nth-child(3)>button{display:none}
+  body.mobile #hud-top>div:nth-child(3)>div:nth-child(4){display:none}
+  body.mobile #hud-bottom{transform:scale(var(--hudz));transform-origin:top left;left:max(6px,env(safe-area-inset-left));top:calc(env(safe-area-inset-top,0px) + 12px + 58px*var(--hudz));right:auto;bottom:auto;width:auto}
+  body.mobile #hud-bottom>div:first-child{display:none}
+  body.mobile #hud-side{display:none}
+  body.mobile #wave-panel{transform:scale(var(--hudz));transform-origin:top right;left:auto;right:max(6px,env(safe-area-inset-right));top:calc(env(safe-area-inset-top,0px) + 118px)}
+  body.mobile #vz-toolbar{top:calc(env(safe-area-inset-top,0px) + 4px);right:max(6px,env(safe-area-inset-right))}
+  body.mobile.hs-0 #vz-toolbar{top:calc(env(safe-area-inset-top,0px) + 42px*var(--hudz) + 10px)}
+  body.mobile #mini-hud{left:max(8px,env(safe-area-inset-left));top:max(6px,env(safe-area-inset-top))}
+  body.mobile #mobile-joystick{width:96px;height:96px;left:max(18px,env(safe-area-inset-left));bottom:max(14px,env(safe-area-inset-bottom))}
+  body.mobile #mobile-stick{width:40px;height:40px}
+  .vzb{position:absolute;pointer-events:auto;touch-action:none;border-radius:50%;background:rgba(2,6,23,.55);border:2px solid rgba(56,189,248,.55);color:#e0f2fe;font:800 10px 'Courier New',monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05;padding:0;-webkit-tap-highlight-color:transparent;user-select:none}
+  .vzb.on{background:rgba(14,116,144,.8);border-color:#7dd3fc}
+  .vzb .ic{font-size:17px}
+  .vzb.big{width:76px;height:76px;border-color:rgba(248,113,113,.7)}
+  .vzb.big .ic{font-size:26px}
+  .vzb.mid{width:54px;height:54px}
+  .vzb.sm{width:44px;height:44px}
+  .vzb.sq{border-radius:12px;width:42px;height:38px}
+  .vzb.hidden{display:none}
+  #vz-rotate{position:fixed;inset:0;z-index:9999;background:rgba(1,4,9,.97);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px;color:#e2e8f0;font-family:'Courier New',monospace}
+  #vz-rotate .ph{font-size:54px;animation:vzrot 2s ease-in-out infinite}
+  @keyframes vzrot{0%,20%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+  #vz-rotate button{padding:10px 18px;border-radius:12px;font-weight:800;font-size:12px;border:1px solid #38bdf8;background:#0c4a6e;color:#e0f2fe;font-family:inherit}
+  #vz-rotate button.ghost{background:transparent;border-color:#334155;color:#94a3b8}
+  body.vz-portrait-block #vz-rotate{display:flex}
+  `;
+  const st = document.createElement('style'); st.id = 'venuza-mobile-style'; st.textContent = css; document.head.appendChild(st);
+
+  // ---------- state HUD ----------
+  function applyHud() {
+    document.documentElement.style.setProperty('--hudz', String(hudz));
+    document.body.classList.toggle('mobile', MOBILE);
+    document.body.classList.remove('hs-0', 'hs-1', 'hs-2'); document.body.classList.add('hs-' + hs);
+    const b = $('vz-t-hide'); if (b) { b.classList.toggle('on', hs > 0); b.title = ['Statistik: penuh', 'Statistik: ringkas', 'Statistik: disembunyikan'][hs]; }
+  }
+  function cycleHs() { hs = (hs + 1) % 3; store.set('vz_hs', hs); applyHud(); toast(['STATISTIK: PENUH', 'STATISTIK: RINGKAS', 'STATISTIK: DISEMBUNYIKAN'][hs], 1400); }
+  function cycleSize() { const i = SIZES.findIndex(v => Math.abs(v - hudz) < 0.01); hudz = SIZES[(i + 1) % SIZES.length]; store.set('vz_hudz', hudz); applyHud(); toast('UKURAN HUD ' + Math.round(hudz * 100) + '%', 1200); }
+
+  // ---------- layar penuh ----------
+  const isFS = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+  function lockLandscape() { try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {}); } catch (e) {} }
+  async function toggleFS() {
+    const el = document.documentElement;
+    try {
+      if (!isFS()) {
+        const rq = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+        if (!rq) { toast('iPhone: tombol Bagikan → "Tambah ke Layar Utama" untuk layar penuh', 4200); return; }
+        await rq.call(el, { navigationUI: 'hide' });
+        if (MOBILE) lockLandscape();
+      } else {
+        try { screen.orientation && screen.orientation.unlock && screen.orientation.unlock(); } catch (e) {}
+        (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      }
+    } catch (e) { toast('Layar penuh ditolak browser', 1800); }
+  }
+  function syncFsBtn() { const b = $('vz-t-fs'); if (b) b.classList.toggle('on', isFS()); setTimeout(fireResize, 200); }
+  function fireResize() { try { window.dispatchEvent(new Event('resize')); } catch (e) {} }
+  document.addEventListener('fullscreenchange', syncFsBtn); document.addEventListener('webkitfullscreenchange', syncFsBtn);
+
+  // ---------- toolbar ----------
+  const tb = document.createElement('div'); tb.id = 'vz-toolbar';
+  const mkT = (id, ic, title, fn) => { const b = document.createElement('button'); b.id = id; b.textContent = ic; b.title = title; b.addEventListener('click', e => { e.stopPropagation(); fn(); }); b.addEventListener('touchstart', e => e.stopPropagation(), { passive: true }); tb.appendChild(b); };
+  mkT('vz-t-fs', '⛶', 'Layar penuh [F]', toggleFS);
+  mkT('vz-t-hide', '👁', 'Sembunyikan statistik [H]', cycleHs);
+  mkT('vz-t-size', 'A±', 'Ukuran HUD', cycleSize);
+  mkT('vz-t-map', '🗺', 'Peta sektor [Tab]', () => { try { toggleSolarCommandMap(); } catch (e) {} });
+  mkT('vz-t-opt', '⚙', 'Opsi [F2]', () => { try { toggleSettingsModal(); } catch (e) {} });
+  tb.querySelector('#vz-t-size').style.fontSize = '11px';
+  document.body.appendChild(tb);
+
+  // ---------- HUD mini ----------
+  const mh = document.createElement('div'); mh.id = 'mini-hud';
+  mh.innerHTML = '<div class="mh-row"><span class="mh-hp"><i id="mh-hpbar"></i></span><b id="mh-ammo"></b></div><div class="mh-detail" id="mh-line"></div>';
+  document.body.appendChild(mh);
+  setInterval(() => {
+    try {
+      if (hs === 0 || typeof LandonState === 'undefined') return;
+      const L = LandonState, pct = Math.max(0, Math.min(100, L.hp / L.maxHp * 100));
+      const bar = $('mh-hpbar'); if (bar) { bar.style.width = pct + '%'; bar.style.background = pct > 60 ? '#22c55e' : (pct > 30 ? '#f59e0b' : '#ef4444'); }
+      const am = $('mh-ammo'); if (am) am.textContent = (Player.reloading ? 'ISI ULANG' : L.ammo + '/' + L.reserveAmmo);
+      const W = window.Waves || {}, O = window.Orbital || {}, S = window.VZ && VZ.sp ? VZ.sp() : null;
+      const orb = (O.cd > 0) ? Math.ceil(O.cd) + 's' : (O.charges > 0 ? '×' + O.charges : '0');
+      const ln = $('mh-line'); if (ln) ln.textContent = `☠ ${Obj.kills}/${Obj.total} · G${W.wave || 0} · ORB ${orb}` + (S !== null ? ` · SP ${S}` : '');
+    } catch (e) {}
+  }, 220);
+
+  // ---------- tombol sentuh ----------
+  function keySynth(code) {
+    window.dispatchEvent(new KeyboardEvent('keydown', { code, key: code, bubbles: true }));
+    window.dispatchEvent(new KeyboardEvent('keyup', { code, key: code, bubbles: true }));
+  }
+  function bindBtn(b, down, up) {
+    const dn = e => { e.preventDefault(); e.stopPropagation(); b.classList.add('on'); down && down(); };
+    const upf = e => { e.preventDefault(); e.stopPropagation(); b.classList.remove('on'); up && up(); };
+    b.addEventListener('touchstart', dn, { passive: false });
+    b.addEventListener('touchend', upf, { passive: false });
+    b.addEventListener('touchcancel', upf, { passive: false });
+    b.addEventListener('mousedown', dn); b.addEventListener('mouseup', upf); b.addEventListener('mouseleave', () => { if (b.classList.contains('on')) { b.classList.remove('on'); up && up(); } });
+  }
+  const sideOf = () => 'max(16px,env(safe-area-inset-right))';
+  function buildTouchButtons() {
+    const host = $('mobile-controls'); if (!host || host.dataset.vz) return; host.dataset.vz = '1';
+    const R = 16, B = 16, mk = (id, cls, ic, lab, style) => {
+      const b = document.createElement('button'); b.id = 'vz-b-' + id; b.className = 'vzb ' + cls;
+      b.innerHTML = `<span class="ic">${ic}</span>${lab ? '<span>' + lab + '</span>' : ''}`;
+      Object.assign(b.style, style); host.appendChild(b); return b;
+    };
+    const rt = n => `calc(${n}px + max(0px,env(safe-area-inset-right)))`, bt = n => `calc(${n}px + max(0px,env(safe-area-inset-bottom)))`, lf = n => `calc(${n}px + max(0px,env(safe-area-inset-left)))`;
+    // kanan bawah: tembak, lompat, bidik, reload, ganti senjata, dash
+    const fire = mk('fire', 'big', '🔥', 'TEMBAK', { right: rt(R), bottom: bt(B) });
+    const jump = mk('jump', 'mid', '⤒', 'LOMPAT', { right: rt(R + 90), bottom: bt(B + 8) });
+    const ads = mk('ads', 'sm', '◎', 'BIDIK', { right: rt(R + 16), bottom: bt(B + 92) });
+    const rel = mk('rel', 'sm', '⟳', 'RELOAD', { right: rt(R + 72), bottom: bt(B + 84) });
+    const swp = mk('swp', 'sm', '⇄', 'SENJATA', { right: rt(R + 124), bottom: bt(B + 78) });
+    const dash = mk('dash', 'sm', '»', 'DASH', { right: rt(R + 16), bottom: bt(B + 144) });
+    // kiri tengah: fitur taktis
+    const orb = mk('orb', 'sq', '🛰', 'ORBIT', { left: lf(10), top: '34%' });
+    const sq = mk('sq', 'sq', '👥', 'REGU', { left: lf(10), top: 'calc(34% + 46px)' });
+    const mech = mk('mech', 'sq', '🤖', 'MECH', { left: lf(10), top: 'calc(34% + 92px)' });
+    const bld = mk('bld', 'sq', '🛠', 'BANGUN', { left: lf(10), top: 'calc(34% + 138px)' });
+    // mode orbital: zoom
+    const zin = mk('zin', 'sm hidden', '＋', 'ZOOM', { right: rt(R + 16), bottom: bt(B + 92) });
+    const zout = mk('zout', 'sm hidden', '－', 'ZOOM', { right: rt(R + 72), bottom: bt(B + 84) });
+    const cancel = mk('cancel', 'sm hidden', '✕', 'BATAL', { right: rt(R + 16), bottom: bt(B + 144) });
+    const view = mk('view', 'sm hidden', '◐', 'TAMPIL', { right: rt(R + 124), bottom: bt(B + 78) });
+
+    const V = () => window.VZ || {};
+    bindBtn(fire, () => { const v = V(); if (v.mode && v.mode()) { v.primaryClick && v.primaryClick(); return; } Player.mouseDown = true; fireLandonWeapon(); }, () => { Player.mouseDown = false; });
+    bindBtn(jump, () => { evaUp = true; }, () => { evaUp = false; });
+    bindBtn(ads, () => { const v = V(); if (v.mode && v.mode()) return; setAimDownSights(!LandonState.isADS); });
+    bindBtn(rel, () => { const v = V(); if (v.mode && v.mode()) return; reloadLandonWeapon(); });
+    bindBtn(swp, () => { const v = V(); if (v.mode && v.mode()) return; switchWeapon((LandonState.weaponIdx + 1) % 3); });
+    bindBtn(dash, () => { const v = V(); if (v.mode && v.mode()) return; playerDash(); });
+    bindBtn(orb, () => keySynth('KeyT'));
+    bindBtn(sq, () => keySynth('KeyV'));
+    bindBtn(mech, () => keySynth('KeyM'));
+    bindBtn(bld, () => keySynth('KeyB'));
+    bindBtn(zin, () => { const O = window.Orbital; if (O && O.zoomBy) O.zoomBy(1); });
+    bindBtn(zout, () => { const O = window.Orbital; if (O && O.zoomBy) O.zoomBy(-1); });
+    bindBtn(cancel, () => { const O = window.Orbital; if (O && O.active) O.cancel(); else { const v = V(); v.cancelMode && v.cancelMode(); } });
+    bindBtn(view, () => { const O = window.Orbital; if (O && O.cycleView) O.cycleView(); });
+
+    // label senjata + mode orbital/bangun
+    setInterval(() => {
+      try {
+        const m = window.VZ && VZ.mode ? VZ.mode() : null;
+        const orbOn = m === 'orbital', bldOn = m === 'build';
+        [ads, rel, swp, dash, jump].forEach(b => b.classList.toggle('hidden', orbOn || bldOn));
+        [zin, zout, view].forEach(b => b.classList.toggle('hidden', !orbOn));
+        cancel.classList.toggle('hidden', !(orbOn || bldOn));
+        const sp = swp.querySelector('span:last-child'); if (sp && typeof LandonState !== 'undefined') sp.textContent = 'SEN ' + (LandonState.weaponIdx + 1);
+        const O = window.Orbital;
+        fire.querySelector('.ic').textContent = orbOn ? (O && O.mode === 'aim' ? '🎯' : '🚀') : (bldOn ? '✔' : '🔥');
+        fire.querySelector('span:last-child').textContent = orbOn ? (O && O.mode === 'aim' ? 'KUNCI' : 'AKTIF') : (bldOn ? 'PASANG' : 'TEMBAK');
+      } catch (e) {}
+    }, 250);
+  }
+
+  // drag untuk menggeser bidikan orbital (menggantikan putar kamera saat orbital)
+  (function orbitalTouchPan() {
+    let id = null, lx = 0, ly = 0;
+    window.addEventListener('touchstart', e => {
+      const O = window.Orbital; if (!O || !O.active || e.target.closest('.vzb,#vz-toolbar,button')) return;
+      const t = e.changedTouches[0]; id = t.identifier; lx = t.clientX; ly = t.clientY; e.stopImmediatePropagation();
+    }, { capture: true, passive: false });
+    window.addEventListener('touchmove', e => {
+      const O = window.Orbital; if (!O || !O.active || id === null) return;
+      const t = [...e.changedTouches].find(c => c.identifier === id); if (!t) return;
+      O.onMove((t.clientX - lx) * 1.1, (t.clientY - ly) * 1.1); lx = t.clientX; ly = t.clientY;
+      e.preventDefault(); e.stopImmediatePropagation();
+    }, { capture: true, passive: false });
+    window.addEventListener('touchend', e => { if (id !== null && [...e.changedTouches].some(c => c.identifier === id)) id = null; }, { capture: true });
+  })();
+
+  // ---------- overlay putar layar ----------
+  let portraitDismissed = false;
+  const ov = document.createElement('div'); ov.id = 'vz-rotate';
+  ov.innerHTML = '<div class="ph">📱</div><div style="font-weight:800;font-size:15px;letter-spacing:.06em">PUTAR HP KE MODE LANSKAP</div><div style="font-size:11px;color:#94a3b8;max-width:300px;line-height:1.5">Layar otomatis menyesuaikan saat HP diputar. Aktifkan "Putar otomatis" di pengaturan HP bila tidak berputar.</div><button id="vz-rot-fs">Layar penuh + kunci lanskap</button><button class="ghost" id="vz-rot-skip">Tetap potret</button>';
+  document.body.appendChild(ov);
+  $('vz-rot-fs').addEventListener('click', async () => { await toggleFS(); setTimeout(checkOrientation, 300); });
+  $('vz-rot-skip').addEventListener('click', () => { portraitDismissed = true; checkOrientation(); });
+  function checkOrientation() {
+    const portrait = innerHeight > innerWidth;
+    const started = typeof Game !== 'undefined' && Game.started;
+    document.body.classList.toggle('vz-portrait-block', MOBILE && started && portrait && !portraitDismissed);
+    if (!portrait) portraitDismissed = false;
+  }
+  function onRotate() { checkOrientation(); setTimeout(fireResize, 150); setTimeout(fireResize, 500); setTimeout(checkOrientation, 520); }
+  window.addEventListener('orientationchange', onRotate);
+  window.addEventListener('resize', checkOrientation);
+  if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', onRotate);
+  setInterval(checkOrientation, 700);
+
+  // ---------- pintasan keyboard ----------
+  window.addEventListener('keydown', e => {
+    if (e.repeat) return;
+    const tag = (e.target && e.target.tagName) || '';
+    if (/INPUT|SELECT|TEXTAREA/.test(tag)) return;
+    if (e.code === 'KeyH') { cycleHs(); }
+    else if (e.code === 'KeyF') { toggleFS(); }
+    else if ((e.code === 'BracketLeft' || e.code === 'BracketRight') && Game.started && !Game.over) {
+      const nx = currentLevelNumber + (e.code === 'BracketRight' ? 1 : -1);
+      if (nx >= 1 && nx <= 50) { try { startSolarLevel(nx); } catch (er) {} }
+    }
+  });
+
+  // ---------- pemilih sektor cepat di menu utama ----------
+  function buildSectorPicker() {
+    const startBtn = document.querySelector('#modal-main-menu button[onclick^="startSolarLevel"]');
+    if (!startBtn || $('vz-sector-row')) return;
+    const row = document.createElement('div'); row.id = 'vz-sector-row'; row.className = 'flex gap-2 mt-3 items-center';
+    let opts = '';
+    for (let i = 1; i <= 50; i++) {
+      const l = CAMPAIGN_50_LEVELS[i - 1], info = window.sectorInfo ? ' — ' + sectorInfo(i) : '';
+      opts += `<option value="${i}">${String(i).padStart(2, '0')} · ${l.title}${info}</option>`;
+    }
+    row.innerHTML = `<span class="text-[10px] font-black uppercase tracking-widest text-sky-400 shrink-0">Lompat ke sektor</span>
+      <select id="vz-sector-select" class="flex-1 min-w-0 bg-slate-900 border border-slate-700 text-slate-200 text-[11px] rounded-lg px-2 py-2">${opts}</select>
+      <button id="vz-sector-go" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-lg uppercase">Mulai</button>`;
+    startBtn.parentElement.after(row);
+    $('vz-sector-go').addEventListener('click', () => startSolarLevel(parseInt($('vz-sector-select').value, 10) || 1));
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    applyHud(); buildTouchButtons(); buildSectorPicker(); syncFsBtn();
+    if (MOBILE) {
+      // HP: render lebih ringan secara bawaan (tanpa bayangan, piksel dibatasi)
+      if (store.get('vz_perf_set', '') === '') { store.set('vz_perf_set', '1'); const lo = $('btn-low-perf'); if (lo) lo.click(); }
+      try { renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5)); renderer.setSize(innerWidth, innerHeight); } catch (e) {}
+    }
+    checkOrientation();
+  });
+  if (document.readyState !== 'loading') { applyHud(); }
 })();
 
 </script>
