@@ -1,0 +1,1968 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VENTURIAN SPASIAL SIMULATOR</title>
+<style>
+:root{
+  --bg:#04060b; --sf:rgba(9,14,25,.88); --pn:rgba(18,27,44,.72); --pn2:rgba(26,38,60,.7);
+  --ed:rgba(130,160,210,.15); --ed2:rgba(130,160,210,.30);
+  --gold:#e9c985; --gold2:#b8893a; --cy:#5eead4; --em:#34d399; --am:#f5b94a;
+  --vi:#a78bfa; --ro:#fb7185; --sk:#7dd3fc; --tx:#e8eef8; --mt:#8a9cb8;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;color:var(--tx);font-family:'Inter','Segoe UI',system-ui,-apple-system,Roboto,sans-serif;font-size:13px;height:100vh;display:flex;flex-direction:column;overflow:hidden;
+  background:radial-gradient(1100px 650px at 85% -10%,rgba(94,234,212,.09),transparent 60%),radial-gradient(900px 600px at -10% 110%,rgba(167,139,250,.11),transparent 60%),var(--bg)}
+::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-thumb{background:rgba(130,160,210,.22);border-radius:9px}::-webkit-scrollbar-track{background:transparent}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.mut{color:var(--mt)}
+header{background:linear-gradient(180deg,rgba(14,21,36,.95),rgba(8,12,22,.92));border-bottom:1px solid var(--ed2);padding:8px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;backdrop-filter:blur(10px);position:relative;z-index:20}
+header:after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),var(--cy),transparent);opacity:.55}
+.brand{display:flex;align-items:center;gap:11px}
+.brand svg{filter:drop-shadow(0 0 8px rgba(233,201,133,.55))}
+.brand h1{margin:0;font-size:15px;font-weight:800;letter-spacing:.22em;background:linear-gradient(90deg,#f6e2b0,#e9c985 45%,#5eead4);-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand small{display:block;color:var(--mt);font-size:9.5px;letter-spacing:.12em;margin-top:2px;text-transform:uppercase}
+.tabs{display:flex;gap:4px;background:rgba(0,0,0,.3);padding:3px;border-radius:10px;border:1px solid var(--ed)}
+.tab{background:transparent;color:var(--mt);border:0;padding:6px 13px;border-radius:8px;cursor:pointer;font-weight:600;font-size:12px;transition:.2s}
+.tab:hover{color:var(--tx)}
+.tab.on{background:linear-gradient(180deg,rgba(233,201,133,.2),rgba(233,201,133,.08));color:var(--gold);box-shadow:inset 0 0 0 1px rgba(233,201,133,.4)}
+.btn{background:linear-gradient(180deg,#f0d799,#d4aa57);color:#1a1204;border:0;border-radius:8px;padding:6px 11px;font-weight:700;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;gap:5px;transition:.18s;box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 4px 14px rgba(233,201,133,.12)}
+.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn.g{background:rgba(255,255,255,.04);color:var(--tx);border:1px solid var(--ed2);box-shadow:none}
+.btn.g:hover{background:rgba(255,255,255,.09)}
+.btn.a{background:linear-gradient(180deg,#fbc765,#e29a1e);color:#1d1002}
+.btn.v{background:linear-gradient(180deg,#b9a2ff,#7c5cf0);color:#fff}
+.btn.r{background:linear-gradient(180deg,#fd8b9c,#e0425f);color:#fff}
+.btn.c{background:linear-gradient(180deg,#7ff2de,#1fb9a2);color:#02221d}
+.btn.on{outline:2px solid #fff;outline-offset:1px}
+.xchip{display:flex;align-items:center;gap:9px;padding:4px 12px 4px 6px;border-radius:30px;border:1px solid var(--ed2);background:rgba(255,255,255,.04);cursor:pointer;min-width:190px}
+.xchip:hover{border-color:var(--gold)}
+.xav{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 30% 30%,#f6e2b0,#b8893a);font-size:15px}
+.xchip b{font-size:12px;display:block;line-height:1.1}
+.xchip small{color:var(--gold);font-size:10px;letter-spacing:.06em}
+.xbar{height:3px;background:rgba(255,255,255,.1);border-radius:3px;margin-top:3px;overflow:hidden}
+.xbar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--cy));width:0}
+#sidebar{width:392px;background:var(--sf);border-right:1px solid var(--ed2);display:flex;flex-direction:column;overflow:hidden;backdrop-filter:blur(12px)}
+#canvas-wrap{flex:1;position:relative;background:#02040a;display:flex;flex-direction:column;overflow:hidden}
+.breadcrumb{background:rgba(6,10,18,.92);border-bottom:1px solid var(--ed);padding:7px 12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px}
+.crumb{cursor:pointer;color:var(--cy);text-decoration:underline dotted;text-underline-offset:3px}
+.crumb.active{color:#fff;font-weight:700;text-decoration:none;cursor:default}
+.toolbar{background:rgba(9,14,25,.92);border-bottom:1px solid var(--ed);padding:7px 12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;z-index:5}
+svg#map{flex:1;width:100%;height:100%;cursor:grab;touch-action:none;user-select:none}
+.panel-sec{padding:11px 13px;border-bottom:1px solid var(--ed)}
+.panel-scroll{flex:1;overflow-y:auto;padding:12px}
+.card{background:var(--pn);border:1px solid var(--ed);border-radius:11px;padding:11px;margin-bottom:9px;transition:.15s}
+.card.sel{border-color:var(--gold);background:rgba(233,201,133,.08);box-shadow:0 0 0 1px rgba(233,201,133,.2),0 6px 24px rgba(233,201,133,.07)}
+label{display:block;font-size:10.5px;color:var(--mt);margin-bottom:3px;letter-spacing:.03em}
+input,select,textarea{width:100%;background:rgba(0,0,0,.35);border:1px solid var(--ed2);color:var(--tx);border-radius:7px;padding:6px 9px;font:inherit;outline:none;transition:.15s}
+input:focus,select:focus,textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(233,201,133,.12)}
+select option{background:#0b111c}
+.row{display:flex;gap:8px;align-items:end}.row>*{flex:1}
+.tag{display:inline-block;padding:2px 8px;border-radius:99px;background:rgba(130,160,210,.15);font-size:10.5px;margin-right:4px}
+.badge-ok{background:rgba(52,211,153,.16);color:#6ee7b7;border:1px solid rgba(52,211,153,.5)}
+.badge-warn{background:rgba(245,185,74,.16);color:#fcd34d;border:1px solid rgba(245,185,74,.5)}
+.badge-no{background:rgba(251,113,133,.16);color:#fda4af;border:1px solid rgba(251,113,133,.5)}
+.full-page{flex:1;overflow-y:auto;padding:20px;max-width:1560px;margin:0 auto;width:100%}
+h2.pt{margin:0;color:var(--gold);font-weight:800;letter-spacing:.05em}
+table{width:100%;border-collapse:collapse}
+th,td{padding:7px 9px;border-bottom:1px solid var(--ed);text-align:left}
+th{color:var(--gold);font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;background:#0b121e;position:sticky;top:0;z-index:2}
+tr:hover td{background:rgba(255,255,255,.025)}
+#hud:empty{display:none}
+#hud{position:absolute;bottom:12px;left:12px;background:rgba(5,8,14,.85);border:1px solid var(--ed2);padding:6px 11px;border-radius:8px;pointer-events:none;font-size:11px;color:#a9bbd2;backdrop-filter:blur(6px)}
+#scalebar{position:absolute;bottom:50px;left:14px;display:none;align-items:center;gap:8px;font-size:11px;color:#cfe0f5;pointer-events:none}
+#scalebar i{display:block;height:6px;border:1.5px solid #cfe0f5;border-top:0}
+#legend{position:absolute;right:12px;bottom:12px;background:rgba(5,8,14,.85);border:1px solid var(--ed2);padding:7px 10px;border-radius:8px;font-size:10.5px;pointer-events:none;display:flex;flex-direction:column;gap:3px;backdrop-filter:blur(6px)}
+#legend span i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:11px;margin-bottom:14px}
+.tile{background:linear-gradient(160deg,rgba(26,38,60,.8),rgba(12,18,30,.8));border:1px solid var(--ed);border-top:2px solid var(--gold);border-radius:11px;padding:10px 14px}
+.tile b{display:block;font-size:22px;color:var(--gold);letter-spacing:.02em}
+.tile span{font-size:10.5px;color:var(--mt);text-transform:uppercase;letter-spacing:.08em}
+.tw{overflow:auto;max-height:62vh}
+#gmodal{position:fixed;inset:0;background:rgba(2,4,9,.86);display:none;z-index:100;overflow:auto;padding:20px;backdrop-filter:blur(6px)}
+.gbox{max-width:1060px;margin:auto;background:linear-gradient(180deg,#0d1522,#080d17);border:1px solid var(--ed2);border-radius:16px;padding:20px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.lk{color:var(--cy);text-decoration:none}.lk:hover{text-decoration:underline}
+.kvg{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.kv{display:flex;justify-content:space-between;gap:8px;font-size:11px;padding:4px 0;border-bottom:1px dashed rgba(130,160,210,.12)}
+.kv span{color:var(--mt)}.kv b{color:#dfe9f7;text-align:right;font-weight:600}
+.note{font-size:11px;color:#b6c5da;margin-top:7px;line-height:1.5}
+details{background:var(--pn);border:1px solid var(--ed);border-radius:10px;margin:8px 12px 0;padding:0}
+details summary{cursor:pointer;padding:8px 11px;font-weight:700;color:var(--gold);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details summary:before{content:'▸';margin-right:7px;display:inline-block;transition:.2s}
+details[open] summary:before{transform:rotate(90deg)}
+details .dbody{padding:2px 11px 10px}
+.bar{display:grid;grid-template-columns:150px 1fr 90px;gap:9px;align-items:center;margin:5px 0;font-size:11.5px}
+.bar .bl{color:#cbd8ea;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bt{height:9px;background:rgba(255,255,255,.06);border-radius:9px;overflow:hidden}
+.bt i{display:block;height:100%;background:linear-gradient(90deg,var(--gold2),var(--gold));border-radius:9px}
+.bv{text-align:right;color:var(--gold)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px}
+.log{max-height:360px;overflow:auto;font-size:11.5px}
+.log div{padding:6px 0;border-bottom:1px dashed var(--ed);display:flex;gap:10px}
+.log time{color:var(--mt);min-width:112px}
+#toasts{position:fixed;top:70px;right:16px;z-index:500;display:flex;flex-direction:column;gap:8px}
+.toast{background:rgba(10,16,28,.96);border:1px solid var(--ed2);border-left:3px solid var(--cy);padding:9px 14px;border-radius:9px;transform:translateX(120%);opacity:0;transition:.35s;max-width:340px;font-size:12px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.toast.show{transform:none;opacity:1}.toast.gold{border-left-color:var(--gold)}.toast.err{border-left-color:var(--ro)}
+/* ===== FX TRANSISI ===== */
+#fx{display:none;position:fixed;inset:0;z-index:300;background:#02040a;opacity:1;transition:opacity .7s ease;cursor:progress}
+#fx.run{animation:fxin .4s ease}
+#fx.out{opacity:0;pointer-events:none}
+@keyframes fxin{from{opacity:0}to{opacity:1}}
+#fxc{position:absolute;inset:0}
+.fx-top{position:absolute;top:7%;left:0;right:0;text-align:center;pointer-events:none;text-shadow:0 2px 22px rgba(0,0,0,.9)}
+#fx-kicker{font-size:11px;letter-spacing:.42em;color:var(--cy);text-transform:uppercase}
+#fx-title{margin:8px 0 4px;font-size:clamp(22px,3.6vw,44px);letter-spacing:.2em;font-weight:800;background:linear-gradient(90deg,#fff,#f0d799,#fff);-webkit-background-clip:text;background-clip:text;color:transparent}
+#fx-sub{font-size:15px;color:#e9eef7}
+#fx-detail{font-size:12px;color:var(--gold);margin-top:6px;letter-spacing:.06em}
+.fx-tel{position:absolute;left:3%;top:50%;transform:translateY(-50%);min-width:215px;background:rgba(4,8,15,.62);border:1px solid rgba(94,234,212,.35);border-radius:12px;padding:12px 15px;backdrop-filter:blur(6px);pointer-events:none}
+.fx-tel h4{margin:0 0 8px;font-size:10px;letter-spacing:.3em;color:var(--cy)}
+.fx-tel div{display:flex;justify-content:space-between;gap:16px;font-size:12px;padding:3px 0}
+.fx-tel span{color:var(--mt)}.fx-tel b{font-family:ui-monospace,Menlo,Consolas,monospace;color:#fff;font-weight:600}
+.fx-bottom{position:absolute;left:0;right:0;bottom:6%;display:flex;flex-direction:column;align-items:center;gap:10px}
+#fx-phase{font-size:12px;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);text-shadow:0 0 12px rgba(0,0,0,.9)}
+.fx-bar{width:min(560px,70vw);height:3px;background:rgba(255,255,255,.12);border-radius:3px;overflow:hidden}
+.fx-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cy),var(--gold))}
+#fx-skip{background:rgba(255,255,255,.07);color:#cfe0f5;border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:5px 15px;cursor:pointer;font-size:11px;letter-spacing:.1em}
+#fx-skip:hover{background:rgba(255,255,255,.16)}
+</style>
+</head>
+<body>
+<div id="toasts"></div>
+
+<header>
+  <div class="brand">
+    <svg width="34" height="34" viewBox="0 0 40 40"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6e2b0"/><stop offset="1" stop-color="#5eead4"/></linearGradient></defs><polygon points="20,2 36,11 36,29 20,38 4,29 4,11" fill="none" stroke="url(#lg)" stroke-width="2"/><circle cx="20" cy="20" r="6" fill="url(#lg)"/><ellipse cx="20" cy="20" rx="14" ry="5" fill="none" stroke="url(#lg)" stroke-width="1.2" transform="rotate(-24 20 20)"/></svg>
+    <div><h1>VENTURIAN SPASIAL SIMULATOR</h1><small>Orbit sistem · atmosfer · benua · negara · permukiman terkecil</small></div>
+  </div>
+  <div class="tabs">
+    <button class="tab on" id="tab-map" onclick="setTab('map')">🌌 Peta Spasial</button>
+    <button class="tab" id="tab-planets" onclick="setTab('planets')">🪐 54 Planet</button>
+    <button class="tab" id="tab-recap" onclick="setTab('recap')">📊 Rekap Wilayah (<span id="hdr-user-count">0</span>)</button>
+    <button class="tab" id="tab-stats" onclick="setTab('stats')">🧭 Penjelajah &amp; Statistik</button>
+  </div>
+  <div class="xchip" id="xchip" onclick="setTab('stats')" title="Buka dossier penjelajah">
+    <div class="xav">🧑‍🚀</div>
+    <div style="flex:1"><b id="xname">—</b><small id="xrank">—</small><div class="xbar"><i id="xbari"></i></div></div>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap">
+    <button class="btn g" id="btn-fx" onclick="toggleFx()">🎬 Transisi: ON</button>
+    <button class="btn g" onclick="exportSVG()">⬇ SVG</button>
+    <button class="btn g" onclick="exportJSON()">⬇ Atlas JSON</button>
+    <label class="btn a" style="cursor:pointer;margin:0">⬆ Impor JSON<input type="file" accept=".json" hidden onchange="importJSON(this.files[0])"></label>
+    <button class="btn r" onclick="resetAll()">↺ Reset</button>
+  </div>
+</header>
+
+<div id="view-map" style="flex:1;display:flex;min-height:0">
+  <aside id="sidebar">
+    <div class="panel-sec">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:6px">
+        <strong style="color:var(--gold);font-size:15px;letter-spacing:.03em" id="ctx-title">Sistem Lecossa</strong>
+        <span class="tag mono" id="ctx-level">L0 · Orbit</span>
+      </div>
+      <div id="ctx-stats" class="mono" style="margin-top:6px;font-size:11px;line-height:1.65;color:#a9bbd2"></div>
+    </div>
+    <div class="panel-sec" id="selected-box"></div>
+    <div style="overflow-y:auto;flex:1;display:flex;flex-direction:column;min-height:0">
+      <div id="stats-box" style="padding-bottom:6px"></div>
+      <div class="panel-scroll" style="flex:none;overflow:visible">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <strong style="font-size:12px;color:var(--am);letter-spacing:.05em"><span id="list-title">Daftar Planet</span> (<span id="child-count">0</span>)</strong>
+          <button class="btn g" id="btn-dist-pop" style="padding:3px 8px;font-size:11px;display:none" onclick="autoDistributePop()">⚖️ Rata Kepadatan</button>
+        </div>
+        <div id="child-list"></div>
+      </div>
+    </div>
+  </aside>
+  <main id="canvas-wrap">
+    <div class="breadcrumb" id="breadcrumb"></div>
+    <div class="toolbar" id="toolbar"></div>
+    <svg id="map" viewBox="-620 -620 1240 1240"></svg>
+    <div id="scalebar"></div>
+    <div id="legend"></div>
+    <div id="hud" class="mono"></div>
+  </main>
+</div>
+<div id="view-planets" class="full-page" style="display:none"></div>
+<div id="view-recap" class="full-page" style="display:none"></div>
+<div id="view-stats" class="full-page" style="display:none"></div>
+<div id="gmodal"></div>
+
+<div id="fx">
+  <canvas id="fxc"></canvas>
+  <div class="fx-top"><div id="fx-kicker"></div><h1 id="fx-title"></h1><div id="fx-sub"></div><div id="fx-detail"></div></div>
+  <div class="fx-tel">
+    <h4>TELEMETRI</h4>
+    <div><span>Ketinggian</span><b id="tl-alt">—</b></div>
+    <div><span>Kecepatan</span><b id="tl-spd">—</b></div>
+    <div><span>Suhu eksternal</span><b id="tl-tmp">—</b></div>
+    <div><span>Tekanan</span><b id="tl-prs">—</b></div>
+    <div><span>Beban-G</span><b id="tl-g">—</b></div>
+  </div>
+  <div class="fx-bottom"><div id="fx-phase"></div><div class="fx-bar"><i id="fx-bar"></i></div><button id="fx-skip" onclick="FX.skip=true">LEWATI ⏭ (Esc)</button></div>
+</div>
+
+<script>
+const DB_NAME = "Venturian_Spasial_Simulator_DB";
+const LS_KEY = "VENTURIAN_SPASIAL_SIMULATOR_V1";
+const $ = s => document.querySelector(s);
+const uid = () => 'u_' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3);
+const fmt = n => Number(n || 0).toLocaleString('id-ID', { maximumFractionDigits: 2 });
+const fmtC = n => { n = Number(n || 0); const a = Math.abs(n); if (a >= 1e12) return fmt(n / 1e12) + ' T'; if (a >= 1e9) return fmt(n / 1e9) + ' M'; if (a >= 1e6) return fmt(n / 1e6) + ' jt'; return fmt(n); };
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const lerp = (a, b, x) => a + (b - a) * x;
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const smooth = x => { x = clamp(x); return x * x * (3 - 2 * x); };
+const bell = (x, c, w) => Math.exp(-Math.pow((x - c) / w, 2));
+const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+const rgba = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+
+function toast(msg, type) {
+  const el = document.createElement('div');
+  el.className = 'toast ' + (type || '');
+  el.textContent = msg;
+  $('#toasts').appendChild(el);
+  setTimeout(() => el.classList.add('show'), 10);
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 400); }, 3400);
+}
+
+const HIERARCHY_LABELS = [
+  "Sistem Bintang", "Planet", "Benua / Massa Daratan", "Negara / Sektor Otoritas",
+  "Provinsi / Negara Bagian", "Kabupaten / Distrik", "Kecamatan / Sektor Lokal",
+  "Kelurahan / Kota Kecil", "Permukiman Lokal / Desa"
+];
+const gxL = d => HIERARCHY_LABELS[Math.min(d, HIERARCHY_LABELS.length - 1)];
+const SURVEY_OPTS = ['Belum disurvei', 'Disurvei', 'Dipetakan', 'Dikembangkan'];
+
+const PLANETS_54 = [
+  { id:"p1", no:1, name:"Lecossa-01", zone:"Inner Zone", cls:"Mercury-type", diam:6800, sats:0, mass:0.1111, au:1.1, rot:1428.6, tilt:2.9, g:0.39, temp:606, press:0, atm:"Eksosfer sangat tipis (Na, K, He, H₂)", landPct:18, bio:"Tidak ada", civ:"Tidak ada", res:"Besi, nikel, titanium, helium-3 regolit" },
+  { id:"p2", no:2, name:"Avarneth", zone:"Inner Zone", cls:"Metallic terrestrial", diam:9200, sats:1, mass:0.4066, au:1.55, rot:349.3, tilt:1.2, g:0.78, temp:472, press:0, atm:"Eksosfer tipis (uap Na, Mg, Fe)", landPct:32, bio:"Tidak ada", civ:"Tidak ada", res:"Bijih besi, nikel, platinoid, tembaga" },
+  { id:"p3", no:3, name:"Zerathis", zone:"Inner Zone", cls:"Mercury-type", diam:11400, sats:1, mass:0.3362, au:2.05, rot:1118.0, tilt:1.7, g:0.42, temp:372, press:0, atm:"Eksosfer sangat tipis (Na, K, He, H₂)", landPct:12, bio:"Tidak ada", civ:"Tidak ada", res:"Besi, nikel, titanium, helium-3 regolit" },
+  { id:"p4", no:4, name:"Orvellan", zone:"Inner Zone", cls:"Super-metallic", diam:14600, sats:2, mass:2.048, au:2.65, rot:496.4, tilt:9.2, g:1.56, temp:300, press:0.0068, atm:"Atmosfer uap logam tipis (Fe, Mg, SiO)", landPct:24, bio:"Tidak ada", civ:"Tidak ada", res:"Besi, nikel, kobalt, logam langka" },
+  { id:"p5", no:5, name:"Kharvoss", zone:"Inner Zone", cls:"Volcanic world", diam:18000, sats:2, mass:1.796, au:3.3, rot:237.9, tilt:13.8, g:0.90, temp:259, press:3.26, atm:"SO₂ ~70%, CO₂ ~20%, N₂ ~8%", landPct:8, bio:"Tidak ada", civ:"Tidak ada", res:"Belerang, silikon, logam vulkanogenik, panas bumi" },
+  { id:"p6", no:6, name:"Therynd", zone:"Inner Zone", cls:"Volcanic superworld", diam:24200, sats:3, mass:6.24, au:4.05, rot:235.6, tilt:13.4, g:1.73, temp:238, press:29, atm:"SO₂ ~65%, CO₂ ~28%, N₂ ~6%", landPct:15, bio:"Tidak ada", civ:"Tidak ada", res:"Belerang, logam vulkanogenik, panas bumi" },
+  { id:"p7", no:7, name:"Maelvyr", zone:"Inner Zone", cls:"Venus-type", diam:22500, sats:2, mass:3.368, au:4.85, rot:3308.1, tilt:171.7, g:1.08, temp:432, press:77, atm:"CO₂ ~96%, N₂ ~3%, awan asam sulfat", landPct:22, bio:"Tidak ada", civ:"Tidak ada", res:"Silikon, aluminium, logam basal" },
+  { id:"p8", no:8, name:"Ilyrion", zone:"Inner Zone", cls:"Venus-type", diam:27000, sats:3, mass:4.984, au:5.7, rot:5003.1, tilt:178.0, g:1.11, temp:372, press:84, atm:"CO₂ ~96%, N₂ ~3%, awan asam sulfat", landPct:35, bio:"Tidak ada", civ:"Tidak ada", res:"Silikon, aluminium, logam basal" },
+  { id:"p9", no:9, name:"Vaelthar", zone:"Inner Zone", cls:"Super-Venus", diam:31800, sats:4, mass:9.903, au:6.6, rot:5347.2, tilt:171.2, g:1.59, temp:515, press:175, atm:"CO₂ ~97%, N₂ ~2%, awan asam sulfat tebal", landPct:28, bio:"Tidak ada", civ:"Tidak ada", res:"Silikon, aluminium, logam basal" },
+  { id:"p10", no:10, name:"Sorevyn", zone:"Inner Zone", cls:"Desert terrestrial", diam:16000, sats:1, mass:1.324, au:7.55, rot:27.6, tilt:27.9, g:0.84, temp:76, press:0.46, atm:"N₂ ~78%, CO₂ ~18%, Ar ~3%", landPct:76, bio:"Tidak ada", civ:"Tidak ada", res:"Mineral evaporit, silika, logam tanah jarang" },
+  { id:"p11", no:11, name:"Draeven", zone:"Inner Zone", cls:"Desert superworld", diam:20500, sats:2, mass:3.132, au:8.55, rot:35.8, tilt:28.0, g:1.21, temp:73, press:2.10, atm:"N₂ ~76%, CO₂ ~20%, Ar ~3%", landPct:42, bio:"Tidak ada", civ:"Tidak ada", res:"Evaporit, silika, logam tanah jarang" },
+  { id:"p12", no:12, name:"Qorathen", zone:"Inner Zone", cls:"High-temperature terrestrial", diam:35000, sats:4, mass:15.24, au:9.6, rot:334.7, tilt:0.6, g:2.02, temp:145, press:6.10, atm:"CO₂, SO₂, uap logam alkali", landPct:10, bio:"Tidak ada", civ:"Tidak ada", res:"Logam refraktori, silikon, tungsten" },
+
+  { id:"p13", no:13, name:"Avereth", zone:"Habitable Zone", cls:"Terrestrial biosphere", diam:19500, sats:2, mass:1.991, au:10.05, rot:24.7, tilt:27.5, g:0.85, temp:45, press:1.02, atm:"N₂ ~76%, O₂ ~21%, Ar ~1%, CO₂", landPct:68, bio:"Ya", civ:"Tidak ada", res:"Biomassa, air tawar, mineral, bijih logam" },
+  { id:"p14", no:14, name:"Cyrandel", zone:"Habitable Zone", cls:"Terrestrial biosphere", diam:26000, sats:3, mass:3.914, au:10.55, rot:32.3, tilt:20.3, g:0.94, temp:44, press:0.83, atm:"N₂ ~76%, O₂ ~21%, Ar ~1%, CO₂", landPct:55, bio:"Ya", civ:"Tidak ada", res:"Biomassa, air tawar, mineral, bijih logam" },
+  { id:"p15", no:15, name:"Thalassyr", zone:"Habitable Zone", cls:"Oceanic biosphere", diam:32000, sats:4, mass:5.613, au:11.05, rot:31.0, tilt:22.2, g:0.89, temp:28, press:1.37, atm:"N₂ ~75%, O₂ ~22%, uap air tinggi", landPct:8, bio:"Ya", civ:"Tidak ada", res:"Biomassa laut, mineral dasar laut, hidrat metana" },
+  { id:"p16", no:16, name:"Elarion", zone:"Habitable Zone", cls:"Earthlike biosphere", diam:36500, sats:5, mass:8.206, au:11.55, rot:22.5, tilt:9.6, g:1.00, temp:28, press:0.98, atm:"N₂ ~76%, O₂ ~21%, Ar ~1%", landPct:61, bio:"Ya", civ:"Tidak ada", res:"Biomassa, air tawar, mineral, bijih logam" },
+  { id:"p17", no:17, name:"Vaeloria", zone:"Habitable Zone", cls:"Super-Earth biosphere", diam:51000, sats:6, mass:23.55, au:12.05, rot:27.7, tilt:7.1, g:1.47, temp:27, press:1.74, atm:"N₂ ~74%, O₂ ~23%, Ar, CO₂", landPct:47, bio:"Ya", civ:"Tidak ada", res:"Biomassa, air tawar, mineral, bijih logam" },
+  { id:"p18", no:18, name:"Myrrhane", zone:"Habitable Zone", cls:"Earthlike biosphere", diam:39000, sats:5, mass:9.93, au:12.55, rot:33.3, tilt:16.2, g:1.06, temp:25, press:1.02, atm:"N₂ ~76%, O₂ ~21%, Ar ~1%", landPct:72, bio:"Ya", civ:"Tidak ada", res:"Biomassa, air tawar, mineral, bijih logam" },
+  { id:"p19", no:19, name:"ELEANTOR", zone:"Habitable Zone", cls:"Earthlike biosphere / Venturian homeworld", diam:43000, sats:6, mass:11.39, au:13.05, rot:24.5, tilt:15.1, g:1.00, temp:15, press:1.00, atm:"N₂ ~78%, O₂ ~21%, Ar ~0,9%", landPct:42, bio:"Ya", civ:"Ya (Venturian)", res:"Biomassa, air tawar, mineral, bijih logam" },
+  { id:"p20", no:20, name:"Ossyra", zone:"Habitable Zone", cls:"Super-Earth biosphere", diam:58000, sats:7, mass:25.9, au:13.55, rot:21.4, tilt:18.1, g:1.25, temp:12, press:1.33, atm:"N₂ ~74%, O₂ ~23%, Ar, CO₂", landPct:58, bio:"Ya", civ:"Tidak ada", res:"Biomassa, air tawar, mineral, bijih logam" },
+  { id:"p21", no:21, name:"Pelagor", zone:"Habitable Zone", cls:"Oceanic superworld biosphere", diam:64000, sats:8, mass:31.03, au:14.05, rot:30.9, tilt:14.9, g:1.23, temp:14, press:2.29, atm:"N₂ ~74%, O₂ ~23%, uap air tinggi", landPct:3, bio:"Ya", civ:"Tidak ada", res:"Biomassa laut, hidrat metana, mineral dasar laut" },
+  { id:"p22", no:22, name:"Nymbrel", zone:"Habitable Zone", cls:"Earthlike biosphere", diam:47500, sats:6, mass:13.2, au:14.55, rot:24.1, tilt:13.9, g:0.95, temp:-1, press:1.13, atm:"N₂ ~76%, O₂ ~21%, Ar ~1%", landPct:36, bio:"Ya", civ:"Tidak ada", res:"Biomassa, air tawar, mineral, bijih logam" },
+  { id:"p23", no:23, name:"Kaelthara", zone:"Habitable Zone", cls:"Super-Earth biosphere", diam:76000, sats:9, mass:44.47, au:15.05, rot:18.4, tilt:9.7, g:1.25, temp:2, press:2.07, atm:"N₂ ~74%, O₂ ~23%, Ar, CO₂", landPct:64, bio:"Ya", civ:"Tidak ada", res:"Biomassa, air tawar, mineral, bijih logam" },
+  { id:"p24", no:24, name:"Orthelia", zone:"Habitable Zone", cls:"Mega-Earth biosphere", diam:105000, sats:12, mass:106.6, au:15.55, rot:21.1, tilt:20.8, g:1.57, temp:-2, press:2.49, atm:"N₂ ~72%, O₂ ~24%, Ar, CO₂", landPct:51, bio:"Ya", civ:"Tidak ada", res:"Biomassa, air tawar, mineral, bijih logam" },
+  { id:"p25", no:25, name:"Syravenn", zone:"Habitable Zone", cls:"Mega-Earth biosphere", diam:128000, sats:14, mass:153.4, au:16.05, rot:14.6, tilt:6.5, g:1.52, temp:-3, press:3.47, atm:"N₂ ~72%, O₂ ~24%, Ar, CO₂", landPct:29, bio:"Ya", civ:"Tidak ada", res:"Biomassa, air tawar, mineral, bijih logam" },
+  { id:"p26", no:26, name:"Demeris", zone:"Habitable Zone", cls:"Super-Earth biosphere", diam:83000, sats:10, mass:51.77, au:16.55, rot:28.4, tilt:15.2, g:1.22, temp:-4, press:1.22, atm:"N₂ ~74%, O₂ ~23%, Ar, CO₂", landPct:75, bio:"Ya", civ:"Tidak ada", res:"Biomassa, air tawar, mineral, bijih logam" },
+  { id:"p27", no:27, name:"Aqualeth", zone:"Habitable Zone", cls:"Oceanic biosphere", diam:54000, sats:7, mass:14.37, au:17.05, rot:23.6, tilt:9.1, g:0.80, temp:-18, press:1.14, atm:"N₂ ~75%, O₂ ~22%, uap air tinggi", landPct:12, bio:"Ya", civ:"Tidak ada", res:"Biomassa laut, mineral dasar laut, hidrat metana" },
+  { id:"p28", no:28, name:"Virellion", zone:"Habitable Zone", cls:"Mega-Earth biosphere", diam:156000, sats:18, mass:265.3, au:17.55, rot:21.7, tilt:6.1, g:1.77, temp:-9, press:3.61, atm:"N₂ ~72%, O₂ ~24%, Ar, CO₂", landPct:44, bio:"Ya", civ:"Tidak ada", res:"Biomassa, air tawar, mineral, bijih logam" },
+  { id:"p29", no:29, name:"Caldris", zone:"Habitable Zone", cls:"Earthlike biosphere", diam:41000, sats:5, mass:10.04, au:18.05, rot:32.0, tilt:20.2, g:0.97, temp:-26, press:1.20, atm:"N₂ ~76%, O₂ ~21%, Ar ~1%", landPct:57, bio:"Ya", civ:"Tidak ada", res:"Biomassa, air tawar, mineral, bijih logam" },
+  { id:"p30", no:30, name:"Zorathene", zone:"Habitable Zone", cls:"Mega-Earth biosphere", diam:184000, sats:22, mass:329.5, au:18.55, rot:26.8, tilt:23.7, g:1.58, temp:-20, press:2.17, atm:"N₂ ~72%, O₂ ~24%, Ar, CO₂", landPct:33, bio:"Ya", civ:"Tidak ada", res:"Biomassa, air tawar, mineral, bijih logam" },
+
+  { id:"p31", no:31, name:"Thyrmagon", zone:"Jovian Zone", cls:"Ice Giant", diam:95000, sats:12, mass:64.48, au:19.05, rot:17.7, tilt:16.2, g:1.16, temp:-64, press:1, atm:"H₂ ~80%, He ~19%, CH₄ ~1,5%", landPct:0, bio:"Tidak ada", civ:"Tidak ada", res:"Helium-3, deuterium, hidrogen" },
+  { id:"p32", no:32, name:"Gorvaleth", zone:"Jovian Zone", cls:"Ice Giant", diam:130000, sats:18, mass:95.76, au:19.55, rot:16.0, tilt:50.3, g:0.92, temp:-60, press:1, atm:"H₂ ~80%, He ~19%, CH₄ ~1,5%", landPct:0, bio:"Tidak ada", civ:"Tidak ada", res:"Helium-3, deuterium, hidrogen" },
+  { id:"p33", no:33, name:"Ashkarond", zone:"Jovian Zone", cls:"Gas Giant", diam:180000, sats:25, mass:233.5, au:20.05, rot:8.9, tilt:10.4, g:1.17, temp:-68, press:1, atm:"H₂ ~90%, He ~10%, CH₄, NH₃", landPct:0, bio:"Tidak ada", civ:"Tidak ada", res:"Helium-3, deuterium, hidrogen" },
+  { id:"p34", no:34, name:"Brynthal", zone:"Jovian Zone", cls:"Gas Giant", diam:240000, sats:32, mass:549.9, au:20.55, rot:10.5, tilt:23.5, g:1.55, temp:-62, press:1, atm:"H₂ ~90%, He ~10%, CH₄, NH₃", landPct:0, bio:"Tidak ada", civ:"Tidak ada", res:"Helium-3, deuterium, hidrogen" },
+  { id:"p35", no:35, name:"Vorhaldis", zone:"Jovian Zone", cls:"Gas Giant", diam:310000, sats:40, mass:828.7, au:21.05, rot:8.1, tilt:8.1, g:1.40, temp:-74, press:1, atm:"H₂ ~90%, He ~10%, CH₄, NH₃", landPct:0, bio:"Tidak ada", civ:"Tidak ada", res:"Helium-3, deuterium, hidrogen" },
+  { id:"p36", no:36, name:"Zephyrane", zone:"Jovian Zone", cls:"Gas Giant", diam:420000, sats:55, mass:1239.0, au:21.55, rot:8.1, tilt:6.1, g:1.14, temp:-78, press:1, atm:"H₂ ~90%, He ~10%, CH₄, NH₃", landPct:0, bio:"Tidak ada", civ:"Tidak ada", res:"Helium-3, deuterium, hidrogen" },
+  { id:"p37", no:37, name:"Kryndor", zone:"Jovian Zone", cls:"Super-Jovian", diam:560000, sats:65, mass:2936.0, au:22.05, rot:7.7, tilt:22.4, g:1.52, temp:-69, press:1, atm:"H₂ ~91%, He ~9%, CH₄, NH₃", landPct:0, bio:"Tidak ada", civ:"Tidak ada", res:"Helium-3, deuterium, hidrogen" },
+  { id:"p38", no:38, name:"Aurelthos", zone:"Jovian Zone", cls:"Super-Jovian", diam:720000, sats:78, mass:4374.0, au:22.55, rot:9.2, tilt:20.1, g:1.37, temp:-72, press:1, atm:"H₂ ~91%, He ~9%, CH₄, NH₃", landPct:0, bio:"Tidak ada", civ:"Tidak ada", res:"Helium-3, deuterium, hidrogen" },
+  { id:"p39", no:39, name:"Mavorreth", zone:"Jovian Zone", cls:"Super-Jovian", diam:950000, sats:90, mass:9227.0, au:23.05, rot:10.3, tilt:23.9, g:1.66, temp:-84, press:1, atm:"H₂ ~91%, He ~9%, CH₄, NH₃", landPct:0, bio:"Tidak ada", civ:"Tidak ada", res:"Helium-3, deuterium, hidrogen" },
+  { id:"p40", no:40, name:"Oltharion", zone:"Jovian Zone", cls:"Super-Jovian", diam:1200000, sats:110, mass:13300.0, au:23.55, rot:6.2, tilt:24.5, g:1.50, temp:-73, press:1, atm:"H₂ ~91%, He ~9%, CH₄, NH₃", landPct:0, bio:"Tidak ada", civ:"Tidak ada", res:"Helium-3, deuterium, hidrogen" },
+  { id:"p41", no:41, name:"Selvandor", zone:"Jovian Zone", cls:"Ice Giant", diam:175000, sats:22, mass:207.5, au:24.05, rot:17.7, tilt:99.3, g:1.10, temp:-76, press:1, atm:"H₂ ~80%, He ~19%, CH₄ ~1,5%", landPct:0, bio:"Tidak ada", civ:"Tidak ada", res:"Helium-3, deuterium, hidrogen" },
+  { id:"p42", no:42, name:"Ymiratha", zone:"Jovian Zone", cls:"Massive Gas Giant", diam:1550000, sats:130, mass:20270.0, au:24.55, rot:6.3, tilt:7.9, g:1.37, temp:-73, press:1, atm:"H₂ ~92%, He ~8%, CH₄, NH₃", landPct:0, bio:"Tidak ada", civ:"Tidak ada", res:"Helium-3, deuterium, hidrogen" },
+  { id:"p43", no:43, name:"Daerathon", zone:"Jovian Zone", cls:"Massive Gas Giant", diam:1900000, sats:150, mass:34020.0, au:25.05, rot:5.4, tilt:0.9, g:1.53, temp:-82, press:1, atm:"H₂ ~92%, He ~8%, CH₄, NH₃", landPct:0, bio:"Tidak ada", civ:"Tidak ada", res:"Helium-3, deuterium, hidrogen" },
+  { id:"p44", no:44, name:"Pyrovane", zone:"Jovian Zone", cls:"Hyper-Jovian", diam:2400000, sats:180, mass:58890.0, au:25.55, rot:6.6, tilt:8.0, g:1.66, temp:-76, press:1, atm:"H₂ ~92%, He ~8%, CH₄, NH₃", landPct:0, bio:"Tidak ada", civ:"Tidak ada", res:"Helium-3, deuterium, hidrogen" },
+  { id:"p45", no:45, name:"Xandrel", zone:"Jovian Zone", cls:"Hyper-Jovian", diam:3100000, sats:227, mass:94110.0, au:26.05, rot:7.4, tilt:7.8, g:1.59, temp:-82, press:1, atm:"H₂ ~92%, He ~8%, CH₄, NH₃", landPct:0, bio:"Tidak ada", civ:"Tidak ada", res:"Helium-3, deuterium, hidrogen" },
+
+  { id:"p46", no:46, name:"Nivaleth", zone:"Outer Zone", cls:"Frozen terrestrial", diam:4800, sats:1, mass:0.03264, au:26.65, rot:199.4, tilt:1.4, g:0.23, temp:-96, press:0.0056, atm:"N₂ dan CH₄ sangat tipis", landPct:74, bio:"Tidak ada", civ:"Tidak ada", res:"Es air, volatil (N₂, CH₄), hidrokarbon" },
+  { id:"p47", no:47, name:"Cryosyn", zone:"Outer Zone", cls:"Frozen terrestrial", diam:8500, sats:2, mass:0.1469, au:27.25, rot:389.2, tilt:23.5, g:0.33, temp:-90, press:0.0025, atm:"N₂ dan CH₄ sangat tipis", landPct:73, bio:"Tidak ada", civ:"Tidak ada", res:"Es air, volatil (N₂, CH₄), hidrokarbon" },
+  { id:"p48", no:48, name:"Hibernis", zone:"Outer Zone", cls:"Ice world", diam:12000, sats:3, mass:0.2838, au:27.85, rot:51.4, tilt:29.9, g:0.32, temp:-90, press:0.0299, atm:"N₂ ~95%, CH₄ ~4%, kabut organik", landPct:77, bio:"Tidak ada", civ:"Tidak ada", res:"Es air, volatil, hidrokarbon kompleks" },
+  { id:"p49", no:49, name:"Glaciora", zone:"Outer Zone", cls:"Frozen super-terrestrial", diam:18000, sats:4, mass:1.497, au:28.45, rot:175.6, tilt:3.6, g:0.75, temp:-95, press:0.10, atm:"N₂ ~93%, CH₄ ~6%, kabut organik", landPct:74, bio:"Tidak ada", civ:"Tidak ada", res:"Es air, volatil, hidrokarbon" },
+  { id:"p50", no:50, name:"Tundrael", zone:"Outer Zone", cls:"Ice world", diam:25000, sats:5, mass:1.116, au:29.05, rot:91.5, tilt:20.7, g:0.29, temp:-101, press:0.0981, atm:"N₂ ~95%, CH₄ ~4%", landPct:62, bio:"Tidak ada", civ:"Tidak ada", res:"Es air, volatil, hidrokarbon kompleks" },
+  { id:"p51", no:51, name:"Skarveth", zone:"Outer Zone", cls:"Frozen superworld", diam:34000, sats:6, mass:5.198, au:29.65, rot:78.2, tilt:29.9, g:0.73, temp:-99, press:0.21, atm:"N₂ ~92%, CH₄ ~7%", landPct:63, bio:"Tidak ada", civ:"Tidak ada", res:"Es air, volatil, hidrokarbon" },
+  { id:"p52", no:52, name:"Isenmir", zone:"Outer Zone", cls:"Frozen Super-Earth", diam:48000, sats:8, mass:12.2, au:30.25, rot:167.2, tilt:9.6, g:0.86, temp:-92, press:0.34, atm:"N₂ ~90%, CH₄ ~8%, Ar", landPct:62, bio:"Tidak ada", civ:"Tidak ada", res:"Es air, volatil, logam inti" },
+  { id:"p53", no:53, name:"Borealyn", zone:"Outer Zone", cls:"Massive frozen world", diam:72000, sats:12, mass:31.93, au:30.85, rot:119.9, tilt:15.0, g:1.00, temp:-102, press:0.29, atm:"N₂ ~88%, CH₄ ~9%, H₂", landPct:78, bio:"Tidak ada", civ:"Tidak ada", res:"Es air, volatil, hidrokarbon" },
+  { id:"p54", no:54, name:"Hollowyn", zone:"Outer Zone", cls:"Outer dwarf world", diam:6500, sats:1, mass:0.02342, au:31.45, rot:211.0, tilt:29.8, g:0.09, temp:-106, press:0.0001, atm:"Hampir tidak ada (N₂ beku, es CH₄)", landPct:91, bio:"Tidak ada", civ:"Tidak ada", res:"Es air, volatil" }
+];
+
+/* ===== 2. DATA 12 BENUA & 420 NEGARA ELEANTOR (p19) ===== */
+const CONT_SEED = [
+  ["Orestan", 245, 38, 33.2, "Konfederasi Vesterrik", "Korshaven", "-rik,-mark,-haven,-grad", "gading/terang"],
+  ["Sura", 232.5, 44, 38.6, "Perserikatan Kalindesh", "Mahaloka", "-desh,-mandala,-puri,-loka", "zaitun/sawo matang"],
+  ["Tairon", 218, 36, 34.9, "Persemakmuran Shenhan", "Nanhai", "-han,-koku,-hai,-jing", "zaitun/sawo matang"],
+  ["Qadira", 228.4, 34, 24.8, "Federasi Zarkand", "Dar-Qalmir", "-kand,-abad,Dar-,-mir", "zaitun/sawo matang"],
+  ["Valken", 196.8, 28, 18.4, "Uni Skandheim", "Osterstad", "-heim,-dal,-fjord,-stad", "gading/terang"],
+  ["Meridia", 204.2, 39, 29.5, "Republik Valemont", "Portomare", "-terra,-mar,-porto", "zaitun/sawo matang"],
+  ["Kushara", 238.6, 46, 32.4, "Persekutuan Tanzuri", "Kwamara", "-zuri,-mara,Kwa-,-goma", "cokelat gelap"],
+  ["Karda", 178.5, 22, 12.1, "Federasi Severosk", "Novopol", "-sk,-ov,Severo-,-pol", "gading/terang"],
+  ["Andara", 194.3, 35, 25.1, "Konfederasi Altosur", "Vallecruz", "-pampa,-cruz,Alto-", "zaitun/sawo matang"],
+  ["Dorava", 189.4, 33, 24.7, "Republik Morava", "Zelenograd", "-ava,-ograd,-polje", "gading/terang"],
+  ["Lokan", 164.8, 41, 26.34, "Perserikatan Srivijaya", "Kotabhumi", "-nusa,-jaya,Kota-,-bhumi", "cokelat gelap"],
+  ["Veldia", 149.2, 24, 9.8, "Persemakmuran Zuidveld", "Hafenbay", "-veld,-bay,Zuid-,-ford", "zaitun/sawo matang"]
+];
+
+const NSEED = [
+  ["Limigrad",0,9784209,1325860128,"Konfederasi",""],["Urtihaven",0,7982564,1081718850,"Republik Parlementer",""],["Zendunhaven",0,3541543,479915254,"Republik",""],["Dunkamark",0,8905491,1206784953,"Federasi",""],["Bellorgrad",0,8708123,1180039569,"Republik Parlementer",""],["Anzenrik",0,4837281,655500871,"Federasi",""],["Migorrik",0,8430881,1142470345,"Republik",""],["Kashahaven",0,6563615,889436754,"Persemakmuran",""],["Miqarik",0,9258404,1254608193,"Republik",""],["Mirahaven",0,5621272,761739678,"Kerajaan Konstitusional",""],["Vegorgrad",0,6575221,891009521,"Republik",""],["Vedungrad",0,6177792,837153797,"Persemakmuran",""],["Tizenhaven",0,3005135,407226422,"Federasi",""],["Qavemark",0,5156380,698742045,"Konfederasi",""],["Holmihaven",0,7007346,949566850,"Republik Parlementer",""],["Belvehaven",0,8186790,1109393588,"Kerajaan Konstitusional",""],["Kaholgrad",0,2598976,352187809,"Republik Parlementer",""],["Vetarhaven",0,2853437,386669882,"Republik",""],["Raurrik",0,2338032,316827183,"Konfederasi",""],["Tarholmark",0,8770850,1188539722,"Kerajaan Konstitusional",""],["Dunlihaven",0,7119768,964801201,"Republik Parlementer",""],["Ramormark",0,7067861,957767240,"Persemakmuran",""],["Shatihaven",0,9791657,1326869457,"Konfederasi",""],["Sorarik",0,9638270,1306083943,"Republik Parlementer",""],["Duntigrad",0,2930252,397079073,"Republik",""],["Kadunmark",0,3465620,469626934,"Republik",""],["Zenzenmark",0,5781623,783468972,"Persemakmuran",""],["Belsohaven",0,2294940,310987845,"Persemakmuran",""],["Rarahaven",0,9798598,1327810018,"Republik",""],["Ananrik",0,2477669,335749445,"Republik",""],["Holanmark",0,3818934,517504459,"Konfederasi",""],["Dunbelmark",0,7621001,1032723350,"Federasi",""],["Migorhaven",0,6107479,827625672,"Konfederasi",""],["Qazenrik",0,10151046,1375570324,"Persemakmuran",""],["Gorqamark",0,5716749,774677796,"Republik Parlementer",""],["Konfederasi Vesterrik",0,10456384,1416946780,"Konfederasi","Korshaven"],["Mormorrik",0,5222108,707648862,"Kerajaan Konstitusional",""],["Belurrik",0,9236699,1251667215,"Persemakmuran",""],
+  ["Qagorpuri",1,5271242,875139489,"Republik Parlementer",""],["Urdunpuri",1,5062802,840533991,"Kerajaan Konstitusional",""],["Kafenpuri",1,7214589,1197776989,"Republik",""],["Morsomandala",1,4505707,748044338,"Republik Parlementer",""],["Razenloka",1,7343761,1219222246,"Konfederasi",""],["Zenbelpuri",1,6601730,1096029084,"Republik",""],["Tarfendesh",1,8131483,1350001074,"Republik Parlementer",""],["Rarapuri",1,3042350,505095588,"Kerajaan Konstitusional",""],["Dunholmandala",1,3578207,594059248,"Konfederasi",""],["Tarqaloka",1,5124029,850699066,"Konfederasi",""],["Ratipuri",1,7160278,1188760162,"Kerajaan Konstitusional",""],["Holvepuri",1,2632796,437100703,"Republik",""],["Fenliloka",1,2002205,332409054,"Federasi",""],["Antiloka",1,7995530,1327430008,"Kerajaan Konstitusional",""],["Tizenpuri",1,4304204,714590450,"Republik Parlementer",""],["Andunpuri",1,2396741,397910515,"Persemakmuran",""],["Belholdesh",1,6812690,1131053055,"Persemakmuran",""],["Raqadesh",1,7194050,1194367083,"Persemakmuran",""],["Zenanloka",1,3132324,520033124,"Republik Parlementer",""],["Lortidesh",1,5995162,995325756,"Persemakmuran",""],["Morkaloka",1,7780385,1291711228,"Republik",""],["Morholloka",1,2591805,430295417,"Kerajaan Konstitusional",""],["Lorkaloka",1,6797446,1128522242,"Persemakmuran",""],["Kashapuri",1,7705860,1279338407,"Republik",""],["Mivedesh",1,5760648,956391446,"Federasi",""],["Kamiloka",1,4541497,753986162,"Republik",""],["Vegorloka",1,7641278,1268616491,"Konfederasi",""],["Ursoloka",1,4969343,825017838,"Republik",""],["Perserikatan Kalindesh",1,8290289,1376366234,"Perserikatan","Mahaloka"],["Gorholloka",1,6663645,1106308431,"Federasi",""],["Fenurpuri",1,2245379,372781150,"Republik Parlementer",""],["Vezenpuri",1,3654141,606665992,"Federasi",""],["Titardesh",1,4712239,782333055,"Persemakmuran",""],["Tiqadesh",1,3469640,576034839,"Konfederasi",""],["Kalidesh",1,7345234,1219466773,"Konfederasi",""],["Lorurdesh",1,4986195,827815581,"Kerajaan Konstitusional",""],["Bellidesh",1,1771001,294024223,"Federasi",""],["Vetarmandala",1,7674952,1274207022,"Konfederasi",""],["Belveloka",1,2937113,487624001,"Republik Parlementer",""],["Katidesh",1,4197513,696877421,"Persemakmuran",""],["Targorloka",1,7000386,1162214647,"Konfederasi",""],["Livepuri",1,3241882,538222200,"Republik Parlementer",""],["Rabelmandala",1,7228734,1200125291,"Kerajaan Konstitusional",""],["Gortardesh",1,3791515,629472886,"Federasi",""],
+  ["Fenlorjing",2,9445107,1512083712,"Konfederasi",""],["Hollikoku",2,6782846,1085877633,"Republik",""],["Gorkakoku",2,7037662,1126671539,"Kerajaan Konstitusional",""],["Shazenjing",2,8756260,1401804954,"Persemakmuran",""],["Vezenhan",2,6423935,1028418895,"Persemakmuran",""],["Lisojing",2,2517654,403055629,"Republik Parlementer",""],["Morurhan",2,4971855,795952974,"Republik",""],["Anvejing",2,6629115,1061266572,"Kerajaan Konstitusional",""],["Kasohan",2,4297948,688065974,"Republik Parlementer",""],["Tarvehai",2,8638180,1382901358,"Federasi",""],["Litarkoku",2,3856463,617387875,"Kerajaan Konstitusional",""],["Dunholjing",2,7316597,1171326727,"Kerajaan Konstitusional",""],["Qasohan",2,9199179,1472712579,"Federasi",""],["Ururhan",2,7504309,1201377987,"Persemakmuran",""],["Gorshahai",2,4023687,644159046,"Konfederasi",""],["Solorkoku",2,5117643,819292443,"Federasi",""],["Raurjing",2,7092108,1135387993,"Federasi",""],["Qalorkoku",2,6885574,1102323480,"Republik",""],["Gortijing",2,3461778,554202141,"Kerajaan Konstitusional",""],["Qakakoku",2,8126611,1301003249,"Persemakmuran",""],["Dunqajing",2,2763208,442366864,"Republik Parlementer",""],["Qatihan",2,5955050,953354285,"Federasi",""],["Sotihan",2,4900698,784561339,"Federasi",""],["Solihan",2,5611126,898294974,"Kerajaan Konstitusional",""],["Qabeljing",2,9018271,1443750771,"Kerajaan Konstitusional",""],["Gorlikoku",2,8077686,1293170792,"Republik Parlementer",""],["Shabeljing",2,2640161,422667956,"Konfederasi",""],["Tiqahan",2,3255285,521144174,"Federasi",""],["Ragorhai",2,7697831,1232359113,"Kerajaan Konstitusional",""],["Dundunjing",2,7272121,1164206493,"Kerajaan Konstitusional",""],["Gorkahai",2,5159880,826054110,"Kerajaan Konstitusional",""],["Lorsohan",2,7071814,1132139022,"Persemakmuran",""],["Somorhan",2,3282832,525554361,"Kerajaan Konstitusional",""],["Zenlorjing",2,5454204,873173071,"Federasi",""],["Persemakmuran Shenhan",2,9601316,1537091357,"Persemakmuran","Nanhai"],["Anmijing",2,2154006,344838558,"Kerajaan Konstitusional",""],
+  ["Kaqamir",3,2948962,320202562,"Federasi",""],["Shamormir",3,10215435,1109206560,"Kerajaan Konstitusional",""],["Andunabad",3,7316038,794385891,"Konfederasi",""],["Darsoqa",3,8634787,937577599,"Federasi",""],["Lilimir",3,5664614,615071910,"Republik Parlementer",""],["Zentarmir",3,5503034,597527380,"Konfederasi",""],["Tiholabad",3,8953680,972203475,"Persemakmuran",""],["Federasi Zarkand",3,11614753,1261146513,"Federasi","Dar-Qalmir"],["Kaqaabad",3,3009594,326786092,"Republik",""],["Dunmorkand",3,5475262,594511771,"Konfederasi",""],["Lorzenabad",3,4247078,461153806,"Federasi",""],["Darbelan",3,7539307,818628792,"Federasi",""],["Darkabel",3,3150949,342134594,"Federasi",""],["Tarmimir",3,10514176,1141644353,"Federasi",""],["Darliso",3,4455931,483831406,"Kerajaan Konstitusional",""],["Zenlorabad",3,10041429,1090312755,"Republik Parlementer",""],["Darholtar",3,11129413,1208447656,"Konfederasi",""],["Shavekand",3,10730807,1165166453,"Federasi",""],["Mitimir",3,4849424,526557395,"Republik",""],["Darralor",3,7098362,770750335,"Kerajaan Konstitusional",""],["Darqatar",3,7714181,837616815,"Persemakmuran",""],["Ananmir",3,4600457,499524250,"Republik",""],["Darbelqa",3,5665746,615194833,"Federasi",""],["Tarholmir",3,8866397,962726093,"Persemakmuran",""],["Urtikand",3,4114172,446722669,"Konfederasi",""],["Lorkamir",3,4336864,470902934,"Republik",""],["Titimir",3,9384750,1019009586,"Persemakmuran",""],["Fenholkand",3,3106115,337266480,"Persemakmuran",""],["Dunholabad",3,10816428,1174463294,"Republik",""],["Tivemir",3,3390393,368133750,"Persemakmuran",""],["Darrati",3,3323516,360872184,"Federasi",""],["Qadunkand",3,4898083,531840868,"Konfederasi",""],["Lirakand",3,10330538,1121704648,"Republik Parlementer",""],["Radunkand",3,4759325,516774298,"Kerajaan Konstitusional",""],
+  ["Gorrafjord",4,8842999,826784438,"Konfederasi",""],["Rasostad",4,5303373,495843817,"Federasi",""],["Urrastad",4,6931857,648100460,"Persemakmuran",""],["Holmorstad",4,11071343,1035125572,"Republik Parlementer",""],["Dunkaheim",4,11068066,1034819181,"Kerajaan Konstitusional",""],["Uni Skandheim",4,11364784,1062561099,"Uni","Osterstad"],["Shatarfjord",4,10928345,1021755865,"Republik Parlementer",""],["Velifjord",4,10267730,959991043,"Kerajaan Konstitusional",""],["Tartiheim",4,5083061,475245560,"Republik Parlementer",""],["Gorurdal",4,7253119,678137117,"Persemakmuran",""],["Litardal",4,5560737,519906313,"Kerajaan Konstitusional",""],["Raqastad",4,4597716,429867782,"Republik",""],["Ramorheim",4,2507590,234449489,"Republik Parlementer",""],["Beldundal",4,9254482,865256448,"Federasi",""],["Zentarstad",4,6822472,637873393,"Persemakmuran",""],["Dunurheim",4,4988228,466379045,"Republik",""],["Zenlorstad",4,4803081,449068560,"Persemakmuran",""],["Tarmidal",4,3559737,332820903,"Republik Parlementer",""],["Duntarstad",4,11149481,1042431121,"Kerajaan Konstitusional",""],["Tisostad",4,6421803,600412438,"Konfederasi",""],["Bellidal",4,4215703,394151067,"Republik Parlementer",""],["Shaqastad",4,2763338,258360848,"Konfederasi",""],["Mikaheim",4,9220253,862056208,"Federasi",""],["Taranfjord",4,5256559,491466855,"Republik Parlementer",""],["Anzendal",4,9708549,907709868,"Kerajaan Konstitusional",""],["Livefjord",4,2922572,273248577,"Republik",""],["Zenbelfjord",4,7164515,669853054,"Federasi",""],["Urgorheim",4,7768507,726323879,"Persemakmuran",""],
+  ["Ramiporto",5,2775889,401022104,"Republik",""],["Gorsomar",5,4760986,687801621,"Persemakmuran",""],["Fenmormar",5,6843335,988630737,"Persemakmuran",""],["Tiqaporto",5,2633657,380474380,"Federasi",""],["Lishamar",5,2274847,328638512,"Federasi",""],["Holzenmar",5,2049252,296047681,"Persemakmuran",""],["Shabelterra",5,5787323,836072557,"Republik Parlementer",""],["Anmiterra",5,6368718,920064554,"Kerajaan Konstitusional",""],["Midunporto",5,6933436,1001647287,"Konfederasi",""],["Zenshaporto",5,5400785,780230882,"Republik",""],["Morbelporto",5,6457526,932894339,"Persemakmuran",""],["Lititerra",5,4357937,629574599,"Kerajaan Konstitusional",""],["Anholterra",5,7302206,1054922008,"Federasi",""],["Morurmar",5,8585957,1240380718,"Republik Parlementer",""],["Vefenmar",5,4598031,664260160,"Persemakmuran",""],["Moranporto",5,5177753,748010357,"Republik Parlementer",""],["Kaurmar",5,7690884,1111072864,"Republik",""],["Lorbelmar",5,5932504,857046384,"Kerajaan Konstitusional",""],["Zenmorterra",5,2314026,334298531,"Konfederasi",""],["Kakamar",5,3593324,519113925,"Kerajaan Konstitusional",""],["Soshaporto",5,3947434,570270874,"Federasi",""],["Holkaporto",5,7179479,1037192134,"Federasi",""],["Gorzenmar",5,8343885,1205409509,"Persemakmuran",""],["Tisoporto",5,3238591,467867003,"Konfederasi",""],["Ralorporto",5,3974296,574151529,"Persemakmuran",""],["Republik Valemont",5,8698838,1256688168,"Republik","Portomare"],["Taranmar",5,4484215,647817586,"Republik",""],["Kamorterra",5,4390962,634345698,"Republik Parlementer",""],["Vezenmar",5,6882472,994284696,"Republik",""],["Morholterra",5,3688277,532831460,"Republik Parlementer",""],["Urbelmar",5,8661751,1251330309,"Federasi",""],["Soliterra",5,3604936,520791379,"Republik",""],["Ururporto",5,8271916,1195012368,"Persemakmuran",""],["Urshaterra",5,5350722,772998574,"Federasi",""],["Veqaterra",5,5361624,774573480,"Kerajaan Konstitusional",""],["Sovemar",5,2615121,377796592,"Federasi",""],["Milimar",5,3292413,475642478,"Federasi",""],["Qashaporto",5,1870767,270262564,"Republik",""],["Ravemar",5,8503925,1228529399,"Konfederasi",""],
+  ["Fenlorgoma",6,2965218,402653194,"Republik Parlementer",""],["Urqazuri",6,3286587,446292677,"Federasi",""],["Kwatira",6,4460336,605678533,"Persemakmuran",""],["Tarmormara",6,6264078,850612463,"Republik Parlementer",""],["Kwasofen",6,5116507,694781312,"Republik Parlementer",""],["Urmimara",6,6005660,815521344,"Persemakmuran",""],["Morurzuri",6,1889508,256580330,"Republik Parlementer",""],["Lorbelzuri",6,5879570,798399318,"Kerajaan Konstitusional",""],["Holdunmara",6,4326649,587524793,"Konfederasi",""],["Belzenmara",6,4579189,621817811,"Konfederasi",""],["Ligormara",6,4013765,545037694,"Kerajaan Konstitusional",""],["Holsomara",6,2860229,388396528,"Federasi",""],["Sosozuri",6,7903046,1073171415,"Republik",""],["Ramormara",6,5859668,795696809,"Persemakmuran",""],["Kwabelra",6,2201739,298978748,"Federasi",""],["Kazenmara",6,7003631,951037896,"Persemakmuran",""],["Kwazenlor",6,2815396,382308612,"Federasi",""],["Lorvezuri",6,4055034,550641719,"Federasi",""],["Kwabellor",6,3806350,516872398,"Republik Parlementer",""],["Lorkagoma",6,6542115,888367638,"Republik Parlementer",""],["Kwaurfen",6,6629812,900276172,"Persemakmuran",""],["Shagorgoma",6,6277954,852496627,"Kerajaan Konstitusional",""],["Lorurgoma",6,3213594,436380704,"Republik Parlementer",""],["Tartizuri",6,7979920,1083610266,"Republik",""],["Kasogoma",6,7361269,999602302,"Konfederasi",""],["Holramara",6,6614669,898219871,"Federasi",""],["Persekutuan Tanzuri",6,8172273,1109730259,"Persekutuan","Kwamara"],["Migormara",6,3162519,429445169,"Republik Parlementer",""],["Dunurzuri",6,7439721,1010255458,"Republik Parlementer",""],["Sotargoma",6,4974994,675564950,"Republik Parlementer",""],["Sovegoma",6,2354193,319680913,"Persemakmuran",""],["Zenvemara",6,5725948,777538674,"Konfederasi",""],["Kwamorso",6,8012656,1088055581,"Federasi",""],["Lorsogoma",6,4552076,618136108,"Federasi",""],["Ururgoma",6,7804075,1059731918,"Federasi",""],["Shalorzuri",6,7188934,976200612,"Federasi",""],["Zentargoma",6,2073074,281507060,"Federasi",""],["Mifenmara",6,3910879,531066490,"Republik Parlementer",""],["Kwatibel",6,6173030,838248844,"Federasi",""],["Kwatian",6,5350268,726524249,"Kerajaan Konstitusional",""],["Vetizuri",6,7564688,1027225026,"Federasi",""],["Kwakasha",6,5254714,713548755,"Kerajaan Konstitusional",""],["Morzenmara",6,5208902,707327884,"Persemakmuran",""],["Mifenzuri",6,3975511,539843100,"Persemakmuran",""],["Somormara",6,1707983,231930647,"Republik Parlementer",""],["Kwakabel",6,8082069,1097481129,"Republik",""],
+  ["Kalisk",7,8525285,577904493,"Federasi",""],["Severozenur",7,5928983,401908683,"Persemakmuran",""],["Litipol",7,9890593,670454795,"Federasi",""],["Anbelpol",7,11223998,760842465,"Republik Parlementer",""],["Shadunsk",7,3551817,240767422,"Kerajaan Konstitusional",""],["Federasi Severosk",7,11794613,799522807,"Federasi","Novopol"],["Severomorur",7,5694544,386016714,"Kerajaan Konstitusional",""],["Gorholov",7,6945099,470788194,"Federasi",""],["Shaveov",7,7336435,497315789,"Konfederasi",""],["Veursk",7,6760000,458240878,"Republik",""],["Kagorsk",7,10432791,707208787,"Persemakmuran",""],["Veraov",7,10981674,744415963,"Persemakmuran",""],["Tarlorov",7,9305860,630817377,"Kerajaan Konstitusional",""],["Qavepol",7,7946849,538693966,"Kerajaan Konstitusional",""],["Sofenov",7,6237163,422799300,"Konfederasi",""],["Fenfenov",7,5206746,352950321,"Federasi",""],["Limorsk",7,11510015,780230686,"Persemakmuran",""],["Tarqaov",7,6288764,426297198,"Republik",""],["Tarraov",7,5913841,400882244,"Republik",""],["Dungorov",7,9103036,617068516,"Republik",""],["Lizensk",7,7017873,475721383,"Konfederasi",""],["Lortiov",7,10904021,739152019,"Republik Parlementer",""],
+  ["Altoanhol",8,5017964,648229001,"Kerajaan Konstitusional",""],["Beltipampa",8,4018982,519178857,"Federasi",""],["Altoqabel",8,3124170,403585495,"Republik Parlementer",""],["Altoantar",8,7686570,992964051,"Federasi",""],["Altoanlor",8,6026475,778510095,"Republik Parlementer",""],["Altotarur",8,3462374,447275331,"Persemakmuran",""],["Altotarso",8,3750346,484476011,"Federasi",""],["Tiholcruz",8,8211354,1060756479,"Federasi",""],["Soholpampa",8,3440964,444509473,"Persemakmuran",""],["Sofenpampa",8,7517508,971124241,"Konfederasi",""],["Altoshalor",8,8007806,1034461868,"Konfederasi",""],["Altogorbel",8,2094626,270587237,"Federasi",""],["Holsopampa",8,4151284,536269858,"Republik",""],["Altomilor",8,5893001,761267796,"Republik",""],["Zenmorcruz",8,5475949,707392235,"Republik Parlementer",""],["Altomira",8,5514194,712332844,"Persemakmuran",""],["Altomoran",8,7067774,913026872,"Republik Parlementer",""],["Fenzenpampa",8,4057149,524109354,"Republik Parlementer",""],["Shasopampa",8,2691347,347672757,"Persemakmuran",""],["Vetipampa",8,8917839,1152021448,"Federasi",""],["Fensocruz",8,7197645,929803831,"Republik Parlementer",""],["Miracruz",8,4410489,569754403,"Persemakmuran",""],["Rafencruz",8,5261367,679672280,"Republik Parlementer",""],["Konfederasi Altosur",8,9107406,1176509945,"Konfederasi","Vallecruz"],["Holtarcruz",8,8589910,1109658936,"Kerajaan Konstitusional",""],["Belfencruz",8,7563917,977119488,"Persemakmuran",""],["Zenlicruz",8,7169997,926232266,"Persemakmuran",""],["Dunvepampa",8,5679455,733681561,"Kerajaan Konstitusional",""],["Zenkapampa",8,4947398,639113210,"Republik Parlementer",""],["Mitarcruz",8,5425728,700904663,"Konfederasi",""],["Altoqamor",8,4523500,584353315,"Republik",""],["Altoshasha",8,2873692,371228360,"Republik",""],["Migorcruz",8,4478979,578601983,"Federasi",""],["Altozenfen",8,8818459,1139183270,"Persemakmuran",""],["Velorcruz",8,2124382,274431186,"Republik",""],
+  ["Litipolje",9,7166445,934589177,"Republik Parlementer",""],["Morgorpolje",9,7975865,1040147146,"Kerajaan Konstitusional",""],["Lortiava",9,5630487,734282124,"Kerajaan Konstitusional",""],["Ravepolje",9,6242863,814143179,"Republik",""],["Tikapolje",9,6083840,793404654,"Republik Parlementer",""],["Republik Morava",9,8953702,1167668693,"Republik","Zelenograd"],["Raanpolje",9,6266142,817178987,"Federasi",""],["Anfenpolje",9,6960802,907770907,"Persemakmuran",""],["Urtarograd",9,2560481,333917051,"Konfederasi",""],["Qafenograd",9,3922176,511498179,"Republik Parlementer",""],["Targorava",9,6587899,859139973,"Persemakmuran",""],["Tiurava",9,7570395,987269072,"Federasi",""],["Lirapolje",9,5066033,660670668,"Kerajaan Konstitusional",""],["Fenveograd",9,8619435,1124076227,"Persemakmuran",""],["Shatarava",9,6720235,876398137,"Federasi",""],["Zenlorava",9,3997167,521277855,"Federasi",""],["Shatipolje",9,5184026,676058353,"Kerajaan Konstitusional",""],["Kaveograd",9,8346194,1088442424,"Republik",""],["Beldunpolje",9,2201478,287098785,"Konfederasi",""],["Zenholpolje",9,3806069,496356349,"Persemakmuran",""],["Zenholava",9,7806335,1018038361,"Konfederasi",""],["Fenzenava",9,1886816,246063119,"Konfederasi",""],["Midunograd",9,6757380,881242214,"Kerajaan Konstitusional",""],["Kamiograd",9,5036652,656838979,"Persemakmuran",""],["Fenfenpolje",9,5476271,714170568,"Kerajaan Konstitusional",""],["Lianava",9,7997215,1042931431,"Federasi",""],["Qarapolje",9,6589936,859405555,"Republik Parlementer",""],["Zenqapolje",9,7329317,955829591,"Kerajaan Konstitusional",""],["Holzenpolje",9,3464354,451792747,"Persemakmuran",""],["Veliograd",9,1956462,255145833,"Kerajaan Konstitusional",""],["Veshaograd",9,2742002,357589487,"Konfederasi",""],["Morshaograd",9,4258486,555356940,"Persemakmuran",""],["Lorgorava",9,8237040,1074207235,"Republik Parlementer",""],
+  ["Lidunnusa",10,4093907,654329493,"Federasi",""],["Holmibhumi",10,6076131,971148553,"Republik",""],["Kazenbhumi",10,5733106,916322868,"Persemakmuran",""],["Kotaveur",10,5263297,841233216,"Republik Parlementer",""],["Lorshajaya",10,5698202,910744242,"Kerajaan Konstitusional",""],["Fenbelnusa",10,3428299,547945362,"Republik",""],["Liranusa",10,1668711,266710233,"Kerajaan Konstitusional",""],["Kotamira",10,5686494,908872840,"Republik Parlementer",""],["Gorbelnusa",10,1800159,287719606,"Federasi",""],["Belminusa",10,5643701,902033269,"Republik Parlementer",""],["Kotatarsha",10,6234357,996437922,"Persemakmuran",""],["Sorajaya",10,1512604,241759594,"Federasi",""],["Targorjaya",10,4409807,704819848,"Federasi",""],["Kotaholtar",10,3871124,618722137,"Persemakmuran",""],["Kotamorbel",10,1920935,307023195,"Republik Parlementer",""],["Qabelnusa",10,4641117,741790237,"Kerajaan Konstitusional",""],["Zenrajaya",10,5518123,881962085,"Republik",""],["Gorzenbhumi",10,1565173,250161711,"Kerajaan Konstitusional",""],["Urshajaya",10,3433491,548775127,"Kerajaan Konstitusional",""],["Zengornusa",10,5327174,851442692,"Persemakmuran",""],["Morranusa",10,2510334,401226937,"Persemakmuran",""],["Zengorjaya",10,5301853,847395723,"Republik Parlementer",""],["Kotatika",10,3287800,525489468,"Republik Parlementer",""],["Zenmornusa",10,2930602,468398473,"Republik",""],["Ragornusa",10,2112419,337628078,"Republik",""],["Kotamormor",10,4180213,668123908,"Republik",""],["Dunsonusa",10,5804601,927749954,"Republik Parlementer",""],["Perserikatan Srivijaya",10,6531489,1043928467,"Perserikatan","Kotabhumi"],["Kashabhumi",10,2478207,396092110,"Kerajaan Konstitusional",""],["Lishanusa",10,3557148,568539261,"Konfederasi",""],["Lorqanusa",10,2338830,373815490,"Konfederasi",""],["Soshajaya",10,1920268,306916694,"Federasi",""],["Belmorjaya",10,3100954,495625785,"Republik Parlementer",""],["Anrajaya",10,5609651,896591120,"Konfederasi",""],["Fenlornusa",10,5138565,821297386,"Persemakmuran",""],["Zenmorbhumi",10,4603727,735814054,"Federasi",""],["Titijaya",10,2311248,369407050,"Republik Parlementer",""],["Kotasoso",10,2680071,428356055,"Persemakmuran",""],["Kotafensha",10,3770485,602636910,"Konfederasi",""],["Kotaurka",10,4654223,743884854,"Kerajaan Konstitusional",""],["Gorfenbhumi",10,6451400,1031127993,"Konfederasi",""],
+  ["Persemakmuran Zuidveld",11,11917289,782771016,"Persemakmuran","Hafenbay"],["Belmorveld",11,4085603,268357282,"Republik Parlementer",""],["Zenanford",11,4056644,266455157,"Republik Parlementer",""],["Belsoford",11,3149277,206856027,"Kerajaan Konstitusional",""],["Moranford",11,10582246,695080511,"Republik",""],["Zuidbelqa",11,6360569,417785391,"Republik Parlementer",""],["Zuidraka",11,6979529,458440913,"Persemakmuran",""],["Fenholford",11,7762214,509850510,"Federasi",""],["Zuidlordun",11,10668147,700722768,"Federasi",""],["Morkaford",11,4173685,274142867,"Persemakmuran",""],["Qativeld",11,5052244,331849818,"Federasi",""],["Zuidveso",11,8950845,587924155,"Republik",""],["Holmibay",11,2491851,163673831,"Kerajaan Konstitusional",""],["Mordunford",11,5519185,362520166,"Republik",""],["Vekaveld",11,2541592,166941062,"Konfederasi",""],["Kabelbay",11,6320165,415131484,"Konfederasi",""],["Morfenveld",11,7231415,474985675,"Republik",""],["Ralorbay",11,3577186,234962595,"Persemakmuran",""],["Zuidmordun",11,11170636,733728126,"Persemakmuran",""],["Veliford",11,10050174,660132105,"Konfederasi",""],["Zuidkagor",11,4542645,298377455,"Federasi",""],["Anliveld",11,3074530,201946356,"Federasi",""],["Zenmiveld",11,4656088,305828826,"Republik Parlementer",""],["Gorkaveld",11,4286241,281535904,"Konfederasi",""]
+];
+
+/* ===== MODEL FISIKA & SKOR KELAYAKAN HUNI LOKAL ===== */
+function getPlanetTotalArea(p) {
+  return 4 * Math.PI * Math.pow((p.diam || 1) / 2, 2);
+}
+
+function getPlanetLandArea(p) {
+  return Math.round(getPlanetTotalArea(p) * ((p.landPct || 0) / 100));
+}
+
+function calcLocalTemp(p, latDeg) {
+  const absLat = Math.min(90, Math.abs(latDeg));
+  const latRad = (absLat * Math.PI) / 180;
+  const pressFactor = Math.min(1, Math.max(0.15, 1 / (1 + Math.log10(Math.max(0.1, p.press || 0.1)))));
+  const deltaT = (38 + (p.tilt || 15) * 0.45) * pressFactor;
+  const localT = p.temp + deltaT * (Math.cos(latRad) - 0.64);
+  return Math.round(localT * 10) / 10;
+}
+
+function evaluateHabitability(p, latDeg, mode = 'open') {
+  const localTemp = calcLocalTemp(p, latDeg);
+  if (!p.landPct || p.landPct <= 0) {
+    return { score: 0, label: "Raksasa Gas/Es (Tanpa Permukaan Padat)", temp: localTemp, reason: "Penambangan atmosfer Helium-3 / Deuterium saja." };
+  }
+  const hasO2 = /O₂/.test(p.atm || '');
+  const toxic = /SO₂|asam sulfat|logam alkali/i.test(p.atm || '');
+
+  if (mode === 'open') {
+    if (!hasO2 || toxic || p.bio !== 'Ya') {
+      return { score: 0, label: "Tidak Layak Terbuka", temp: localTemp, reason: "Tanpa biosfer O₂ atau atmosfer beracun; wajib kubah bertekanan." };
+    }
+    let score = 100;
+    const reasons = [];
+    if (localTemp < -20 || localTemp > 48) { score -= 65; reasons.push(`Suhu ekstrem (${localTemp}°C)`); }
+    else if (localTemp < 5) { score -= Math.round((5 - localTemp) * 1.4); reasons.push(`Iklim dingin (${localTemp}°C)`); }
+    else if (localTemp > 32) { score -= Math.round((localTemp - 32) * 1.8); reasons.push(`Iklim panas (${localTemp}°C)`); }
+    else { reasons.push(`Suhu optimal (${localTemp}°C)`); }
+
+    if (p.g > 1.5) { score -= Math.round((p.g - 1.5) * 45); reasons.push(`Gravitasi berat (${p.g} g)`); }
+    else if (p.g < 0.7) { score -= Math.round((0.7 - p.g) * 35); reasons.push(`Gravitasi rendah (${p.g} g)`); }
+
+    if (p.press > 2.5) { score -= Math.round((p.press - 2.5) * 15); reasons.push(`Tekanan tinggi (${p.press} atm)`); }
+    else if (p.press < 0.6) { score -= Math.round((0.6 - p.press) * 40); reasons.push(`Udara tipis (${p.press} atm)`); }
+
+    score = Math.max(0, Math.min(100, score));
+    const label = score >= 75 ? "Sangat Potensial (Zona Inti Huni)" : score >= 45 ? "Moderat (Adaptasi Iklim/Gravitasi)" : score >= 20 ? "Marginal (Perbatasan Ekstrem)" : "Tidak Layak Terbuka";
+    return { score, label, temp: localTemp, reason: reasons.join(" · ") };
+  } else {
+    let score = 85;
+    const reasons = [];
+    if (localTemp > 220 || localTemp < -150) { score -= 55; reasons.push(`Beban termal ekstrem (${localTemp}°C)`); }
+    else if (localTemp > 100 || localTemp < -80) { score -= 22; reasons.push(`Isolasi termal berat (${localTemp}°C)`); }
+    else { reasons.push(`Beban termal terkendali (${localTemp}°C)`); }
+
+    if (p.press > 25) { score -= 45; reasons.push(`Tekanan penghancur (${p.press} atm)`); }
+    else if (p.press > 5) { score -= 18; reasons.push(`Tekanan luar tinggi (${p.press} atm)`); }
+
+    if (p.g > 1.6) { score -= 25; reasons.push(`Gravitasi tinggi (${p.g} g)`); }
+    if (/es air|air tawar|logam|helium-3/i.test(p.res || '')) { score += 10; reasons.push("Sumber daya lokal bernilai tinggi"); }
+    score = Math.max(0, Math.min(100, score));
+    const label = score >= 70 ? "Ideal untuk Koloni Kubah / Tambang" : score >= 40 ? "Layak Pos Riset / Ekstraksi" : "Sangat Berbahaya (Robotik Saja)";
+    return { score, label, temp: localTemp, reason: reasons.join(" · ") };
+  }
+}
+
+/* ===== GEOMETRI POLIGON & TESELASI ORGANIK ===== */
+const SYLLABLES = ["ka","ve","lor","an","mi","tar","so","ra","bel","dun","hol","zen","ur","ti","mor","qa","sha","li","gor","fen"];
+function forgeName(sufStr = "-rik,-haven,-grad", seed = Date.now()) {
+  const r = (n) => Math.abs(Math.floor(Math.sin(seed * 12.9898 + n * 78.233) * 43758.5453));
+  const sufs = String(sufStr || "-rik,-haven,-grad").split(',').map(s => s.trim()).filter(Boolean);
+  const s = sufs[r(1) % sufs.length];
+  let base = SYLLABLES[r(2) % SYLLABLES.length] + SYLLABLES[r(3) % SYLLABLES.length];
+  base = base[0].toUpperCase() + base.slice(1);
+  if (s.endsWith('-')) return s.slice(0, -1) + base.toLowerCase();
+  if (s.startsWith('-')) return base + s.slice(1);
+  return base + s;
+}
+
+function makeBlobPoly(cx, cy, rx, ry, seed, ptsCount = 20) {
+  const pts = [];
+  for (let i = 0; i < ptsCount; i++) {
+    const a = (i / ptsCount) * Math.PI * 2;
+    const n1 = Math.sin(seed * 11.3 + i * 2.1) * 0.22;
+    const n2 = Math.cos(seed * 5.7 + i * 3.9) * 0.14;
+    const rf = 0.78 + n1 + n2;
+    const x = Math.max(25, Math.min(975, cx + rx * rf * Math.cos(a)));
+    const y = Math.max(25, Math.min(535, cy + ry * rf * Math.sin(a)));
+    pts.push([Math.round(x * 10) / 10, Math.round(y * 10) / 10]);
+  }
+  return pts;
+}
+
+function polyArea(pts) {
+  if (!pts || pts.length < 3) return 0;
+  let s = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const [x1, y1] = pts[i], [x2, y2] = pts[(i + 1) % pts.length];
+    s += x1 * y2 - x2 * y1;
+  }
+  return Math.abs(s) / 2;
+}
+
+function polyCentroid(pts) {
+  if (!pts || !pts.length) return [500, 280];
+  let sx = 0, sy = 0;
+  pts.forEach(p => { sx += p[0]; sy += p[1]; });
+  return [sx / pts.length, sy / pts.length];
+}
+
+function polyBBox(pts) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  pts.forEach(([x, y]) => {
+    if (x < minX) minX = x;
+    if (y < minY) minY = y;
+    if (x > maxX) maxX = x;
+    if (y > maxY) maxY = y;
+  });
+  return { minX, minY, maxX, maxY, w: Math.max(10, maxX - minX), h: Math.max(10, maxY - minY) };
+}
+
+function yToLatitude(y) {
+  return Math.round(((280 - y) / 280) * 90 * 10) / 10;
+}
+
+function buildOrganicPolygons(parentPoly, k, seedBase = 1) {
+  const bb = polyBBox(parentPoly);
+  const cols = Math.ceil(Math.sqrt(k * (bb.w / bb.h)));
+  const rows = Math.ceil(k / cols);
+  const cellW = bb.w / cols;
+  const cellH = bb.h / rows;
+
+  const rnd = (s) => {
+    const x = Math.sin(s * 91.3458) * 47453.5453;
+    return x - Math.floor(x);
+  };
+
+  const gridNodes = Array.from({ length: rows + 1 }, (_, r) =>
+    Array.from({ length: cols + 1 }, (_, c) => {
+      const bx = bb.minX + c * cellW;
+      const by = bb.minY + r * cellH;
+      const s = seedBase + r * 31 + c * 17;
+      const ox = (c === 0 || c === cols) ? (rnd(s) - 0.5) * cellW * 0.15 : (rnd(s) - 0.5) * cellW * 0.44;
+      const oy = (r === 0 || r === rows) ? (rnd(s + 3) - 0.5) * cellH * 0.15 : (rnd(s + 3) - 0.5) * cellH * 0.44;
+      return [Math.round((bx + ox) * 10) / 10, Math.round((by + oy) * 10) / 10];
+    })
+  );
+
+  const makeWavyLine = (x1, y1, x2, y2, s) => {
+    const dx = x2 - x1, dy = y2 - y1;
+    const nx = -dy, ny = dx;
+    const p1 = [x1 + dx * 0.33 + nx * (rnd(s) - 0.5) * 0.26, y1 + dy * 0.33 + ny * (rnd(s + 1) - 0.5) * 0.26];
+    const p2 = [x1 + dx * 0.67 + nx * (rnd(s + 2) - 0.5) * 0.26, y1 + dy * 0.67 + ny * (rnd(s + 3) - 0.5) * 0.26];
+    return [[x1, y1], p1, p2, [x2, y2]];
+  };
+
+  const vEdge = {}, hEdge = {};
+  for (let r = 0; r <= rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      hEdge[`${r},${c}`] = makeWavyLine(...gridNodes[r][c], ...gridNodes[r][c + 1], seedBase + r * 100 + c);
+    }
+  }
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c <= cols; c++) {
+      vEdge[`${r},${c}`] = makeWavyLine(...gridNodes[r][c], ...gridNodes[r + 1][c], seedBase + 500 + r * 100 + c);
+    }
+  }
+
+  const polys = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (polys.length >= k) break;
+      const top = hEdge[`${r},${c}`];
+      const right = vEdge[`${r},${c + 1}`];
+      const bottom = hEdge[`${r + 1},${c}`].slice().reverse();
+      const left = vEdge[`${r},${c}`].slice().reverse();
+      const poly = [...top, ...right.slice(1), ...bottom.slice(1), ...left.slice(1, -1)].map(p => [
+        Math.round(p[0] * 10) / 10,
+        Math.round(p[1] * 10) / 10
+      ]);
+      polys.push(poly);
+    }
+  }
+  return polys;
+}
+
+/* Bangkitkan benua organik untuk suatu planet dan tandai userCreated: true */
+function generateUserContinents(p, count, salt = 1) {
+  const totalLand = getPlanetLandArea(p);
+  const cols = Math.ceil(Math.sqrt(count * 1.6));
+  const rows = Math.ceil(count / cols);
+  const cellW = 880 / cols;
+  const cellH = 480 / rows;
+  const scaleFactor = Math.sqrt(Math.max(8, p.landPct) / 55);
+
+  const raw = [];
+  let sumPx = 0;
+  for (let i = 0; i < count; i++) {
+    const r = Math.floor(i / cols);
+    const c = i % cols;
+    const seed = p.no * 37 + i * 19 + salt * 101;
+    const jx = Math.sin(seed) * cellW * 0.25;
+    const jy = Math.cos(seed * 1.3) * cellH * 0.25;
+    const cx = 60 + (c + 0.5) * cellW + jx;
+    const cy = 40 + (r + 0.5) * cellH + jy;
+    const rx = cellW * 0.36 * scaleFactor * (0.75 + (seed % 5) * 0.1);
+    const ry = cellH * 0.36 * scaleFactor * (0.75 + ((seed * 3) % 5) * 0.1);
+    const poly = makeBlobPoly(cx, cy, rx, ry, seed, 20);
+    const pxA = polyArea(poly);
+    sumPx += pxA;
+    raw.push({
+      id: `${p.id}_land_${i}_${salt}`,
+      name: forgeName("-terra,-var,-thal,-dor,-nusa", seed),
+      kind: p.landPct <= 15 ? "Kepulauan / Busur Vulkanik" : "Benua Utama",
+      cap: forgeName("-base,-haven,-pol,-port", seed + 7),
+      gov: "Zona Eksplorasi / Sektor",
+      pxA,
+      poly
+    });
+  }
+
+  return raw.map(item => ({
+    id: item.id,
+    name: item.name,
+    kind: item.kind,
+    cap: item.cap,
+    gov: item.gov,
+    area: Math.round(totalLand * (item.pxA / (sumPx || 1))),
+    pop: 0,
+    suf: "-rik,-haven,-pol,-grad",
+    poly: item.poly,
+    userCreated: true,
+    createdAt: new Date().toISOString(),
+    children: [],
+    pins: [],
+    par: [],
+    note: ""
+  }));
+}
+
+function buildEleantorCanon() {
+  return CONT_SEED.map((c, idx) => {
+    const col = idx % 4;
+    const row = Math.floor(idx / 4);
+    const cx = 135 + col * 245 + ((idx % 2) * 18 - 9);
+    const cy = 105 + row * 178 + ((idx % 3) * 12 - 12);
+    const scale = Math.sqrt(c[1] / 245);
+    const contPoly = makeBlobPoly(cx, cy, 88 * scale, 62 * scale, idx + 1.5, 22);
+    const rawNations = NSEED.filter(n => n[1] === idx);
+    const nationPolys = buildOrganicPolygons(contPoly, rawNations.length, (idx + 1) * 77);
+    const nations = rawNations.map((n, nIdx) => {
+      const nPoly = nationPolys[nIdx] || makeBlobPoly(cx, cy, 12, 12, nIdx + 1, 10);
+      const [ncx, ncy] = polyCentroid(nPoly);
+      return {
+        id: `nat_${idx}_${nIdx}`, name: n[0], kind: "Negara Berdaulat", cap: n[5] || "", gov: n[4] || "Republik",
+        area: n[2], pop: n[3], pig: c[7], suf: c[6], poly: nPoly, userCreated: false,
+        children: [], pins: n[5] ? [{ id: uid(), name: n[5], type: "Ibu Kota", pop: Math.round(n[3] * 0.035), x: ncx, y: ncy }] : [],
+        par: [], note: "", survey: "Dipetakan"
+      };
+    });
+    return {
+      id: 'cont_' + idx, name: c[0], kind: "Benua Utama", area: c[1] * 1e6, quotaCountries: c[2], pop: c[3] * 1e9,
+      fed: c[4], cap: c[5], suf: c[6], pig: c[7], poly: contPoly, userCreated: false,
+      children: nations, pins: [], par: [], note: "", survey: "Dipetakan"
+    };
+  });
+}
+
+/* ===== STATISTIK FISIK PLANET ===== */
+const EARTH_R = 6371;
+function planetStats(p) {
+  const r = (p.diam || 1) / 2, rE = r / EARTH_R, m = p.mass || 0.0001;
+  const total = getPlanetTotalArea(p), land = getPlanetLandArea(p);
+  const M = (S.cfg && S.cfg.starMass) || 1;
+  const au = p.au || 1;
+  const dens = 5.514 * m / Math.pow(rE, 3);
+  const vesc = 11.186 * Math.sqrt(m / rE);
+  const vorb = vesc / Math.SQRT2;
+  const Pyr = Math.sqrt(Math.pow(au, 3) / M);
+  const vsolar = 29.78 * Math.sqrt(M / au);
+  const dayH = Math.abs(p.rot || 24);
+  const yearDays = Pyr * 8766 / dayH;
+  const scaleH = Math.max(1.5, 8.5 * ((p.temp + 273.15) / 288) / (p.g || 1));
+  return { r, total, land, ocean: total - land, dens, vesc, vorb, Pyr, vsolar, dayH, yearDays, scaleH, circ: Math.PI * p.diam };
+}
+function planetHabBest(p, mode) {
+  let best = 0;
+  [0, 15, 30, 45, 60].forEach(l => { best = Math.max(best, evaluateHabitability(p, l, mode).score); });
+  return best;
+}
+const kv = (l, v) => `<div class="kv"><span>${l}</span><b>${v}</b></div>`;
+function planetParamsHTML(p) {
+  const st = planetStats(p);
+  const rows = [
+    ['Kelas', esc(p.cls)], ['Zona', esc(p.zone)], ['Diameter', fmt(p.diam) + ' km'], ['Jari-jari', fmt(st.r) + ' km'],
+    ['Keliling ekuator', fmt(st.circ) + ' km'], ['Massa', fmt(p.mass) + ' M⊕'], ['Kepadatan rata²', fmt(st.dens) + ' g/cm³'],
+    ['Gravitasi', p.g + ' g'], ['Kec. lepas', fmt(st.vesc) + ' km/s'], ['Kec. orbit rendah', fmt(st.vorb) + ' km/s'],
+    ['Jarak bintang', p.au + ' AU'], ['Periode orbit', fmt(st.Pyr) + ' thn'], ['Kec. orbital', fmt(st.vsolar) + ' km/s'],
+    ['Rotasi (1 hari)', fmt(st.dayH) + ' jam'], ['Hari / tahun', fmt(st.yearDays)], ['Kemiringan sumbu', p.tilt + '°'],
+    ['Satelit', p.sats], ['Suhu rata²', p.temp + ' °C'], ['Tekanan', p.press + ' atm'],
+    ['Skala tinggi atm.', p.press > 0 ? fmt(st.scaleH) + ' km' : '—'], ['Luas total', fmtC(st.total) + ' km²'],
+    ['Luas daratan', fmtC(st.land) + ' km² (' + p.landPct + '%)'], ['Luas lautan', fmtC(st.ocean) + ' km²'],
+    ['Biosfer', esc(p.bio)], ['Peradaban', esc(p.civ)], ['Huni terbuka maks.', planetHabBest(p, 'open') + '/100'],
+    ['Huni kubah maks.', planetHabBest(p, 'dome') + '/100'], ['Wilayah dibuat', (p.children || []).length]
+  ];
+  return `<div class="kvg">${rows.map(r => kv(r[0], r[1])).join('')}</div>
+    <div class="note"><b style="color:var(--gold)">Atmosfer:</b> ${esc(p.atm)}</div>
+    <div class="note"><b style="color:var(--gold)">Sumber daya:</b> ${esc(p.res)}</div>
+    <div class="note mut">Periode orbit memakai massa bintang ${fmt(S.cfg.starMass)} M☉ (asumsi, ubah di tab Penjelajah). Skala tinggi atmosfer &amp; kecepatan lepas adalah estimasi fisika sederhana.</div>`;
+}
+
+/* ===== STATISTIK WILAYAH ===== */
+function densClass(d) {
+  if (d <= 0.01) return 'Tak berpenghuni';
+  if (d < 1) return 'Terpencil';
+  if (d < 25) return 'Jarang';
+  if (d < 150) return 'Sedang';
+  if (d < 500) return 'Padat';
+  return 'Metropolitan';
+}
+function regionStats(n, p, parent) {
+  const s = {};
+  s.area = +n.area || 0; s.pop = +n.pop || 0;
+  s.density = s.area ? s.pop / s.area : 0;
+  s.shareArea = parent && parent.area ? s.area / parent.area * 100 : null;
+  s.sharePop = parent && parent.pop ? s.pop / parent.pop * 100 : null;
+  s.kids = (n.children || []).length;
+  let desc = 0, pins = 0;
+  (function w(x) { (x.children || []).forEach(c => { desc++; w(c); }); pins += (x.pins || []).length; })(n);
+  s.desc = desc; s.pins = pins;
+  s.kidArea = (n.children || []).reduce((a, c) => a + (+c.area || 0), 0);
+  s.kidPop = (n.children || []).reduce((a, c) => a + (+c.pop || 0), 0);
+  s.cover = s.area ? s.kidArea / s.area * 100 : 0;
+  s.dclass = densClass(s.density);
+  if (n.poly && n.poly.length > 2 && n.kind !== 'Planet') {
+    const pa = polyArea(n.poly), kpp = Math.sqrt(s.area / Math.max(1, pa));
+    let per = 0;
+    for (let i = 0; i < n.poly.length; i++) { const a = n.poly[i], b = n.poly[(i + 1) % n.poly.length]; per += Math.hypot(a[0] - b[0], a[1] - b[1]); }
+    s.perimKm = per * kpp; s.compact = per ? 4 * Math.PI * pa / (per * per) : 0;
+    const [cx, cy] = polyCentroid(n.poly);
+    s.lat = yToLatitude(cy); s.lon = Math.round((cx - 500) / 500 * 180 * 10) / 10;
+    const bb = polyBBox(n.poly);
+    s.spanW = bb.w * kpp; s.spanH = bb.h * kpp;
+    if (p) {
+      s.habO = evaluateHabitability(p, s.lat, 'open');
+      s.habD = evaluateHabitability(p, s.lat, 'dome');
+      s.hab = UI.habMode === 'open' ? s.habO : s.habD;
+      const dmax = UI.habMode === 'open' ? 180 : 60;
+      s.capacity = s.area * dmax * s.hab.score / 100;
+      s.util = s.capacity ? s.pop / s.capacity * 100 : null;
+    }
+  }
+  return s;
+}
+function regionStatsHTML(n, p, parent) {
+  const s = regionStats(n, p, parent);
+  const rows = [
+    ['Luas', fmtC(s.area) + ' km²'], ['Populasi', fmtC(s.pop) + ' jiwa'],
+    ['Kepadatan', fmt(s.density) + ' /km²'], ['Klasifikasi', s.dclass],
+    ['Porsi luas induk', s.shareArea === null ? '—' : fmt(s.shareArea) + '%'],
+    ['Porsi populasi induk', s.sharePop === null ? '—' : fmt(s.sharePop) + '%'],
+    ['Sub-wilayah langsung', s.kids], ['Total turunan', s.desc], ['Titik kota/pos', s.pins],
+    ['Cakupan anak (luas)', fmt(s.cover) + '%'], ['Populasi dialokasi ke anak', fmtC(s.kidPop)]
+  ];
+  if (s.lat !== undefined) {
+    rows.push(['Koordinat', `${Math.abs(s.lat)}° ${s.lat >= 0 ? 'LU' : 'LS'}, ${Math.abs(s.lon)}° ${s.lon >= 0 ? 'BT' : 'BB'}`]);
+    rows.push(['Bentang (L×T)', fmtC(s.spanW) + ' × ' + fmtC(s.spanH) + ' km']);
+    rows.push(['Keliling batas', fmtC(s.perimKm) + ' km']);
+    rows.push(['Indeks kebulatan', fmt(s.compact)]);
+    if (s.habO) {
+      rows.push(['Suhu lokal', s.habO.temp + ' °C']);
+      rows.push(['Huni terbuka', s.habO.score + '/100']);
+      rows.push(['Huni kubah', s.habD.score + '/100']);
+      rows.push(['Daya dukung (estimasi)', fmtC(s.capacity) + ' jiwa']);
+      rows.push(['Keterpakaian daya dukung', s.util === null ? '—' : fmt(s.util) + '%']);
+    }
+  }
+  rows.push(['Status survei', esc(n.survey || '—')]);
+  rows.push(['Diklaim oleh', esc(n.claimedBy || '—')]);
+  return `<div class="kvg">${rows.map(r => kv(r[0], r[1])).join('')}</div>
+   <div class="note mut">Daya dukung = luas × kepadatan maksimum mode aktif (${UI.habMode === 'open' ? '180' : '60'} jiwa/km²) × skor huni. Estimasi, bukan data kanon.</div>`;
+}
+
+/* ===== STATE ===== */
+function defaultExplorer() {
+  return { name: "Penjelajah Tanpa Nama", callsign: "VX-001", vessel: "ISV Perintis", xp: 0, depthMax: 0, visited: {},
+    log: [{ t: new Date().toISOString(), msg: "Ekspedisi dimulai di Sistem Lecossa." }] };
+}
+function createInitialState() {
+  const planets = PLANETS_54.map(p => {
+    const children = p.id === 'p19' ? buildEleantorCanon() : [];
+    return {
+      ...p, kind: "Planet", area: getPlanetLandArea(p),
+      pop: children.reduce((a, c) => a + (+c.pop || 0), 0),
+      poly: [[20, 20], [980, 20], [980, 540], [20, 540]],
+      children, pins: [], par: [], note: "", survey: "Dipetakan"
+    };
+  });
+  return {
+    v: 3, app: "Venturian Spasial Simulator", star: "Lecossan Prime",
+    cfg: { starMass: 1, fx: true, fxSpeed: 1 }, explorer: defaultExplorer(),
+    root: { id: "lecossa_system", name: "Sistem Lecossa", kind: "Sistem Bintang",
+      area: planets.reduce((a, p) => a + (+p.area || 0), 0), pop: planets.reduce((a, p) => a + (+p.pop || 0), 0), children: planets }
+  };
+}
+function normalizeState(s) {
+  s.v = 3;
+  s.cfg = Object.assign({ starMass: 1, fx: true, fxSpeed: 1 }, s.cfg || {});
+  s.explorer = Object.assign(defaultExplorer(), s.explorer || {});
+  if (Array.isArray(s.explorer.visited)) { const o = {}; s.explorer.visited.forEach(i => o[i] = 1); s.explorer.visited = o; }
+  return s;
+}
+let S = createInitialState();
+let UI = {
+  tab: 'map', path: [], selectedId: 'p19', orbitScale: 'au', orbitLabels: true, habMode: 'open', layer: 'habitability',
+  showLat: true, tool: 'select', draftPts: [], isFreeDrawing: false, dragVertexIdx: null,
+  vb: [-620, -620, 1240, 1240], isPanning: false, panStart: [0, 0, 0, 0], filterZone: '',
+  dOpen: { stat: true, plan: true }, plSearch: '', plSort: 'no', plLand: false
+};
+
+/* ===== STORAGE (IndexedDB baru) ===== */
+let db = null, saveTimer = null;
+function openDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('kv');
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+async function loadState() {
+  try {
+    db = await openDB();
+    const val = await new Promise(r => {
+      const q = db.transaction('kv').objectStore('kv').get('state');
+      q.onsuccess = () => r(q.result); q.onerror = () => r(null);
+    });
+    if (val && val.root && Array.isArray(val.root.children)) { S = normalizeState(val); return; }
+  } catch (e) {}
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) { const v = JSON.parse(raw); if (v && v.root) S = normalizeState(v); }
+  } catch (e) {}
+}
+function persistNow() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) {}
+  try { if (db) db.transaction('kv', 'readwrite').objectStore('kv').put(JSON.parse(JSON.stringify(S)), 'state'); } catch (e) {}
+}
+function saveState() {
+  updateUserCounterBadge();
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(persistNow, 350);
+}
+window.addEventListener('beforeunload', persistNow);
+function resetAll() {
+  if (!confirm("Reset seluruh simulator ke kondisi awal (termasuk profil & jurnal penjelajah)? Ekspor JSON dulu bila perlu cadangan.")) return;
+  S = createInitialState();
+  UI.path = []; UI.selectedId = 'p19'; UI.vb = [-620, -620, 1240, 1240];
+  persistNow(); setTab('map'); render();
+  toast('Simulator direset.');
+}
+
+/* ===== PENJELAJAH ===== */
+const RANKS = [[0, "Kadet Spasial"], [100, "Perintis"], [300, "Navigator"], [700, "Kartografer"], [1500, "Komandan Ekspedisi"], [3000, "Laksamana Spasial"]];
+function rankInfo(xp) {
+  let idx = 0;
+  RANKS.forEach((r, i) => { if (xp >= r[0]) idx = i; });
+  const cur = RANKS[idx][0], nxt = RANKS[idx + 1] ? RANKS[idx + 1][0] : null;
+  return { idx, name: RANKS[idx][1], next: nxt, pct: nxt ? (xp - cur) / (nxt - cur) * 100 : 100 };
+}
+function logEvent(msg) {
+  S.explorer.log.unshift({ t: new Date().toISOString(), msg });
+  if (S.explorer.log.length > 300) S.explorer.log.length = 300;
+}
+function addXP(n, msg) {
+  const ex = S.explorer, before = rankInfo(ex.xp).idx;
+  ex.xp += n;
+  if (msg) logEvent(`${msg} (+${n} XP)`);
+  const after = rankInfo(ex.xp);
+  if (after.idx > before) { toast(`🎖️ Pangkat naik: ${after.name}!`, 'gold'); logEvent(`Pangkat naik menjadi ${after.name}.`); }
+  updateExplorerChip(); saveState();
+}
+function updateExplorerChip() {
+  const ex = S.explorer, r = rankInfo(ex.xp);
+  $('#xname').textContent = ex.name;
+  $('#xrank').textContent = `${r.name.toUpperCase()} · ${fmt(ex.xp)} XP`;
+  $('#xbari').style.width = r.pct + '%';
+}
+function arrive(target, d) {
+  const ex = S.explorer;
+  ex.depthMax = Math.max(ex.depthMax || 0, d);
+  if (d > 0 && !ex.visited[target.id]) {
+    ex.visited[target.id] = 1;
+    addXP(d === 1 ? 40 : 8 + d * 3, d === 1 ? `Mendarat di planet ${target.name}` : `Memasuki ${gxL(d)} ${target.name}`);
+  }
+}
+function toggleFx() {
+  S.cfg.fx = !S.cfg.fx;
+  $('#btn-fx').textContent = '🎬 Transisi: ' + (S.cfg.fx ? 'ON' : 'OFF');
+  saveState();
+}
+
+/* ===== NAVIGASI ===== */
+function getActiveNode() {
+  let curr = S.root;
+  const valid = [];
+  for (const id of UI.path) {
+    const next = (curr.children || []).find(c => c.id === id);
+    if (!next) break;
+    valid.push(id); curr = next;
+  }
+  UI.path = valid;
+  return curr;
+}
+function getTrailNodes() {
+  const trail = [S.root];
+  let curr = S.root;
+  for (const id of UI.path) {
+    const next = (curr.children || []).find(c => c.id === id);
+    if (!next) break;
+    trail.push(next); curr = next;
+  }
+  return trail;
+}
+function getActivePlanet() {
+  if (!UI.path.length) return null;
+  return (S.root.children || []).find(p => p.id === UI.path[0]) || null;
+}
+function nodeAtPath(path) {
+  let curr = S.root;
+  for (const id of path) {
+    curr = (curr.children || []).find(c => c.id === id);
+    if (!curr) return null;
+  }
+  return curr;
+}
+function zoomInto(id) {
+  const active = getActiveNode();
+  const child = (active.children || []).find(c => c.id === id);
+  if (!child) return;
+  if (child.kind === 'Planet' && (!child.landPct || child.landPct <= 0)) { gxModal(child.id); return; }
+  navigateTo(UI.path.concat([id]));
+}
+function landOn(id) {
+  setTab('map');
+  UI.path = [];
+  zoomInto(id);
+}
+function goBreadcrumb(depth) { navigateTo(UI.path.slice(0, depth)); }
+
+function navigateTo(path) {
+  if (FX.running) return;
+  const oldPath = UI.path.slice(), oldD = oldPath.length, newD = path.length;
+  const oldNode = getActiveNode();
+  const target = nodeAtPath(path);
+  if (!target) return;
+  if (newD > 0 && (!target.poly || target.poly.length < 3)) target.poly = makeBlobPoly(500, 280, 280, 200, target.name.length + 3, 20);
+  target.children = target.children || []; target.pins = target.pins || [];
+  const kind = oldD === 0 && newD > 0 ? 'entry' : oldD > 0 && newD === 0 ? 'exit' : newD >= oldD ? 'descend' : 'ascend';
+  const planet = newD > 0 ? S.root.children.find(p => p.id === path[0]) : getActivePlanet();
+  const info = buildFxInfo(kind, { planet, target, oldNode, oldD, newD });
+  playTransition(kind, info, () => {
+    UI.path = path.slice();
+    UI.selectedId = newD === 0 ? (oldPath[0] || 'p19') : null;
+    UI.draftPts = []; UI.isFreeDrawing = false;
+    fitViewToNode(target);
+    arrive(target, newD);
+    render();
+  });
+}
+function fitViewToNode(node) {
+  if (!node || node.id === 'lecossa_system') { UI.vb = [-620, -620, 1240, 1240]; return; }
+  if (node.kind === 'Planet') { UI.vb = [0, 0, 1000, 560]; return; }
+  const bb = polyBBox(node.poly);
+  const padX = bb.w * 0.16, padY = bb.h * 0.16;
+  UI.vb = [bb.minX - padX, bb.minY - padY, bb.w + padX * 2, bb.h + padY * 2];
+}
+function resetZoom() { fitViewToNode(getActiveNode()); renderMap(); }
+
+/* ===== TRANSISI VISUAL (ENGINE) ===== */
+const FX = { running: false, skip: false, timer: null };
+const ALT = [Infinity, 400, 90, 25, 8, 3, 1, 0.4, 0.05];
+const altOf = d => ALT[Math.min(d, 8)];
+function atmColor(p) {
+  const a = p.atm || '';
+  if (/SO₂|asam sulfat|alkali|logam/i.test(a)) return [217, 164, 65];
+  if (/CH₄|kabut organik/i.test(a)) return [201, 138, 74];
+  if (/O₂/.test(a)) return [90, 169, 255];
+  if (/CO₂/.test(a)) return [201, 119, 75];
+  return [150, 170, 200];
+}
+function groundColor(p) {
+  if (p.zone === 'Habitable Zone') return p.landPct < 10 ? [20, 70, 110] : [34, 92, 66];
+  if (p.zone === 'Outer Zone') return [170, 200, 225];
+  if (/Venus|Volcanic/i.test(p.cls || '')) return [96, 54, 32];
+  return [112, 86, 62];
+}
+function buildFxInfo(kind, o) {
+  const p = o.planet, tgt = o.target;
+  const st = p ? planetStats(p) : null;
+  const dense = !!p && (p.press || 0) >= 0.01;
+  const info = { planet: p, st, dense, sky: p ? atmColor(p) : [120, 140, 170], ground: p ? groundColor(p) : [80, 80, 80], temp: p ? p.temp : 0, poly: null, detail: '' };
+  const lab = d => gxL(d).toUpperCase();
+  let lat = null;
+  if (tgt && tgt.poly && tgt.kind !== 'Planet' && o.newD >= 2) { const [, cy] = polyCentroid(tgt.poly); lat = yToLatitude(cy); }
+  if (kind === 'entry') {
+    info.kicker = 'Transisi orbital · pendaratan';
+    info.title = dense ? 'MEMASUKI ATMOSFER' : 'PENDARATAN TANPA ATMOSFER';
+    info.sub = `${p.name} · ${p.atm}`;
+    info.detail = `Gravitasi ${p.g} g · Tekanan permukaan ${p.press} atm · Suhu rata² ${p.temp}°C`;
+    info.altFrom = 400; info.altTo = 0;
+  } else if (kind === 'exit') {
+    info.kicker = 'Transisi orbital · peluncuran';
+    info.title = 'MENINGGALKAN PERMUKAAN';
+    info.sub = `Naik dari ${p.name} menuju orbit Sistem Lecossa`;
+    info.detail = `Kecepatan orbit rendah ≈ ${fmt(st.vorb)} km/s`;
+    info.altFrom = 0; info.altTo = 400;
+  } else {
+    info.kicker = 'Transisi wilayah';
+    const up = kind === 'ascend';
+    info.title = (up ? 'NAIK KE ' : 'MEMASUKI ') + lab(o.newD);
+    info.sub = tgt.name + (p ? ` · ${p.name}` : '');
+    info.altFrom = altOf(o.oldD); info.altTo = altOf(o.newD);
+    info.poly = up ? (o.oldNode && o.oldNode.kind !== 'Planet' ? o.oldNode.poly : null) : (tgt.kind !== 'Planet' ? tgt.poly : null);
+    if (lat !== null) {
+      info.temp = calcLocalTemp(p, lat);
+      const h = evaluateHabitability(p, lat, UI.habMode);
+      info.detail = `Lintang ${Math.abs(lat)}° ${lat >= 0 ? 'LU' : 'LS'} · ~${info.temp}°C · Skor huni ${h.score}/100`;
+    } else if (o.newD === 1) {
+      info.detail = `Orbit rendah ${p.name} · Gravitasi ${p.g} g`;
+    }
+  }
+  return info;
+}
+const PH = {
+  entry: [[0, 'Deorbit burn · penurunan perigee'], [.18, 'Antarmuka atmosfer'], [.36, 'Pemanasan puncak · plasma'], [.58, 'Perlambatan & parasut'], [.74, 'Menembus lapisan awan'], [.88, 'Pendekatan akhir · sentuh permukaan']],
+  entryVac: [[0, 'Deorbit burn'], [.2, 'Pendekatan tanpa hambatan atmosfer'], [.5, 'Pengereman retro-thruster'], [.82, 'Pendaratan lunak']],
+  exit: [[0, 'Pelepasan dari permukaan'], [.25, 'Pendakian vertikal'], [.5, 'Menembus awan'], [.75, 'Meninggalkan atmosfer'], [.9, 'Insersi orbit']],
+  descend: [[0, 'Manuver penurunan'], [.25, 'Menembus lapisan awan'], [.5, 'Pemindaian topografi'], [.75, 'Penguncian koordinat'], [.9, 'Pendekatan visual']],
+  ascend: [[0, 'Pelepasan lokasi'], [.3, 'Pendakian'], [.6, 'Memperluas cakupan sensor'], [.85, 'Stabilisasi orbit']]
+};
+function phaseOf(kind, t, info) {
+  const list = kind === 'entry' && !info.dense ? PH.entryVac : PH[kind];
+  let r = list[0][1];
+  list.forEach(x => { if (t >= x[0]) r = x[1]; });
+  return r;
+}
+function fmtAlt(a) { return a >= 1 ? fmt(a) + ' km' : fmt(a * 1000) + ' m'; }
+function fmtPrs(x) { return x < 0.001 ? x.toExponential(1) + ' atm' : fmt(x) + ' atm'; }
+function updateTel(kind, t, info) {
+  const p = info.planet, st = info.st;
+  let alt, spd, tmp, prs, gl;
+  if (kind === 'entry' || kind === 'exit') {
+    const tt = kind === 'entry' ? t : 1 - t;
+    alt = lerp(info.altFrom, info.altTo, smooth(t));
+    const v = st.vorb * Math.pow(Math.max(0, 1 - tt), 1.8);
+    spd = v >= 1 ? fmt(v) + ' km/s' : fmt(v * 1000) + ' m/s';
+    const plasma = kind === 'entry' && info.dense ? bell(t, .47, .12) * Math.min(3500, 700 + st.vorb * 180) : 0;
+    tmp = Math.round(p.temp + plasma) + ' °C';
+    gl = kind === 'entry' ? (0.2 + bell(t, .48, .1) * (info.dense ? Math.min(9, 2 + st.vorb * .3) : 0.8)) : p.g + 2.2 * bell(t, .25, .2);
+  } else {
+    const la = Math.log(Math.max(.01, info.altFrom)), lb = Math.log(Math.max(.01, info.altTo));
+    alt = Math.exp(lerp(la, lb, smooth(t)));
+    const kmh = Math.min(st.vorb * 3600, (250 + alt * 55) * (alt / (alt + .4)));
+    spd = fmt(kmh) + ' km/j';
+    tmp = (Math.round(info.temp * 10) / 10) + ' °C';
+    gl = p.g;
+  }
+  prs = p.press * Math.exp(-alt / st.scaleH);
+  $('#tl-alt').textContent = fmtAlt(alt);
+  $('#tl-spd').textContent = spd;
+  $('#tl-tmp').textContent = tmp;
+  $('#tl-prs').textContent = fmtPrs(prs);
+  $('#tl-g').textContent = fmt(gl) + ' g';
+}
+
+function drawEntry(g, W, H, t, info, P, time, dir, plasmaOn) {
+  const cx = W / 2, sky = info.sky, gr = info.ground, dense = info.dense;
+  g.save();
+  const k = plasmaOn && dense ? bell(t, .47, .12) : 0;
+  if (k > .02) g.translate((Math.random() - .5) * k * 7, (Math.random() - .5) * k * 7);
+  g.fillStyle = '#02040a'; g.fillRect(-20, -20, W + 40, H + 40);
+  const sa = clamp(1 - t * 2.2);
+  if (sa > 0) P.stars.forEach(s => {
+    const len = 1 + (dir > 0 ? t : 1 - t) * 34 * s.z;
+    g.fillStyle = `rgba(255,255,255,${sa * (.3 + .7 * s.z)})`;
+    g.fillRect(s.x * W, s.y * H * .9, 1.2, len);
+  });
+  const e = smooth(t / .6);
+  const R = lerp(H * .95, H * 7, e), hy = lerp(H * .66, -H * .1, e), cy = hy + R;
+  const hg = g.createRadialGradient(cx, cy, R * .99, cx, cy, R + H * .25);
+  hg.addColorStop(0, rgba(sky, dense ? .85 : .15)); hg.addColorStop(.35, rgba(sky, dense ? .35 : .05)); hg.addColorStop(1, rgba(sky, 0));
+  g.fillStyle = hg; g.beginPath(); g.arc(cx, cy, R + H * .25, 0, Math.PI * 2); g.fill();
+  const bg = g.createLinearGradient(0, hy, 0, H);
+  bg.addColorStop(0, rgba(mix(gr, [255, 255, 255], .12), 1)); bg.addColorStop(1, rgba(mix(gr, [0, 0, 0], .55), 1));
+  g.fillStyle = bg; g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.fill();
+  if (k > .01) {
+    const gl = g.createRadialGradient(cx, H * .08, 0, cx, H * .08, H * .95);
+    gl.addColorStop(0, `rgba(255,244,214,${.95 * k})`); gl.addColorStop(.25, `rgba(255,170,70,${.75 * k})`);
+    gl.addColorStop(.6, `rgba(210,60,20,${.35 * k})`); gl.addColorStop(1, 'rgba(60,0,0,0)');
+    g.fillStyle = gl; g.fillRect(0, 0, W, H);
+    g.lineCap = 'round';
+    P.parts.forEach(q => {
+      const sp = (q.ph + time * .0011 * q.sp * (.8 + k * 2)) % 1;
+      const y = dir > 0 ? H * 1.05 - sp * H * 1.2 : -H * .05 + sp * H * 1.2;
+      const x = cx + (q.x - .5) * W * (.25 + .75 * sp);
+      const len = H * .08 * q.len * (.4 + k * 2.2);
+      g.strokeStyle = `rgba(255,${150 + q.len * 80 | 0},${60 + q.len * 60 | 0},${k * .42})`;
+      g.lineWidth = .6 + q.len * 1.2;
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + len * dir); g.stroke();
+    });
+  }
+  const thr = !plasmaOn ? .8 : (!dense ? smooth((t - .2) / .15) * (1 - smooth((t - .92) / .08)) : 0);
+  if (thr > .02) {
+    const tg = g.createRadialGradient(cx, H * 1.02, 0, cx, H * 1.02, H * .6);
+    tg.addColorStop(0, `rgba(170,235,255,${.6 * thr * (.85 + .15 * Math.random())})`); tg.addColorStop(1, 'rgba(60,140,200,0)');
+    g.fillStyle = tg; g.fillRect(0, 0, W, H);
+  }
+  const ca = dense ? smooth((t - .5) / .22) * (1 - smooth((t - .92) / .08) * .5) : smooth((t - .55) / .2) * .35;
+  if (ca > .01) {
+    const col = mix(sky, [255, 255, 255], .55);
+    P.puffs.forEach(q => {
+      const sp2 = ((q.ph + (dir > 0 ? 1 : -1) * time * .00035 * q.sp) % 1 + 1) % 1;
+      const y = H * 1.2 - sp2 * H * 1.5, x = q.x * W, r = 60 + q.s * 260 * (.4 + sp2);
+      const cg = g.createRadialGradient(x, y, 0, x, y, r);
+      cg.addColorStop(0, rgba(col, .38 * ca)); cg.addColorStop(1, rgba(col, 0));
+      g.fillStyle = cg; g.fillRect(x - r, y - r, r * 2, r * 2);
+    });
+  }
+  const ga = smooth((t - .72) / .2);
+  if (ga > .01) {
+    const hz = H * .46;
+    g.strokeStyle = `rgba(125,240,225,${.28 * ga})`; g.lineWidth = 1; g.beginPath();
+    for (let i = 0; i < 14; i++) { const f = Math.pow(i / 13, 2.2), y = hz + f * H * .56; g.moveTo(0, y); g.lineTo(W, y); }
+    for (let j = -12; j <= 12; j++) { g.moveTo(cx + j * 16, hz); g.lineTo(cx + j * W * .14, H * 1.02); }
+    g.stroke();
+  }
+  const vg = g.createRadialGradient(cx, H / 2, H * .35, cx, H / 2, H * .95);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.6)');
+  g.fillStyle = vg; g.fillRect(-20, -20, W + 40, H + 40);
+  g.restore();
+}
+function drawDescend(g, W, H, t, info, P, time, dir) {
+  const cx = W / 2, cy = H / 2, z = dir > 0 ? t : 1 - t, sky = info.sky, gr = info.ground;
+  const bg = g.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, rgba(mix(sky, [0, 0, 0], .72), 1)); bg.addColorStop(1, rgba(mix(gr, [0, 0, 0], .6), 1));
+  g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  const frac = (z * 4) % 1, stepA = 80 * Math.pow(2, frac);
+  const grid = (step, a) => {
+    g.strokeStyle = `rgba(125,240,225,${a})`; g.lineWidth = 1; g.beginPath();
+    const n = Math.ceil(W / 2 / step) + 1, m = Math.ceil(H / 2 / step) + 1;
+    for (let i = -n; i <= n; i++) { g.moveTo(cx + i * step, 0); g.lineTo(cx + i * step, H); }
+    for (let j = -m; j <= m; j++) { g.moveTo(0, cy + j * step); g.lineTo(W, cy + j * step); }
+    g.stroke();
+  };
+  grid(stepA, (1 - frac) * .12); grid(stepA * 2, .12);
+  const cloudy = info.planet && info.planet.press > .05 ? 1 : .25, col = mix(sky, [255, 255, 255], .6);
+  P.puffs.forEach(q => {
+    const zi = (((q.ph + z * 1.1 * q.sp) % 1) + 1) % 1, ang = q.x * Math.PI * 2, rad = zi * zi * Math.max(W, H) * .8;
+    const x = cx + Math.cos(ang) * rad, y = cy + Math.sin(ang) * rad * .8, r = 20 + zi * zi * (200 + q.s * 260);
+    const a = Math.sin(zi * Math.PI) * .32 * cloudy;
+    const cg = g.createRadialGradient(x, y, 0, x, y, r);
+    cg.addColorStop(0, rgba(col, a)); cg.addColorStop(1, rgba(col, 0));
+    g.fillStyle = cg; g.fillRect(x - r, y - r, r * 2, r * 2);
+  });
+  if (info.poly && info.poly.length > 2) {
+    const bb = polyBBox(info.poly), ez = 1 - Math.pow(1 - z, 3);
+    const sc = lerp(.10, .78, ez) * Math.min(W, H) / Math.max(bb.w, bb.h), pcx = bb.minX + bb.w / 2, pcy = bb.minY + bb.h / 2;
+    g.save(); g.beginPath();
+    info.poly.forEach(([x, y], i) => { const X = cx + (x - pcx) * sc, Y = cy + (y - pcy) * sc; i ? g.lineTo(X, Y) : g.moveTo(X, Y); });
+    g.closePath(); g.fillStyle = 'rgba(233,201,133,.07)'; g.fill();
+    g.shadowColor = 'rgba(233,201,133,.85)'; g.shadowBlur = 18; g.strokeStyle = 'rgba(233,201,133,.92)'; g.lineWidth = 2; g.stroke(); g.restore();
+  }
+  const m = Math.min(W, H), rs = lerp(m * .46, m * .2, 1 - Math.pow(1 - z, 3)), l = rs * .22;
+  g.strokeStyle = 'rgba(94,234,212,.85)'; g.lineWidth = 2; g.beginPath();
+  [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([sx, sy]) => {
+    g.moveTo(cx + sx * rs, cy + sy * (rs - l)); g.lineTo(cx + sx * rs, cy + sy * rs); g.lineTo(cx + sx * (rs - l), cy + sy * rs);
+  });
+  g.moveTo(cx - 10, cy); g.lineTo(cx + 10, cy); g.moveTo(cx, cy - 10); g.lineTo(cx, cy + 10);
+  g.stroke();
+  const vg = g.createRadialGradient(cx, cy, H * .35, cx, cy, H * .95);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.65)');
+  g.fillStyle = vg; g.fillRect(0, 0, W, H);
+}
+function playTransition(kind, info, mid) {
+  if (!S.cfg.fx) { mid(); return; }
+  const root = $('#fx'), cv = $('#fxc');
+  clearTimeout(FX.timer);
+  FX.running = true; FX.skip = false;
+  const dpr = Math.min(2, window.devicePixelRatio || 1), W = innerWidth, H = innerHeight;
+  cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const P = {
+    stars: Array.from({ length: 260 }, () => ({ x: Math.random(), y: Math.random(), z: Math.random() })),
+    parts: Array.from({ length: 150 }, () => ({ x: Math.random(), ph: Math.random(), sp: .5 + Math.random(), len: .5 + Math.random() })),
+    puffs: Array.from({ length: 30 }, () => ({ x: Math.random(), ph: Math.random(), sp: .5 + Math.random() * .8, s: Math.random() }))
+  };
+  $('#fx-kicker').textContent = info.kicker; $('#fx-title').textContent = info.title;
+  $('#fx-sub').textContent = info.sub; $('#fx-detail').textContent = info.detail || '';
+  root.classList.remove('out', 'run'); root.style.display = 'block'; void root.offsetWidth; root.classList.add('run');
+  const dur = { entry: 4800, exit: 3300, descend: 2100, ascend: 1700 }[kind] / (S.cfg.fxSpeed || 1);
+  const t0 = performance.now();
+  let swapped = false, outed = false;
+  const doMid = () => { if (swapped) return; swapped = true; try { mid(); } catch (e) { console.error(e); } };
+  function frame(now) {
+    let t = clamp((now - t0) / dur);
+    if (FX.skip) t = 1;
+    try {
+      if (kind === 'entry') drawEntry(g, W, H, t, info, P, now, 1, true);
+      else if (kind === 'exit') drawEntry(g, W, H, 1 - t, info, P, now, -1, false);
+      else drawDescend(g, W, H, t, info, P, now, kind === 'descend' ? 1 : -1);
+      updateTel(kind, t, info);
+    } catch (e) { console.error(e); }
+    $('#fx-phase').textContent = phaseOf(kind, t, info);
+    $('#fx-bar').style.width = (t * 100) + '%';
+    if (!swapped && t >= .68) doMid();
+    if (!outed && t >= .86) { outed = true; root.classList.add('out'); }
+    if (t < 1) requestAnimationFrame(frame);
+    else {
+      doMid(); root.classList.add('out');
+      FX.timer = setTimeout(() => { root.style.display = 'none'; FX.running = false; }, 720);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ===== ALAT GAMBAR ===== */
+function setTool(t) { UI.tool = t; cancelDraw(); }
+function cancelDraw() {
+  UI.draftPts = []; UI.isFreeDrawing = false;
+  renderToolbar(); renderMap();
+}
+function clientToSvg(ev) {
+  const rect = $('#map').getBoundingClientRect();
+  const [vx, vy, vw, vh] = UI.vb;
+  return [Math.round((vx + ((ev.clientX - rect.left) / rect.width) * vw) * 10) / 10, Math.round((vy + ((ev.clientY - rect.top) / rect.height) * vh) * 10) / 10];
+}
+function pointInPoly(pt, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i][0], yi = poly[i][1], xj = poly[j][0], yj = poly[j][1];
+    if (((yi > pt[1]) !== (yj > pt[1])) && (pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi)) inside = !inside;
+  }
+  return inside;
+}
+function finishPoly() {
+  if (UI.draftPts.length < 3) { toast('Minimal 3 titik sudut untuk membentuk wilayah.', 'err'); return; }
+  const active = getActiveNode(), p = getActivePlanet(), depth = UI.path.length;
+  if (active.poly && active.poly.length > 2) {
+    const inCount = UI.draftPts.filter(pt => pointInPoly(pt, active.poly)).length;
+    if (!pointInPoly(polyCentroid(UI.draftPts), active.poly) || inCount < UI.draftPts.length * 0.6) {
+      toast(`Wilayah harus berada di dalam batas ${active.name}.`, 'err'); return;
+    }
+  }
+  const label = gxL(depth + 1);
+  const baseArea = active.kind === 'Planet' ? getPlanetTotalArea(p) : (active.area || 0);
+  const ratio = Math.min(1, polyArea(UI.draftPts) / Math.max(1, polyArea(active.poly)));
+  const nm = forgeName(active.suf, Date.now());
+  const reg = {
+    id: uid(), name: nm, kind: label, cap: forgeName(active.suf, Date.now() + 11),
+    gov: depth === 1 ? "Zona Eksplorasi" : "Administrasi Lokal",
+    area: Math.round(baseArea * ratio), pop: Math.round((active.pop || 0) * ratio),
+    suf: active.suf || "-rik,-haven,-grad", poly: UI.draftPts.slice(), userCreated: true,
+    createdAt: new Date().toISOString(), claimedBy: S.explorer.name, survey: 'Dipetakan',
+    children: [], pins: [], par: [], note: ""
+  };
+  active.children = active.children || [];
+  active.children.push(reg);
+  UI.selectedId = reg.id; UI.tool = 'select'; UI.draftPts = []; UI.isFreeDrawing = false;
+  addXP(15, `Memetakan & mengklaim ${label} ${nm}`);
+  saveState(); render();
+}
+function generateOrganicSubdivisions() {
+  const active = getActiveNode(), depth = UI.path.length;
+  if (depth === 0) return;
+  const cs = prompt(`Bagi "${active.name}" menjadi wilayah organik (non-simetris).\nJumlah sub-wilayah (2 - 60):`, depth === 1 ? 8 : 6);
+  if (!cs) return;
+  const k = Math.max(2, Math.min(60, parseInt(cs, 10) || 6));
+  if ((active.children || []).length > 0 && !confirm(`"${active.name}" sudah memiliki ${active.children.length} sub-wilayah. Timpa dengan pembagian baru?`)) return;
+  if (depth === 1) {
+    active.children = generateUserContinents(active, k, Date.now() % 997);
+  } else {
+    const polys = buildOrganicPolygons(active.poly, k, Date.now() % 1000);
+    const label = gxL(depth + 1);
+    const totalPx = polys.reduce((a, q) => a + polyArea(q), 0) || 1;
+    const weights = polys.map(q => polyArea(q) * (0.75 + Math.random() * 0.5));
+    const sumW = weights.reduce((a, b) => a + b, 0) || 1;
+    active.children = polys.map((poly, i) => ({
+      id: uid(), name: forgeName(active.suf, Date.now() + i * 17), kind: label,
+      cap: forgeName(active.suf, Date.now() + i * 31 + 5), gov: depth === 2 ? "Sektor Otoritas" : "Administrasi Wilayah",
+      area: Math.round((active.area || 0) * (polyArea(poly) / totalPx)), pop: Math.round((active.pop || 0) * (weights[i] / sumW)),
+      suf: active.suf || "-rik,-haven,-grad", poly, userCreated: true, createdAt: new Date().toISOString(),
+      children: [], pins: [], par: [], note: ""
+    }));
+  }
+  active.children.forEach(c => { c.survey = 'Disurvei'; c.claimedBy = S.explorer.name; });
+  UI.selectedId = active.children[0] ? active.children[0].id : null;
+  addXP(Math.min(150, 8 * k), `Membagi ${active.name} menjadi ${k} ${gxL(depth + 1)}`);
+  saveState(); render();
+}
+function autoDistributePop() {
+  const active = getActiveNode(), kids = active.children || [];
+  if (!kids.length) return;
+  const sumArea = kids.reduce((a, c) => a + (+c.area || 0), 0);
+  if (!sumArea) return toast('Total luas sub-wilayah adalah 0.', 'err');
+  kids.forEach(c => { c.pop = Math.round((active.pop || 0) * ((+c.area || 0) / sumArea)); c.userCreated = true; });
+  saveState(); render();
+  toast('Populasi didistribusikan proporsional terhadap luas.');
+}
+function randomizeSelectedName() {
+  const active = getActiveNode();
+  updateSelectedField('name', forgeName(active.suf, Date.now()));
+  renderSidebar();
+}
+
+/* ===== EVENT KANVAS ===== */
+function initCanvasEvents() {
+  const svg = $('#map');
+  svg.addEventListener('pointermove', ev => {
+    const [x, y] = clientToSvg(ev), depth = UI.path.length;
+    if (depth === 0) {
+      $('#hud').textContent = `Orbit Sistem Lecossa · radius ${Math.round(Math.hypot(x, y))} · Scroll = zoom · Klik ganda planet = mendarat`;
+    } else {
+      const lat = yToLatitude(y), lon = Math.round((x - 500) / 500 * 180 * 10) / 10, p = getActivePlanet();
+      $('#hud').textContent = `${UI.tool.toUpperCase()} · ${Math.abs(lat)}° ${lat >= 0 ? 'LU' : 'LS'} ${Math.abs(lon)}° ${lon >= 0 ? 'BT' : 'BB'} · ~${calcLocalTemp(p, lat)}°C · Klik ganda = zoom masuk`;
+    }
+    if (UI.dragVertexIdx !== null && UI.selectedId && depth > 0) {
+      const sel = (getActiveNode().children || []).find(c => c.id === UI.selectedId);
+      if (sel && sel.poly && sel.poly[UI.dragVertexIdx]) { sel.poly[UI.dragVertexIdx] = [x, y]; sel.userCreated = true; renderMap(); }
+      return;
+    }
+    if (UI.isPanning) {
+      const rect = svg.getBoundingClientRect();
+      UI.vb[0] = UI.panStart[2] - ((ev.clientX - UI.panStart[0]) / rect.width) * UI.vb[2];
+      UI.vb[1] = UI.panStart[3] - ((ev.clientY - UI.panStart[1]) / rect.height) * UI.vb[3];
+      svg.setAttribute('viewBox', UI.vb.join(' '));
+      return;
+    }
+    if (depth > 0 && UI.tool === 'free' && UI.isFreeDrawing) {
+      const last = UI.draftPts[UI.draftPts.length - 1];
+      if (!last || Math.hypot(x - last[0], y - last[1]) > UI.vb[2] * 0.008) { UI.draftPts.push([x, y]); renderMap(); }
+    }
+  });
+  svg.addEventListener('pointerdown', ev => {
+    const depth = UI.path.length;
+    if (depth === 0) {
+      if (ev.target.tagName !== 'circle' && ev.target.tagName !== 'text') UI.isPanning = true;
+      UI.panStart = [ev.clientX, ev.clientY, UI.vb[0], UI.vb[1]];
+      return;
+    }
+    if (ev.button === 1 || ev.shiftKey) { UI.isPanning = true; UI.panStart = [ev.clientX, ev.clientY, UI.vb[0], UI.vb[1]]; return; }
+    if (ev.target.closest && ev.target.closest('.pin')) return;
+    const [x, y] = clientToSvg(ev), p = getActivePlanet(), active = getActiveNode();
+    if (UI.tool === 'poly') { UI.draftPts.push([x, y]); renderToolbar(); renderMap(); }
+    else if (UI.tool === 'free') { UI.isFreeDrawing = true; UI.draftPts = [[x, y]]; renderToolbar(); renderMap(); }
+    else if (UI.tool === 'city') {
+      const lat = yToLatitude(y), h = evaluateHabitability(p, lat, UI.habMode);
+      const bName = prompt(`Tandai Kota / Pangkalan pada lintang ${Math.abs(lat)}° (${h.temp}°C, skor huni ${h.score}/100).\nNama lokasi:`, forgeName(active.suf, Math.round(x + y)));
+      if (!bName) return;
+      const bPop = parseInt(prompt("Perkiraan populasi (jiwa):", "150000") || "0", 10) || 0;
+      const bType = prompt("Jenis (Ibu Kota / Kota Metropolitan / Kota Kecil / Pelabuhan Orbital / Pos Tambang):", p.id === 'p19' ? "Kota" : "Pos Riset") || "Kota";
+      active.pins = active.pins || [];
+      active.pins.push({ id: uid(), name: bName, type: bType, pop: bPop, x, y, userCreated: true });
+      addXP(5, `Mendirikan ${bType} ${bName}`);
+      saveState(); renderMap();
+    } else if (UI.tool === 'select' || UI.tool === 'vertex') {
+      if (ev.target === svg || ev.target.tagName === 'rect') { UI.isPanning = true; UI.panStart = [ev.clientX, ev.clientY, UI.vb[0], UI.vb[1]]; }
+    }
+  });
+  window.addEventListener('pointerup', () => {
+    if (UI.dragVertexIdx !== null) { UI.dragVertexIdx = null; saveState(); renderSidebar(); }
+    UI.isPanning = false;
+    if (UI.path.length > 0 && UI.tool === 'free' && UI.isFreeDrawing) {
+      UI.isFreeDrawing = false;
+      if (UI.draftPts.length >= 3) finishPoly(); else cancelDraw();
+    }
+  });
+  svg.addEventListener('wheel', ev => {
+    ev.preventDefault();
+    const rect = svg.getBoundingClientRect(), factor = ev.deltaY > 0 ? 1.15 : 1 / 1.15, [vx, vy, vw, vh] = UI.vb;
+    const mx = vx + ((ev.clientX - rect.left) / rect.width) * vw, my = vy + ((ev.clientY - rect.top) / rect.height) * vh;
+    if ((vw * factor) < 2 || (vw * factor) > 40000) return;
+    UI.vb = [mx - (mx - vx) * factor, my - (my - vy) * factor, vw * factor, vh * factor];
+    svg.setAttribute('viewBox', UI.vb.join(' '));
+    updateScale();
+  }, { passive: false });
+  window.addEventListener('resize', updateScale);
+  window.addEventListener('keydown', ev => {
+    if (FX.running) { if (['Escape', ' ', 'Enter'].includes(ev.key)) { FX.skip = true; ev.preventDefault(); } return; }
+    if (ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA' || ev.target.tagName === 'SELECT') return;
+    if (ev.key === 'Enter' && UI.tool === 'poly' && UI.draftPts.length >= 3) finishPoly();
+    if (ev.key === 'Escape') { if ($('#gmodal').style.display === 'block') gxClose(); else cancelDraw(); }
+  });
+}
+function startDragVertex(idx, ev) { ev.stopPropagation(); UI.dragVertexIdx = idx; }
+
+/* ===== RENDER PETA ===== */
+const ZONE_COLORS = { 'Inner Zone': '#f59e0b', 'Habitable Zone': '#34d399', 'Jovian Zone': '#a78bfa', 'Outer Zone': '#60a5fa' };
+let STARFIELD = '';
+function starfield() {
+  if (STARFIELD) return STARFIELD;
+  let s = '';
+  for (let i = 0; i < 260; i++) {
+    const x = (Math.sin(i * 12.9898) * 43758.5453 % 1) * 3000, y = (Math.sin(i * 78.233) * 12345.6789 % 1) * 3000, r = .4 + Math.abs(Math.sin(i * 3.7)) * 1.1;
+    s += `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" opacity="${.15 + Math.abs(Math.sin(i * 1.9)) * .6}"/>`;
+  }
+  return STARFIELD = s;
+}
+function renderOrbitMap() {
+  const svg = $('#map');
+  svg.setAttribute('viewBox', UI.vb.join(' '));
+  const planets = (S.root.children || []).slice().sort((a, b) => a.no - b.no);
+  const useAu = UI.orbitScale === 'au';
+  const logs = planets.map(p => Math.log(p.au || 1)), lo = Math.min(...logs), hi = Math.max(...logs);
+  const radiusOf = (p, i) => useAu && hi > lo ? 75 + ((Math.log(p.au) - lo) / (hi - lo)) * 500 : 70 + i * 9.6;
+  const nodes = planets.map((p, i) => { const r = radiusOf(p, i), a = i * 2.39996; return { p, r, x: r * Math.cos(a), y: r * Math.sin(a) }; });
+  const zoneBands = Object.keys(ZONE_COLORS).map(z => {
+    const grp = nodes.filter(o => o.p.zone === z);
+    if (!grp.length) return '';
+    const a = Math.min(...grp.map(o => o.r)) - 6, b = Math.max(...grp.map(o => o.r)) + 6;
+    return `<circle r="${(a + b) / 2}" fill="none" stroke="${ZONE_COLORS[z]}" stroke-opacity="0.07" stroke-width="${b - a}"/>`;
+  }).join('');
+  const orbits = nodes.map(o => `<circle r="${o.r}" fill="none" stroke="${o.p.id === UI.selectedId ? 'rgba(233,201,133,.55)' : 'rgba(120,150,200,.16)'}" stroke-width="${o.p.id === UI.selectedId ? 1.1 : .6}" ${o.p.id === UI.selectedId ? 'stroke-dasharray="5 4"' : ''}/>`).join('');
+  const defs = Object.entries(ZONE_COLORS).map(([z, c], i) => `<radialGradient id="pg${i}" cx=".35" cy=".3" r=".85"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".35" stop-color="${c}"/><stop offset="1" stop-color="#05070c"/></radialGradient>`).join('');
+  const zIdx = z => Object.keys(ZONE_COLORS).indexOf(z);
+  const bodies = nodes.map(o => {
+    const p = o.p, rr = Math.max(2.8, Math.min(10, 2.2 + (Math.log10(p.diam || 1) - 3.5) * 3.2));
+    const isE = p.id === 'p19', isSel = UI.selectedId === p.id, sub = (p.children || []).length;
+    return `<g onclick="selectRegion('${p.id}')" ondblclick="zoomInto('${p.id}')" style="cursor:pointer">
+      <circle cx="${o.x}" cy="${o.y}" r="${rr * 2.4}" fill="${ZONE_COLORS[p.zone]}" opacity="${isSel || isE ? .22 : .07}"/>
+      ${isE ? `<circle cx="${o.x}" cy="${o.y}" r="${rr + 4}" fill="none" stroke="#e9c985" stroke-width="1.4"><animate attributeName="r" values="${rr + 3};${rr + 9};${rr + 3}" dur="3s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;.1;1" dur="3s" repeatCount="indefinite"/></circle>` : ''}
+      <circle cx="${o.x}" cy="${o.y}" r="${rr}" fill="url(#pg${zIdx(p.zone)})" stroke="${isSel ? '#fb7185' : 'none'}" stroke-width="2">
+        <title>#${p.no} ${esc(p.name)} · ${esc(p.zone)} · ⌀${fmt(p.diam)} km · ${p.landPct > 0 ? 'Darat ' + p.landPct + '% (' + sub + ' wilayah)' : 'Gas/Es'}</title></circle>
+      ${UI.orbitLabels || isE || isSel ? `<text x="${o.x + rr + 4}" y="${o.y + 3}" fill="${isE ? '#f6e2b0' : isSel ? '#fde68a' : '#8aa0b8'}" font-size="${isE ? 11.5 : 8}" font-weight="${isE ? 700 : 400}">${esc(p.name)}${sub > 0 ? ' [' + sub + ']' : ''}</text>` : ''}
+    </g>`;
+  }).join('');
+  svg.innerHTML = `<defs>${defs}
+    <radialGradient id="starGrad"><stop offset="0" stop-color="#fffdf2"/><stop offset=".5" stop-color="#fbbf24"/><stop offset="1" stop-color="#d97706"/></radialGradient>
+    <radialGradient id="starHalo"><stop offset="0" stop-color="#fbbf24" stop-opacity=".55"/><stop offset="1" stop-color="#fbbf24" stop-opacity="0"/></radialGradient></defs>
+    <rect x="-3000" y="-3000" width="6000" height="6000" fill="#02040a"/>
+    <g transform="translate(-1500,-1500)">${starfield()}</g>
+    ${zoneBands}${orbits}
+    <circle r="90" fill="url(#starHalo)"/>
+    <circle r="22" fill="url(#starGrad)"><animate attributeName="r" values="21;23.5;21" dur="4s" repeatCount="indefinite"/></circle>
+    <text y="40" fill="#fbbf24" font-size="11" font-weight="700" text-anchor="middle" letter-spacing="1.5">LECOSSAN PRIME</text>
+    ${bodies}`;
+}
+function hashHue(str) { let h = 0; for (const ch of String(str)) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; }
+function getRegionColor(p, reg, isSel) {
+  if (isSel) return 'rgba(233,201,133,0.55)';
+  const [, cy] = polyCentroid(reg.poly), lat = yToLatitude(cy);
+  if (UI.layer === 'habitability') {
+    const { score } = evaluateHabitability(p, lat, UI.habMode);
+    if (score >= 75) return 'rgba(52,211,153,0.72)';
+    if (score >= 45) return 'rgba(20,184,166,0.64)';
+    if (score >= 20) return 'rgba(245,185,74,0.62)';
+    return 'rgba(251,113,133,0.5)';
+  } else if (UI.layer === 'thermal') {
+    const t = calcLocalTemp(p, lat);
+    if (t > 100) return 'rgba(220,38,38,0.75)';
+    if (t > 35) return 'rgba(249,115,22,0.72)';
+    if (t >= 5) return 'rgba(52,211,153,0.7)';
+    if (t >= -30) return 'rgba(56,189,248,0.7)';
+    return 'rgba(129,140,248,0.72)';
+  }
+  return `hsla(${hashHue(reg.name)},52%,36%,0.7)`;
+}
+function oceanPair(p) {
+  if (p.zone === 'Inner Zone') return p.temp > 200 ? ['#2a140b', '#0f0704'] : ['#2b1f12', '#0e0a06'];
+  if (p.zone === 'Outer Zone') return ['#13294a', '#050d1b'];
+  return ['#0b2a4a', '#030c1a'];
+}
+function kmPerUnit() {
+  const a = getActiveNode(), p = getActivePlanet();
+  if (!p) return null;
+  if (a.kind === 'Planet') return Math.sqrt(getPlanetTotalArea(p) / (960 * 520));
+  const pa = polyArea(a.poly);
+  return pa > 0 ? Math.sqrt((a.area || 1) / pa) : null;
+}
+function updateScale() {
+  const el = $('#scalebar'), k = kmPerUnit();
+  if (!k || UI.path.length === 0) { el.style.display = 'none'; return; }
+  const w = $('#map').getBoundingClientRect().width || 1, kmCss = k * UI.vb[2] / w, target = kmCss * 120;
+  const pw = Math.pow(10, Math.floor(Math.log10(target)));
+  let n = target / pw; n = n >= 5 ? 5 : n >= 2 ? 2 : 1;
+  const km = n * pw;
+  el.style.display = 'flex';
+  el.innerHTML = `<i style="width:${km / kmCss}px"></i><span class="mono">${fmt(km)} km</span>`;
+}
+function renderLegend() {
+  const el = $('#legend');
+  const sw = (c, t) => `<span><i style="background:${c}"></i>${t}</span>`;
+  if (UI.path.length === 0) { el.innerHTML = Object.entries(ZONE_COLORS).map(([z, c]) => sw(c, z)).join(''); return; }
+  if (UI.layer === 'habitability') el.innerHTML = sw('#34d399', 'Sangat potensial ≥75') + sw('#14b8a6', 'Moderat 45–74') + sw('#f5b94a', 'Marginal 20–44') + sw('#fb7185', 'Tidak layak <20');
+  else if (UI.layer === 'thermal') el.innerHTML = sw('#dc2626', '> 100°C') + sw('#f97316', '35–100°C') + sw('#34d399', '5–35°C') + sw('#38bdf8', '−30–5°C') + sw('#818cf8', '< −30°C');
+  else el.innerHTML = '<span>Warna = identitas nama wilayah</span>';
+}
+function renderSurfaceMap() {
+  const svg = $('#map');
+  svg.setAttribute('viewBox', UI.vb.join(' '));
+  const p = getActivePlanet(), active = getActiveNode(), kids = active.children || [], pins = active.pins || [];
+  const strokeW = UI.vb[2] * 0.002, fontScale = UI.vb[2] / 1000;
+  const [oc1, oc2] = oceanPair(p);
+  const drawingNow = ['poly', 'free', 'city'].includes(UI.tool);
+  let html = `<defs>
+    <radialGradient id="oc" cx="50%" cy="50%" r="70%"><stop offset="0" stop-color="${oc1}"/><stop offset="1" stop-color="${oc2}"/></radialGradient>
+    <filter id="gg" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="${UI.vb[2] * .004}" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+    <rect x="-2500" y="-2500" width="6000" height="6000" fill="url(#oc)"/>`;
+  if (UI.showLat) {
+    [{ y: 46, label: "75° LU" }, { y: 140, label: "45° LU" }, { y: 280, label: "0° Khatulistiwa", eq: true }, { y: 420, label: "45° LS" }, { y: 514, label: "75° LS" }].forEach(l => {
+      const deg = yToLatitude(l.y), t = calcLocalTemp(p, deg);
+      html += `<line x1="-1000" y1="${l.y}" x2="2000" y2="${l.y}" stroke="${l.eq ? '#38bdf8' : '#2a4468'}" stroke-opacity="${l.eq ? .7 : .55}" stroke-width="${l.eq ? strokeW * 1.2 : strokeW * .7}" stroke-dasharray="${l.eq ? '' : '6,4'}"/>
+        <text x="12" y="${l.y - 4 * fontScale}" fill="${l.eq ? '#7dd3fc' : '#64809e'}" font-size="${9.5 * fontScale}" class="mono">${l.label} · ~${t}°C</text>`;
+    });
+  }
+  if (active.kind !== 'Planet' && active.poly && active.poly.length >= 3) {
+    html += `<polygon points="${active.poly.map(pt => pt.join(',')).join(' ')}" fill="#0c1b2c" fill-opacity=".85" stroke="#38bdf8" stroke-width="${strokeW * 1.6}" stroke-dasharray="${strokeW * 4},${strokeW * 2}"/>`;
+  }
+  if (!kids.length && !UI.draftPts.length) {
+    html += `<g pointer-events="none"><rect x="230" y="210" width="540" height="140" rx="14" fill="rgba(8,13,23,.9)" stroke="#e9c985" stroke-opacity=".4" stroke-width="1.5"/>
+      <text x="500" y="252" text-anchor="middle" fill="#e9c985" font-size="16" font-weight="700">Wilayah "${esc(active.name)}" belum dipetakan</text>
+      <text x="500" y="280" text-anchor="middle" fill="#cbd5e1" font-size="12">Klik "🎲 Bagi Organik" untuk membangkitkan wilayah otomatis,</text>
+      <text x="500" y="299" text-anchor="middle" fill="#cbd5e1" font-size="12">atau gambar batas sendiri dengan "✒️ Poligon" / "🖌️ Kuas".</text>
+      <text x="500" y="326" text-anchor="middle" fill="#5eead4" font-size="11">Setiap wilayah yang Anda buat otomatis menjadi klaim penjelajah &amp; masuk Rekap.</text></g>`;
+  }
+  let selPoly = null;
+  kids.forEach(reg => {
+    if (!reg.poly || reg.poly.length < 3) return;
+    const pts = reg.poly.map(pt => pt.join(',')).join(' '), isSel = reg.id === UI.selectedId;
+    if (isSel) selPoly = reg.poly;
+    const [cx, cy] = polyCentroid(reg.poly), hab = evaluateHabitability(p, yToLatitude(cy), UI.habMode), bb = polyBBox(reg.poly);
+    const fs = Math.max(2.5 * fontScale, Math.min(13 * fontScale, bb.w / Math.max(5, reg.name.length * .7)));
+    const sub = (reg.children || []).length;
+    html += `<g onclick="selectRegion('${reg.id}')" ondblclick="zoomInto('${reg.id}')" style="cursor:pointer;${drawingNow ? 'pointer-events:none' : ''}">
+      <polygon points="${pts}" fill="${getRegionColor(p, reg, isSel)}" stroke="${isSel ? '#e9c985' : '#06101a'}" stroke-width="${isSel ? strokeW * 2.2 : strokeW}" stroke-linejoin="round" ${isSel ? 'filter="url(#gg)"' : ''}>
+        <title>${esc(reg.name)} · ${fmt(reg.area)} km² · Huni ${hab.score}/100 (${hab.temp}°C)${sub ? ' · +' + sub + ' sub' : ''}</title></polygon>
+      <text x="${cx}" y="${cy - 3 * fontScale}" text-anchor="middle" fill="#fff" font-size="${fs}" font-weight="700" stroke="#04080e" stroke-width="${fs * .22}" paint-order="stroke">${esc(reg.name)}</text>
+      <text x="${cx}" y="${cy + fs * .9}" text-anchor="middle" fill="#e2e8f0" font-size="${fs * .72}" class="mono">${p.id === 'p19' ? fmtC(reg.pop) + ' jiwa' : 'Huni ' + hab.score + '/100'}${sub ? ' [+' + sub + ']' : ''}</text></g>`;
+  });
+  if (UI.tool === 'vertex' && selPoly) selPoly.forEach(([vx, vy], i) => {
+    html += `<circle cx="${vx}" cy="${vy}" r="${4.5 * fontScale}" fill="#e9c985" stroke="#000" stroke-width="${strokeW}" style="cursor:move" onpointerdown="startDragVertex(${i}, event)"/>`;
+  });
+  pins.forEach(b => {
+    const r = (b.type === 'Ibu Kota' ? 4.8 : 3.5) * fontScale, fs = 9.5 * fontScale;
+    html += `<g class="pin" onclick="editPin('${b.id}')" style="cursor:pointer">
+      <circle cx="${b.x}" cy="${b.y}" r="${r * 2}" fill="${b.type === 'Ibu Kota' ? '#fb7185' : '#38bdf8'}" opacity=".18"/>
+      <circle cx="${b.x}" cy="${b.y}" r="${r}" fill="${b.type === 'Ibu Kota' ? '#fb7185' : '#38bdf8'}" stroke="#fff" stroke-width="${strokeW}"/>
+      <text x="${b.x + r * 1.4}" y="${b.y + fs * .35}" fill="#bae6fd" font-size="${fs}" font-weight="600" stroke="#04080e" stroke-width="${fs * .2}" paint-order="stroke">${esc(b.name)}</text></g>`;
+  });
+  if (UI.draftPts.length) {
+    html += `<polyline points="${UI.draftPts.map(pt => pt.join(',')).join(' ')}" fill="rgba(94,234,212,0.2)" stroke="#5eead4" stroke-width="${strokeW * 1.5}" stroke-dasharray="${strokeW * 3},${strokeW * 2}"/>`;
+    UI.draftPts.forEach(([px, py], i) => { html += `<circle cx="${px}" cy="${py}" r="${(i === 0 ? 5 : 3.2) * fontScale}" fill="${i === 0 ? '#fb7185' : '#5eead4'}"/>`; });
+  }
+  svg.innerHTML = html;
+  updateScale();
+}
+function renderMap() { if (UI.path.length === 0) renderOrbitMap(); else renderSurfaceMap(); renderLegend(); if (!UI.path.length) updateScale(); }
+function selectRegion(id) { UI.selectedId = id; renderSidebar(); renderMap(); }
+function editPin(id) {
+  const active = getActiveNode(), b = (active.pins || []).find(x => x.id === id);
+  if (!b) return;
+  const act = prompt(`${b.name} (${b.type}, populasi ${fmt(b.pop || 0)})\nKetik nama baru, atau HAPUS untuk menghapus:`, b.name);
+  if (act === null) return;
+  if (act.trim().toUpperCase() === 'HAPUS') active.pins = active.pins.filter(x => x.id !== id);
+  else if (act.trim()) { b.name = act.trim(); b.userCreated = true; }
+  saveState(); renderMap();
+}
+function updateSelectedField(key, val) {
+  const active = getActiveNode(), reg = (active.children || []).find(l => l.id === UI.selectedId);
+  if (!reg) return;
+  reg[key] = (key === 'area' || key === 'pop') ? (+val || 0) : val;
+  reg.userCreated = true;
+  saveState(); renderSidebar(true); renderMap();
+}
+function deleteSelectedRegion() {
+  const active = getActiveNode();
+  if (!UI.selectedId) return;
+  if (!confirm("Hapus wilayah terpilih beserta seluruh sub-wilayah di dalamnya?")) return;
+  active.children = (active.children || []).filter(l => l.id !== UI.selectedId);
+  UI.selectedId = null; saveState(); render();
+}
+
+/* ===== BREADCRUMB, TOOLBAR, SIDEBAR ===== */
+function renderBreadcrumb() {
+  const trail = getTrailNodes();
+  $('#breadcrumb').innerHTML = trail.map((node, idx) => {
+    const last = idx === trail.length - 1, lvl = idx === 0 ? 'Orbit · 54 Planet' : gxL(idx);
+    return `<span class="crumb ${last ? 'active' : ''}" onclick="${last ? '' : `goBreadcrumb(${idx})`}">L${idx} · ${esc(node.name)} <small style="color:var(--mt)">(${lvl})</small></span>`;
+  }).join(' <span style="color:var(--mt)">▸</span> ');
+}
+function renderToolbar() {
+  if (UI.path.length === 0) {
+    $('#toolbar').innerHTML = `
+      <div style="display:flex;align-items:center;gap:6px"><label style="margin:0">Skala orbit:</label>
+        <select onchange="UI.orbitScale=this.value;renderMap()" style="width:auto;padding:4px 8px">
+          <option value="au" ${UI.orbitScale === 'au' ? 'selected' : ''}>Logaritmik jarak (AU)</option>
+          <option value="seq" ${UI.orbitScale === 'seq' ? 'selected' : ''}>Urutan nomor (1–54)</option></select></div>
+      <label style="display:inline-flex;align-items:center;gap:4px;margin:0;cursor:pointer"><input type="checkbox" ${UI.orbitLabels ? 'checked' : ''} onchange="UI.orbitLabels=this.checked;renderMap()" style="width:auto"> Semua label</label>
+      <button class="btn" onclick="zoomInto('p19')">🌍 Ke ELEANTOR</button>
+      <button class="btn g" onclick="resetZoom()">🎯 Reset orbit</button>`;
+  } else {
+    const drawing = UI.draftPts.length > 0, on = t => UI.tool === t ? 'on' : '';
+    $('#toolbar').innerHTML = `
+      <select onchange="UI.habMode=this.value;render()" style="width:auto;padding:4px 7px" title="Mode evaluasi huni">
+        <option value="open" ${UI.habMode === 'open' ? 'selected' : ''}>🌿 Biosfer terbuka</option>
+        <option value="dome" ${UI.habMode === 'dome' ? 'selected' : ''}>🛸 Koloni kubah</option></select>
+      <select onchange="UI.layer=this.value;renderMap()" style="width:auto;padding:4px 7px" title="Lapisan warna">
+        <option value="habitability" ${UI.layer === 'habitability' ? 'selected' : ''}>🎯 Potensi huni</option>
+        <option value="thermal" ${UI.layer === 'thermal' ? 'selected' : ''}>🌡️ Suhu lintang</option>
+        <option value="biome" ${UI.layer === 'biome' ? 'selected' : ''}>🗺️ Identitas wilayah</option></select>
+      <button class="btn g ${on('select')}" onclick="setTool('select')">👆 Pilih</button>
+      <button class="btn v ${on('vertex')}" onclick="setTool('vertex')">✏️ Sudut</button>
+      <button class="btn ${on('poly')}" onclick="setTool('poly')">✒️ Poligon</button>
+      <button class="btn c ${on('free')}" onclick="setTool('free')">🖌️ Kuas</button>
+      <button class="btn a ${on('city')}" onclick="setTool('city')">📍 Kota/Pos</button>
+      ${drawing ? `<button class="btn" onclick="finishPoly()">✓ Selesai</button><button class="btn r" onclick="cancelDraw()">✕ Batal</button>` : ''}
+      <button class="btn g" onclick="generateOrganicSubdivisions()">🎲 Bagi organik</button>
+      <label style="display:inline-flex;align-items:center;gap:4px;margin:0;cursor:pointer"><input type="checkbox" ${UI.showLat ? 'checked' : ''} onchange="UI.showLat=this.checked;renderMap()" style="width:auto"> Garis lintang</label>
+      <button class="btn g" onclick="resetZoom()">🎯 Reset</button>`;
+  }
+}
+function renderSidebar(skipInputs) {
+  const depth = UI.path.length, active = getActiveNode(), kids = active.children || [];
+  $('#ctx-title').textContent = active.name;
+  $('#ctx-level').textContent = depth === 0 ? 'L0 · Orbit' : `L${depth} · ${active.kind || gxL(depth)}`;
+  $('#child-count').textContent = kids.length;
+  const dOpenAttr = (k) => `${UI.dOpen[k] ? 'open' : ''} ontoggle="UI.dOpen.${k}=this.open"`;
+  if (depth === 0) {
+    $('#list-title').textContent = '54 Planet Sistem Lecossa';
+    $('#btn-dist-pop').style.display = 'none';
+    const hab = kids.filter(p => p.bio === 'Ya').length, solid = kids.filter(p => p.landPct > 0).length;
+    $('#ctx-stats').innerHTML = `Bintang induk: <b>Lecossan Prime</b> (${fmt(S.cfg.starMass)} M☉)<br>Planet: <b>54</b> (${solid} berdaratan · ${hab} biosfer)<br>Wilayah buatan penjelajah: <b>${getUserBuiltEntries().length}</b> entitas`;
+    const selP = kids.find(p => p.id === UI.selectedId) || kids.find(p => p.id === 'p19');
+    if (selP) {
+      const land = selP.landPct > 0;
+      $('#selected-box').innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:4px">
+        <strong style="color:var(--gold)">#${selP.no} ${esc(selP.name)}</strong>
+        <div>${land ? `<button class="btn" style="padding:3px 8px;font-size:11px" onclick="zoomInto('${selP.id}')">🚀 Mendarat ▸</button> ` : ''}
+        <button class="btn v" style="padding:3px 8px;font-size:11px" onclick="gxModal('${selP.id}')">🔎 Profil</button></div></div>`;
+      $('#stats-box').innerHTML = `<details ${dOpenAttr('plan')} style="margin-top:10px"><summary>Parameter ${esc(selP.name)}</summary><div class="dbody">${planetParamsHTML(selP)}</div></details>`;
+    }
+    $('#child-list').innerHTML = kids.map(p => `
+      <div class="card ${p.id === UI.selectedId ? 'sel' : ''}" style="cursor:pointer" onclick="selectRegion('${p.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:center"><strong>#${p.no} ${esc(p.name)}</strong>
+          <span><button class="btn v" style="padding:2px 6px;font-size:11px" onclick="event.stopPropagation();gxModal('${p.id}')">🔎</button>
+          ${p.landPct > 0 ? `<button class="btn g" style="padding:2px 6px;font-size:11px" onclick="event.stopPropagation();zoomInto('${p.id}')">Mendarat ▸</button>` : '<span class="tag">Gas/Es</span>'}</span></div>
+        <div class="mono mut" style="font-size:11px;margin-top:3px">${esc(p.zone)} · Darat ${p.landPct}% · ${(p.children || []).length ? `<span style="color:#6ee7b7">${p.children.length} wilayah</span>` : 'Kosong'}</div></div>`).join('');
+    return;
+  }
+  const p = getActivePlanet(), sumArea = kids.reduce((a, c) => a + (+c.area || 0), 0);
+  $('#list-title').textContent = 'Sub-Wilayah';
+  $('#btn-dist-pop').style.display = 'inline-flex';
+  $('#ctx-stats').innerHTML = `Planet: <b>${esc(p.name)}</b> (${p.g} g · ${p.temp}°C)<br>Luas wadah: <b>${fmtC(active.area)} km²</b> · Pop: <b>${fmtC(active.pop)}</b><br>Alokasi anak: ${fmtC(sumArea)} km² (${active.area ? Math.round(sumArea / active.area * 100) : 0}%)<br>
+    <button class="btn v" style="margin-top:6px;padding:3px 8px;font-size:11px" onclick="gxModal('${active.id}')">🔎 Breakdown ${esc(active.name)}</button>`;
+  const sel = kids.find(l => l.id === UI.selectedId);
+  if (!skipInputs) {
+    if (sel) {
+      const [, cy] = polyCentroid(sel.poly), lat = yToLatitude(cy), hab = evaluateHabitability(p, lat, UI.habMode);
+      const hCls = hab.score >= 70 ? 'badge-ok' : hab.score >= 35 ? 'badge-warn' : 'badge-no';
+      $('#selected-box').innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:4px">
+          <strong style="color:var(--gold);flex:1">${esc(sel.name)}</strong>
+          <button class="btn" style="padding:3px 8px;font-size:11px" onclick="zoomInto('${sel.id}')">🔍 Masuk ▸</button>
+          <button class="btn v" style="padding:3px 8px;font-size:11px" onclick="gxModal('${sel.id}')">🔎 Detail</button></div>
+        <div class="card" style="background:rgba(0,0,0,.3);font-size:11px;line-height:1.5;margin-bottom:6px">
+          <span class="tag ${hCls}">Huni ${hab.score}/100</span> <b>${Math.abs(lat)}° ${lat >= 0 ? 'LU' : 'LS'} (${hab.temp}°C)</b><br>${esc(hab.label)}</div>
+        <div class="row" style="margin-bottom:6px">
+          <div><label>Nama wilayah</label><input value="${esc(sel.name)}" oninput="updateSelectedField('name', this.value)"></div>
+          <div><label>Ibu kota / pusat</label><input value="${esc(sel.cap || '')}" oninput="updateSelectedField('cap', this.value)"></div></div>
+        <div class="row" style="margin-bottom:6px">
+          <div><label>Luas (km²)</label><input type="number" value="${sel.area || 0}" oninput="updateSelectedField('area', this.value)"></div>
+          <div><label>Populasi (jiwa)</label><input type="number" value="${sel.pop || 0}" oninput="updateSelectedField('pop', this.value)"></div></div>
+        <div class="row" style="margin-bottom:6px">
+          <div><label>Status survei</label><select onchange="updateSelectedField('survey', this.value)">${SURVEY_OPTS.map(o => `<option ${sel.survey === o ? 'selected' : ''}>${o}</option>`).join('')}</select></div>
+          <div><label>Bentuk pemerintahan</label><input value="${esc(sel.gov || '')}" oninput="updateSelectedField('gov', this.value)"></div></div>
+        <div style="display:flex;gap:6px"><button class="btn g" style="flex:1" onclick="randomizeSelectedName()">🎲 Acak nama</button><button class="btn r" onclick="deleteSelectedRegion()">Hapus</button></div>`;
+    } else {
+      $('#selected-box').innerHTML = `<small class="mut">Klik wilayah di peta untuk mengedit &amp; melihat statistiknya, atau <b>klik ganda</b> untuk turun hingga level permukiman terkecil.</small>`;
+    }
+  }
+  const parent = getTrailNodes().slice(-2, -1)[0];
+  const tgt = sel || active, tgtParent = sel ? active : parent;
+  $('#stats-box').innerHTML = `
+    <details ${dOpenAttr('stat')} style="margin-top:10px"><summary>Statistik · ${esc(tgt.name)}</summary><div class="dbody">${regionStatsHTML(tgt, p, tgtParent && tgtParent.id !== 'lecossa_system' ? tgtParent : null)}</div></details>
+    <details ${dOpenAttr('plan')}><summary>Parameter planet · ${esc(p.name)}</summary><div class="dbody">${planetParamsHTML(p)}</div></details>`;
+  $('#child-list').innerHTML = kids.map(l => {
+    const [, cy] = polyCentroid(l.poly), hab = evaluateHabitability(p, yToLatitude(cy), UI.habMode);
+    return `<div class="card ${l.id === UI.selectedId ? 'sel' : ''}" style="cursor:pointer" onclick="selectRegion('${l.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:center"><strong>${esc(l.name)} ${l.userCreated ? '<span class="tag badge-ok" style="font-size:9px">Klaim</span>' : ''}</strong>
+        <span><button class="btn v" style="padding:2px 6px;font-size:11px" onclick="event.stopPropagation();gxModal('${l.id}')">🔎</button>
+        <button class="btn g" style="padding:2px 6px;font-size:11px" onclick="event.stopPropagation();zoomInto('${l.id}')">Zoom ▸</button></span></div>
+      <div class="mono mut" style="font-size:11px;margin-top:3px">${fmtC(l.area)} km² · ${p.id === 'p19' ? fmtC(l.pop) + ' jiwa' : 'Huni ' + hab.score + '/100 (' + hab.temp + '°C)'}</div></div>`;
+  }).join('') || `<small class="mut">Belum ada wilayah di <b>${esc(active.name)}</b>. Klik <b>🎲 Bagi organik</b> atau gambar dengan <b>✒️ Poligon</b> / <b>🖌️ Kuas</b>.</small>`;
+}
+function render() {
+  updateUserCounterBadge(); updateExplorerChip();
+  renderBreadcrumb(); renderToolbar(); renderSidebar(); renderMap();
+}
+
+/* ===== REKAP WILAYAH USER ===== */
+function getUserBuiltEntries() {
+  const results = [];
+  (S.root.children || []).forEach(planet => {
+    function walk(node, depth, trail) {
+      if (depth >= 2 && node.userCreated) {
+        results.push({ node, planet, depth, levelName: gxL(depth), trailNames: trail.map(x => x.name), isPin: false });
+      }
+      (node.pins || []).forEach(pin => {
+        if (pin.userCreated) results.push({
+          node: { id: pin.id, name: pin.name, kind: pin.type || "Titik Kota / Pos", cap: "", area: 0, pop: pin.pop || 0, children: [], userCreated: true },
+          planet, depth: depth + 1, levelName: "Titik Kota / Permukiman", trailNames: trail.concat([node]).map(x => x.name), isPin: true, parentId: node.id
+        });
+      });
+      (node.children || []).forEach(c => walk(c, depth + 1, trail.concat([node])));
+    }
+    (planet.children || []).forEach(cont => walk(cont, 2, [S.root, planet]));
+  });
+  return results;
+}
+function updateUserCounterBadge() { const el = $('#hdr-user-count'); if (el) el.textContent = getUserBuiltEntries().length; }
+
+function buildUserLoreText() {
+  const entries = getUserBuiltEntries();
+  if (!entries.length) return "";
+  const lines = ["======================================================================",
+    "KOMPENDIUM GEOGRAFI & WILAYAH BINAAN — SISTEM BINTANG LECOSSA",
+    `Penjelajah: ${S.explorer.name} (${S.explorer.callsign}) · ${rankInfo(S.explorer.xp).name}`,
+    `Tanggal ekspor: ${new Date().toLocaleString('id-ID')}`, `Total entitas tercatat: ${entries.length}`,
+    "======================================================================", ""];
+  const byPlanet = {};
+  entries.forEach(e => { (byPlanet[e.planet.id] = byPlanet[e.planet.id] || { planet: e.planet, items: [] }).items.push(e); });
+  Object.values(byPlanet).forEach(({ planet, items }) => {
+    const st = planetStats(planet);
+    lines.push(`# PLANET ${planet.name.toUpperCase()} (${planet.zone} — ${planet.cls})`);
+    lines.push(`Fisik: diameter ${fmt(planet.diam)} km | g ${planet.g} | suhu ${planet.temp}°C | tekanan ${planet.press} atm | kec. lepas ${fmt(st.vesc)} km/s | hari ${fmt(st.dayH)} jam`);
+    lines.push(`Atmosfer: ${planet.atm} | Darat:Laut ${planet.landPct}:${100 - planet.landPct} (${fmt(planet.area)} km² daratan)`);
+    lines.push(`Sumber daya: ${planet.res}`);
+    lines.push("----------------------------------------------------------------------");
+    items.forEach(e => {
+      const ind = "  ".repeat(Math.max(0, e.depth - 2)), path = e.trailNames.slice(1).join(" › ");
+      lines.push(`${ind}• [${e.levelName}] ${e.node.name}${e.node.cap ? ` (Pusat: ${e.node.cap})` : ''}`);
+      lines.push(`${ind}  Jalur: ${path} › ${e.node.name}`);
+      if (e.isPin) lines.push(`${ind}  Jenis: ${e.node.kind} | Populasi: ${fmt(e.node.pop)} jiwa`);
+      else {
+        const s = regionStats(e.node, planet, null);
+        let extra = '';
+        if (s.lat !== undefined) extra = ` | ${Math.abs(s.lat)}° ${s.lat >= 0 ? 'LU' : 'LS'} ~${s.habO.temp}°C, huni terbuka ${s.habO.score}/100, kubah ${s.habD.score}/100`;
+        lines.push(`${ind}  Luas: ${fmt(e.node.area)} km² | Pop: ${fmt(e.node.pop)} | Kepadatan: ${fmt(s.density)}/km² (${s.dclass})${extra}`);
+        lines.push(`${ind}  Status: ${e.node.survey || '—'} | Klaim: ${e.node.claimedBy || '—'}`);
+      }
+      if (e.node.note) lines.push(`${ind}  Catatan lore: ${e.node.note.replace(/\n+/g, ' ')}`);
+    });
+    lines.push("");
+  });
+  return lines.join("\n");
+}
+function buildUserSynopsisText() {
+  const entries = getUserBuiltEntries();
+  if (!entries.length) return "";
+  const top = entries.filter(e => e.depth <= 3), src = top.length ? top : entries;
+  return src.map((e, idx) => {
+    const p = e.planet; let latDesc = "";
+    if (!e.isPin && e.node.poly && e.node.poly.length >= 3) {
+      const [, cy] = polyCentroid(e.node.poly), lat = yToLatitude(cy), ho = evaluateHabitability(p, lat, 'open'), hd = evaluateHabitability(p, lat, 'dome');
+      latDesc = `Terletak di lintang ${Math.abs(lat)}° ${lat >= 0 ? 'LU' : 'LS'} dengan suhu lokal sekitar ${ho.temp}°C (potensi huni terbuka ${ho.score}/100, koloni kubah ${hd.score}/100). `;
+    }
+    const subs = (e.node.children || []).map(c => c.name).slice(0, 6);
+    const subText = subs.length ? `Wilayah ini terbagi ke dalam sektor administratif termasuk ${subs.join(', ')}${e.node.children.length > 6 ? ', dan lainnya' : ''}. ` : '';
+    const noteText = e.node.note ? `Catatan lapangan: ${e.node.note.replace(/\n+/g, ' ')}. ` : '';
+    const tech = p.id === 'p19' ? "Dinamika geopolitik peradaban Venturian pada era teknologi setara 2100 M (Kardashev 0,86)." : "Misi pemetaan wahana nirawak/orbiter atau perencanaan koloni kubah bertekanan sesuai batas teknologi ≤ 2100 M tanpa FTL.";
+    const syn = `Fokus latar berada di ${e.node.name} (${e.levelName}), wilayah seluas ${fmt(e.node.area)} km² di planet ${p.name} (${p.zone}, gravitasi ${p.g} g). Dijelajahi oleh ${S.explorer.name}. ${latDesc}${subText}${noteText}${tech}`;
+    return `1|${idx + 1}|Ekspedisi ${e.node.name} (${p.name})|${syn}`;
+  }).join("\n");
+}
+function downloadTextFile(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: type || 'text/plain;charset=utf-8' }));
+  a.download = name; a.click();
+}
+function exportUserLore() { const t = buildUserLoreText(); if (!t) return toast('Belum ada wilayah buatan penjelajah.', 'err'); downloadTextFile('Venturian_Lore_Wilayah.txt', t); }
+function exportUserSynopsis() { const t = buildUserSynopsisText(); if (!t) return toast('Belum ada wilayah buatan penjelajah.', 'err'); downloadTextFile('Venturian_Sinopsis_Wilayah.txt', t); }
+function openExportPreviewModal(mode) {
+  if (!getUserBuiltEntries().length) return toast('Belum ada wilayah buatan penjelajah.', 'err');
+  const lore = mode === 'lore', content = lore ? buildUserLoreText() : buildUserSynopsisText();
+  $('#gmodal').style.display = 'block';
+  $('#gmodal').innerHTML = `<div class="gbox">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px"><h2 class="pt" style="margin:0">${lore ? 'Pratinjau Teks Lore Geografis' : 'Pratinjau Draf Sinopsis (Tempel Massal)'}</h2><button class="btn g" onclick="gxClose()">Tutup ✕</button></div>
+    <p class="mut" style="margin:0 0 10px">${lore ? 'Untuk dokumentasi worldbuilding / catatan Suite.' : 'Format per baris: season|ep|judul|sinopsis — tempel ke fitur Tempel Massal Studio Sinopsis.'}</p>
+    <textarea id="export-preview-ta" rows="18" class="mono" style="font-size:12px;line-height:1.6">${esc(content)}</textarea>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn" onclick="copyPreviewText()">📋 Salin</button><button class="btn a" onclick="${lore ? 'exportUserLore()' : 'exportUserSynopsis()'}">⬇ Unduh .TXT</button><button class="btn g" onclick="gxClose()">Selesai</button></div></div>`;
+}
+async function copyPreviewText() {
+  const ta = $('#export-preview-ta');
+  if (!ta) return;
+  try { await navigator.clipboard.writeText(ta.value); } catch (e) { ta.select(); document.execCommand('copy'); }
+  toast('Teks disalin ke clipboard.');
+}
+const RECAP_UI = { filterPlanet: '', filterLevel: '', search: '' };
+function exportUserCsv() {
+  const entries = getUserBuiltEntries();
+  if (!entries.length) return toast('Belum ada wilayah buatan penjelajah.', 'err');
+  const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const rows = entries.map(e => [e.planet.name, e.trailNames.slice(1).join(' > ') + ' > ' + e.node.name, 'L' + (e.depth - 1), e.node.kind || e.levelName, e.node.name, e.node.cap || '',
+    e.node.area || 0, e.node.pop || 0, e.node.area ? Math.round((e.node.pop || 0) / e.node.area * 100) / 100 : 0, e.node.survey || '', e.node.claimedBy || ''].map(q).join(','));
+  downloadTextFile('Rekap_Wilayah_Penjelajah.csv', '\ufeffplanet,jalur_hierarki,level,jenis,nama_wilayah,pusat,luas_km2,populasi,kepadatan,status_survei,diklaim_oleh\n' + rows.join('\n'), 'text/csv');
+}
+function renderRecapPage() {
+  const all = getUserBuiltEntries(), planetsUsed = [...new Set(all.map(e => e.planet.name))], levelsUsed = [...new Set(all.map(e => e.levelName))];
+  const levelMap = {};
+  all.forEach(e => { const m = levelMap[e.levelName] = levelMap[e.levelName] || { name: e.levelName, count: 0, area: 0, pop: 0 }; m.count++; m.area += +e.node.area || 0; m.pop += +e.node.pop || 0; });
+  $('#view-recap').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+      <div><h2 class="pt">Rekapitulasi Wilayah Penjelajah</h2><small class="mut">Hanya wilayah yang Anda bangkitkan atau edit (Bagi Organik, Poligon, Kuas, Titik Kota).</small></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" onclick="openExportPreviewModal('lore')">📜 Teks Lore</button><button class="btn v" onclick="openExportPreviewModal('synopsis')">🎬 Sinopsis</button><button class="btn g" onclick="exportUserCsv()">⬇ CSV</button></div></div>
+    <div class="tiles">
+      <div class="tile"><b>${fmt(all.length)}</b><span>Entitas dibuat</span></div>
+      <div class="tile"><b>${planetsUsed.length}</b><span>Planet diolah</span></div>
+      <div class="tile"><b>${Object.keys(levelMap).length}</b><span>Tingkat kedalaman</span></div>
+      <div class="tile"><b>${fmtC(all.filter(e => e.depth === 2).reduce((a, e) => a + (+e.node.area || 0), 0))}</b><span>Luas benua klaim (km²)</span></div></div>
+    ${all.length === 0 ? `<div class="card" style="padding:26px;text-align:center"><h3 style="color:var(--gold);margin-top:0">Belum ada wilayah</h3>
+      <p class="mut" style="max-width:560px;margin:0 auto 14px">Mendaratlah di planet berdaratan (misal <b>Elarion</b>), lalu pakai <b>🎲 Bagi organik</b> atau gambar poligon.</p><button class="btn" onclick="setTab('map')">🌌 Buka Peta</button></div>` : `
+    <div class="card"><h3 style="color:var(--am);margin-top:0">Ringkasan per tingkat</h3><div class="tw" style="max-height:30vh"><table><thead><tr><th>Tingkat</th><th>Jumlah</th><th>Total luas (km²)</th><th>Total populasi</th></tr></thead><tbody>
+      ${Object.values(levelMap).map(m => `<tr><td><b>${esc(m.name)}</b></td><td class="mono">${fmt(m.count)}</td><td class="mono">${fmt(m.area)}</td><td class="mono">${fmt(m.pop)}</td></tr>`).join('')}</tbody></table></div></div>
+    <div class="card"><div class="row" style="margin-bottom:10px">
+      <div><label>Filter planet</label><select onchange="RECAP_UI.filterPlanet=this.value;renderRecapRows()"><option value="">Semua (${planetsUsed.length})</option>${planetsUsed.map(pn => `<option ${RECAP_UI.filterPlanet === pn ? 'selected' : ''}>${esc(pn)}</option>`).join('')}</select></div>
+      <div><label>Filter tingkat</label><select onchange="RECAP_UI.filterLevel=this.value;renderRecapRows()"><option value="">Semua</option>${levelsUsed.map(lv => `<option ${RECAP_UI.filterLevel === lv ? 'selected' : ''}>${esc(lv)}</option>`).join('')}</select></div>
+      <div><label>Cari nama / jalur</label><input placeholder="Ketik nama..." value="${esc(RECAP_UI.search)}" oninput="RECAP_UI.search=this.value;renderRecapRows()"></div></div>
+      <div class="tw"><table><thead><tr><th>Nama</th><th>Tingkat</th><th>Jalur</th><th>Pusat</th><th>Luas km²</th><th>Populasi</th><th>Kepadatan</th><th>Status</th><th>Sub</th><th>Aksi</th></tr></thead><tbody id="recap-rows"></tbody></table></div></div>`}`;
+  if (all.length) renderRecapRows();
+}
+function renderRecapRows() {
+  const rs = RECAP_UI.search.toLowerCase();
+  const rows = getUserBuiltEntries().filter(e => (!RECAP_UI.filterPlanet || e.planet.name === RECAP_UI.filterPlanet) && (!RECAP_UI.filterLevel || e.levelName === RECAP_UI.filterLevel) &&
+    (!rs || (e.node.name + ' ' + e.trailNames.join(' ') + ' ' + (e.node.cap || '')).toLowerCase().includes(rs)));
+  $('#recap-rows').innerHTML = rows.map(e => `<tr><td><b>${esc(e.node.name)}</b></td><td><span class="tag">${esc(e.levelName)}</span></td>
+    <td class="mono" style="font-size:11px;color:#9fb3c8">${e.trailNames.slice(1).map(esc).join(' › ')} › <b style="color:var(--gold)">${esc(e.node.name)}</b></td>
+    <td>${esc(e.node.cap || '—')}</td><td class="mono">${fmt(e.node.area)}</td><td class="mono">${fmt(e.node.pop)}</td>
+    <td class="mono">${e.node.area ? fmt((e.node.pop || 0) / e.node.area) : '—'}</td><td>${esc(e.node.survey || '—')}</td><td class="mono">${(e.node.children || []).length}</td>
+    <td><button class="btn" style="padding:3px 7px;font-size:11px" onclick="gxJumpToCanvas('${e.isPin ? e.parentId : e.node.id}')">🗺️</button>
+    ${!e.isPin ? `<button class="btn v" style="padding:3px 7px;font-size:11px" onclick="gxModal('${e.node.id}')">🔎</button>` : ''}</td></tr>`).join('');
+}
+
+/* ===== TAB 54 PLANET ===== */
+function renderPlanetsPage() {
+  $('#view-planets').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+      <div><h2 class="pt">Katalog 54 Planet Sistem Lecossa</h2><small class="mut">Parameter fisika turunan dihitung dari massa, diameter, dan jarak orbit. Klik <b>Mendarat</b> untuk memulai transisi atmosfer.</small></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end">
+        <div><label>Cari</label><input style="width:150px" placeholder="nama / kelas" value="${esc(UI.plSearch)}" oninput="UI.plSearch=this.value;renderPlanetsBody()"></div>
+        <div><label>Zona</label><select onchange="UI.filterZone=this.value;renderPlanetsBody()"><option value="">Semua zona</option>${Object.keys(ZONE_COLORS).map(z => `<option ${UI.filterZone === z ? 'selected' : ''}>${z}</option>`).join('')}</select></div>
+        <div><label>Urutkan</label><select onchange="UI.plSort=this.value;renderPlanetsBody()">${[['no', 'Nomor'], ['diam', 'Diameter'], ['g', 'Gravitasi'], ['temp', 'Suhu'], ['hab', 'Potensi huni'], ['landPct', 'Daratan']].map(o => `<option value="${o[0]}" ${UI.plSort === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
+        <label style="display:flex;gap:5px;align-items:center;margin:0 0 6px;cursor:pointer"><input type="checkbox" style="width:auto" ${UI.plLand ? 'checked' : ''} onchange="UI.plLand=this.checked;renderPlanetsBody()"> Berdaratan saja</label></div></div>
+    <div class="card" style="overflow:auto;max-height:76vh"><table><thead><tr><th>No</th><th>Planet</th><th>Zona</th><th>Diameter</th><th>Massa M⊕</th><th>g</th><th>Kepadatan</th><th>V lepas</th><th>Orbit (thn)</th><th>Hari (jam)</th><th>Darat</th><th>Suhu</th><th>Huni maks.</th><th>Wilayah</th><th>Aksi</th></tr></thead><tbody id="pl-body"></tbody></table></div>`;
+  renderPlanetsBody();
+}
+function renderPlanetsBody() {
+  const q = UI.plSearch.toLowerCase();
+  let list = (S.root.children || []).filter(p => (!UI.filterZone || p.zone === UI.filterZone) && (!UI.plLand || p.landPct > 0) && (!q || (p.name + ' ' + p.cls).toLowerCase().includes(q)));
+  const hab = p => planetHabBest(p, 'open');
+  list = list.map(p => ({ p, st: planetStats(p), hb: hab(p) }));
+  const key = { no: x => x.p.no, diam: x => -x.p.diam, g: x => -x.p.g, temp: x => -x.p.temp, hab: x => -x.hb, landPct: x => -x.p.landPct }[UI.plSort] || (x => x.p.no);
+  list.sort((a, b) => key(a) - key(b));
+  $('#pl-body').innerHTML = list.map(({ p, st, hb }) => `<tr>
+    <td class="mono">${p.no}</td><td><b>${esc(p.name)}</b><br><small class="mut">${esc(p.cls)}</small></td><td><span class="tag">${esc(p.zone)}</span></td>
+    <td class="mono">${fmt(p.diam)} km</td><td class="mono">${fmt(p.mass)}</td><td class="mono">${p.g}</td><td class="mono">${fmt(st.dens)}</td><td class="mono">${fmt(st.vesc)}</td>
+    <td class="mono">${fmt(st.Pyr)}</td><td class="mono">${fmt(st.dayH)}</td><td class="mono">${p.landPct > 0 ? p.landPct + '%' : 'Gas/Es'}</td><td class="mono">${p.temp}°C</td>
+    <td class="mono">${p.landPct > 0 ? hb + '/100' : '—'}</td><td class="mono">${(p.children || []).length ? `<span class="tag badge-ok">${p.children.length}</span>` : '<span class="mut">—</span>'}</td>
+    <td style="white-space:nowrap">${p.landPct > 0 ? `<button class="btn" onclick="landOn('${p.id}')">🚀 Mendarat</button> ` : ''}<button class="btn v" onclick="gxModal('${p.id}')">🔎</button></td></tr>`).join('');
+}
+
+/* ===== TAB PENJELAJAH & STATISTIK ===== */
+function barsHTML(items) {
+  const mx = Math.max(1, ...items.map(i => i.v));
+  return items.map(i => `<div class="bar"><span class="bl" title="${esc(i.l)}">${esc(i.l)}</span><div class="bt"><i style="width:${Math.max(1.5, i.v / mx * 100)}%;${i.c ? 'background:' + i.c : ''}"></i></div><span class="bv mono">${i.t !== undefined ? i.t : fmt(i.v)}</span></div>`).join('') || '<small class="mut">Belum ada data.</small>';
+}
+function renderStatsPage() {
+  const ex = S.explorer, r = rankInfo(ex.xp), all = getUserBuiltEntries(), regions = all.filter(e => !e.isPin), pinsN = all.length - regions.length;
+  const planetsVisited = (S.root.children || []).filter(p => ex.visited[p.id]).length;
+  const top = regions.slice().sort((a, b) => (+b.node.area || 0) - (+a.node.area || 0)).slice(0, 10);
+  const byLevel = {};
+  regions.forEach(e => { byLevel[e.depth] = (byLevel[e.depth] || 0) + 1; });
+  const lvlItems = Object.keys(byLevel).sort((a, b) => a - b).map(d => ({ l: gxL(+d), v: byLevel[d] }));
+  const bins = [['< 20 · tidak layak', 0, 20, '#fb7185'], ['20–44 · marginal', 20, 45, '#f5b94a'], ['45–74 · moderat', 45, 75, '#14b8a6'], ['≥ 75 · sangat potensial', 75, 101, '#34d399']];
+  const binCount = bins.map(() => 0);
+  regions.forEach(e => {
+    if (!e.node.poly || e.node.poly.length < 3) return;
+    const sc = evaluateHabitability(e.planet, yToLatitude(polyCentroid(e.node.poly)[1]), 'open').score;
+    bins.forEach((b, i) => { if (sc >= b[1] && sc < b[2]) binCount[i]++; });
+  });
+  const byPlanetPop = {};
+  regions.filter(e => e.depth === 2).forEach(e => { byPlanetPop[e.planet.name] = (byPlanetPop[e.planet.name] || 0) + (+e.node.pop || 0); });
+  const popItems = Object.entries(byPlanetPop).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([l, v]) => ({ l, v, t: fmtC(v) }));
+  const totalArea = regions.filter(e => e.depth === 2).reduce((a, e) => a + (+e.node.area || 0), 0);
+  const totalPop = regions.filter(e => e.depth === 2).reduce((a, e) => a + (+e.node.pop || 0), 0);
+  $('#view-stats').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+      <div><h2 class="pt">Dossier Penjelajah &amp; Statistik Ekspedisi</h2><small class="mut">Setiap pendaratan, pemetaan, dan pendirian pos menambah XP dan masuk jurnal.</small></div></div>
+    <div class="tiles">
+      <div class="tile"><b>${planetsVisited}</b><span>Planet didarati</span></div>
+      <div class="tile"><b>${regions.length}</b><span>Wilayah dipetakan</span></div>
+      <div class="tile"><b>${pinsN}</b><span>Kota / pos didirikan</span></div>
+      <div class="tile"><b>${fmtC(totalArea)}</b><span>Luas benua klaim (km²)</span></div>
+      <div class="tile"><b>${fmtC(totalPop)}</b><span>Populasi benua klaim</span></div>
+      <div class="tile"><b style="font-size:15px;line-height:1.5">${esc(gxL(ex.depthMax || 0))}</b><span>Kedalaman terjauh (L${ex.depthMax || 0})</span></div></div>
+    <div class="grid2">
+      <div class="card"><h3 style="color:var(--gold);margin-top:0">🧑‍🚀 Profil penjelajah</h3>
+        <div class="row" style="margin-bottom:8px"><div><label>Nama</label><input value="${esc(ex.name)}" oninput="S.explorer.name=this.value;updateExplorerChip();saveState()"></div>
+          <div><label>Callsign</label><input value="${esc(ex.callsign)}" oninput="S.explorer.callsign=this.value;saveState()"></div>
+          <div><label>Wahana</label><input value="${esc(ex.vessel)}" oninput="S.explorer.vessel=this.value;saveState()"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px"><b style="color:var(--gold)">${r.name}</b><span class="mono">${fmt(ex.xp)} XP${r.next ? ' / ' + fmt(r.next) : ' (maks.)'}</span></div>
+        <div class="xbar" style="height:7px;margin-top:5px"><i style="width:${r.pct}%"></i></div>
+        <div class="note mut">Pangkat: ${RANKS.map(x => x[1] + ' (' + x[0] + ')').join(' → ')}</div></div>
+      <div class="card"><h3 style="color:var(--gold);margin-top:0">⚙️ Pengaturan simulator</h3>
+        <div class="row" style="margin-bottom:8px"><div><label>Massa bintang (M☉) — asumsi untuk periode orbit</label><input type="number" step="0.1" min="0.1" value="${S.cfg.starMass}" oninput="S.cfg.starMass=Math.max(0.1,+this.value||1);saveState()"></div>
+          <div><label>Kecepatan transisi</label><select onchange="S.cfg.fxSpeed=+this.value;saveState()">${[[.6, 'Lambat'], [1, 'Normal'], [1.6, 'Cepat'], [2.5, 'Sangat cepat']].map(o => `<option value="${o[0]}" ${S.cfg.fxSpeed === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div></div>
+        <label style="display:flex;gap:6px;align-items:center;cursor:pointer;margin:0"><input type="checkbox" style="width:auto" ${S.cfg.fx ? 'checked' : ''} onchange="S.cfg.fx=this.checked;saveState();$('#btn-fx').textContent='🎬 Transisi: '+(S.cfg.fx?'ON':'OFF')"> Aktifkan animasi transisi (atmosfer, penurunan wilayah)</label>
+        <div class="note mut">Penyimpanan: IndexedDB <span class="mono">${DB_NAME}</span> (terpisah dari Lecossa Unified Atlas lama).</div></div>
+      <div class="card"><h3 style="color:var(--am);margin-top:0">Wilayah per tingkat</h3>${barsHTML(lvlItems)}</div>
+      <div class="card"><h3 style="color:var(--am);margin-top:0">Distribusi potensi huni (mode terbuka)</h3>${barsHTML(bins.map((b, i) => ({ l: b[0], v: binCount[i], c: b[3] })))}</div>
+      <div class="card"><h3 style="color:var(--am);margin-top:0">10 wilayah terluas</h3>${barsHTML(top.map(e => ({ l: e.node.name + ' · ' + e.planet.name, v: +e.node.area || 0, t: fmtC(e.node.area) + ' km²' })))}</div>
+      <div class="card"><h3 style="color:var(--am);margin-top:0">Populasi benua klaim per planet</h3>${barsHTML(popItems)}</div>
+      <div class="card" style="grid-column:1/-1"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="color:var(--am);margin:0 0 6px">📓 Jurnal ekspedisi</h3><button class="btn g" onclick="downloadTextFile('Jurnal_Ekspedisi.txt',S.explorer.log.slice().reverse().map(l=>new Date(l.t).toLocaleString('id-ID')+'  '+l.msg).join('\\n'))">⬇ Unduh</button></div>
+        <div class="log">${ex.log.slice(0, 80).map(l => `<div><time class="mono">${new Date(l.t).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}</time><span>${esc(l.msg)}</span></div>`).join('')}</div></div></div>`;
+}
+
+function setTab(t) {
+  UI.tab = t;
+  ['map', 'planets', 'recap', 'stats'].forEach(k => {
+    $('#tab-' + k).classList.toggle('on', k === t);
+    $('#view-' + k).style.display = k === t ? (k === 'map' ? 'flex' : 'block') : 'none';
+  });
+  if (t === 'planets') renderPlanetsPage();
+  if (t === 'recap') renderRecapPage();
+  if (t === 'stats') renderStatsPage();
+  if (t === 'map') render();
+}
+
+/* ===== EKSPOR & IMPOR ===== */
+function exportJSON() { downloadTextFile('Venturian_Spasial_Simulator_Atlas.json', JSON.stringify(S, null, 2), 'application/json'); }
+function exportSVG() {
+  const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' + $('#map').outerHTML.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+  downloadTextFile(`Atlas_${getActiveNode().name.replace(/\s+/g, '_')}.svg`, xml, 'image/svg+xml');
+}
+function importJSON(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (data.root && data.root.id === 'lecossa_system') {
+        S = normalizeState(data); UI.path = []; UI.selectedId = 'p19'; persistNow(); setTab('map'); render();
+        toast('Atlas berhasil dimuat (kompatibel dengan Lecossa Unified Atlas).'); return;
+      }
+      if (data.root && data.root.id === 'eleantor') {
+        const el = S.root.children.find(p => p.id === 'p19');
+        if (el) { el.children = data.root.children; el.pins = data.root.pins || el.pins; }
+        saveState(); render(); toast('Data Eleantor digabungkan.'); return;
+      }
+      if (Array.isArray(data.planets)) {
+        data.planets.forEach(ip => {
+          const t = S.root.children.find(p => p.id === ip.id || p.name === ip.name);
+          if (t && Array.isArray(ip.children)) { t.children = ip.children.map(c => ({ ...c, userCreated: true })); t.pins = (ip.pins || []).map(pin => ({ ...pin, userCreated: true })); }
+        });
+        saveState(); render(); toast('Data planet digabungkan.'); return;
+      }
+      toast('Format JSON tidak dikenali.', 'err');
+    } catch (e) { toast('Gagal membaca JSON: ' + e.message, 'err'); }
+  };
+  reader.readAsText(file);
+}
+
+/* ===== MODAL BREAKDOWN ===== */
+const gxH = t => { let h = 0; for (const c of String(t)) h = (h * 31 + c.charCodeAt(0)) % 100000; return h; };
+function gxFind(id) {
+  let r = null;
+  (function f(n, p) { if (r) return; if (n.id === id) { r = { n, p }; return; } (n.children || []).forEach(c => f(c, p.concat([n]))); })(S.root, []);
+  return r;
+}
+function gxClose() { $('#gmodal').style.display = 'none'; setTab(UI.tab); }
+function gxJumpToCanvas(id) {
+  const f = gxFind(id);
+  if (!f) return;
+  $('#gmodal').style.display = 'none';
+  setTab('map');
+  if (f.n.kind === 'Planet' && (!f.n.landPct || f.n.landPct <= 0)) {
+    UI.path = []; UI.selectedId = f.n.id; fitViewToNode(S.root); render(); return;
+  }
+  const path = f.p.slice(1).map(x => x.id).concat(f.n.id === 'lecossa_system' ? [] : [f.n.id]);
+  if (path.join('/') === UI.path.join('/')) { render(); return; }
+  navigateTo(path);
+}
+function gxMini(n) {
+  const P = n.poly;
+  if (!P || P.length < 3) return '<small class="mut">Tampilan orbit / non-poligon.</small>';
+  const xs = P.map(p => p[0]), ys = P.map(p => p[1]), x0 = Math.min(...xs), y0 = Math.min(...ys);
+  const w = Math.max(...xs) - x0 || 1, h = Math.max(...ys) - y0 || 1, m = Math.max(w, h), pt = q => q.map(p => p.join(',')).join(' ');
+  return `<svg viewBox="${x0 - m * .04} ${y0 - m * .04} ${w + m * .08} ${h + m * .08}" style="width:100%;max-height:290px;background:radial-gradient(circle,#0b2a4a,#030c1a);border-radius:10px;border:1px solid var(--ed)">
+    <polygon points="${pt(P)}" fill="#0c1b2c" stroke="#38bdf8" stroke-width="${m / 300}"/>
+    ${(n.children || []).filter(c => c.poly && c.poly.length > 2).map(c => `<polygon points="${pt(c.poly)}" fill="hsl(${gxH(c.id) % 360},45%,32%)" stroke="#0b1a14" stroke-width="${m / 600}" style="cursor:pointer" onclick="gxModal('${c.id}')"><title>${esc(c.name)}</title></polygon>`).join('')}
+    ${(n.pins || []).map(q => `<circle cx="${q.x}" cy="${q.y}" r="${m / 150}" fill="#e9c985"><title>${esc(q.name)}</title></circle>`).join('')}</svg>`;
+}
+function gxModal(id) {
+  const f = gxFind(id);
+  if (!f) return;
+  const n = f.n, anc = f.p, d = anc.length, lab = n.kind || gxL(d);
+  const planet = n.kind === 'Planet' ? n : (anc[1] || null);
+  const parent = anc.length ? anc[anc.length - 1] : null;
+  const isP = n.kind === 'Planet';
+  $('#gmodal').style.display = 'block';
+  $('#gmodal').innerHTML = `<div class="gbox">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h2 class="pt" style="flex:1;margin:0">${esc(n.name)} <span class="tag">${esc(lab)}</span><span class="tag">L${d}</span></h2>
+      <button class="btn" onclick="gxJumpToCanvas('${id}')">🗺️ Buka di Peta</button><button class="btn g" onclick="gxClose()">Tutup ✕</button></div>
+    <div style="margin:8px 0;font-size:12px">${anc.map(a => `<a href="#" class="lk" onclick="gxModal('${a.id}');return false">${esc(a.name)}</a> › `).join('')}<b>${esc(n.name)}</b></div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
+      <div style="flex:1 1 380px"><h3 style="color:var(--am);margin-top:0">Properti (dapat diedit)</h3>
+        <div class="row" style="flex-wrap:wrap">
+          <div><label>Nama</label><input value="${esc(n.name)}" oninput="const x=gxFind('${id}').n;x.name=this.value;x.userCreated=true;saveState()"></div>
+          <div><label>Jenis</label><input value="${esc(lab)}" oninput="const x=gxFind('${id}').n;x.kind=this.value;x.userCreated=true;saveState()" ${isP ? 'disabled' : ''}></div>
+          <div><label>Pusat / ibu kota</label><input value="${esc(n.cap || '')}" oninput="const x=gxFind('${id}').n;x.cap=this.value;x.userCreated=true;saveState()"></div>
+          <div><label>Luas darat (km²)</label><input type="number" value="${n.area || 0}" oninput="const x=gxFind('${id}').n;x.area=+this.value;x.userCreated=true;saveState()"></div>
+          <div><label>Populasi (jiwa)</label><input type="number" value="${n.pop || 0}" oninput="const x=gxFind('${id}').n;x.pop=+this.value;x.userCreated=true;saveState()"></div>
+          <div><label>Status survei</label><select onchange="const x=gxFind('${id}').n;x.survey=this.value;x.userCreated=true;saveState()">${SURVEY_OPTS.concat(['Dipetakan Kanon']).map(o => `<option ${n.survey === o ? 'selected' : ''}>${o}</option>`).join('')}</select></div></div>
+        <label style="margin-top:8px">Catatan lore / geografis</label>
+        <textarea rows="3" oninput="const x=gxFind('${id}').n;x.note=this.value;x.userCreated=true;saveState()">${esc(n.note || '')}</textarea></div>
+      <div style="flex:1 1 320px"><h3 style="color:var(--am);margin-top:0">Peta turunan</h3>${gxMini(n)}</div></div>
+    <div class="grid2" style="margin-top:14px">
+      <div class="card"><h3 style="color:var(--gold);margin-top:0">Statistik wilayah</h3>${regionStatsHTML(n, planet, parent && parent.id !== 'lecossa_system' ? parent : null)}</div>
+      ${planet ? `<div class="card"><h3 style="color:var(--gold);margin-top:0">Parameter planet ${esc(planet.name)}</h3>${planetParamsHTML(planet)}</div>` : ''}</div>
+    ${(n.children || []).length ? `<h3 style="color:var(--am)">Sub-wilayah langsung (${n.children.length})</h3><div class="tw" style="max-height:28vh"><table><thead><tr><th>Nama</th><th>Jenis</th><th>Luas km²</th><th>Populasi</th><th>Kepadatan</th><th>Sub</th></tr></thead><tbody>
+      ${n.children.slice(0, 150).map(c => `<tr><td><a href="#" class="lk" onclick="gxModal('${c.id}');return false">${esc(c.name)}</a></td><td>${esc(c.kind || '')}</td><td>${fmt(c.area)}</td><td>${fmt(c.pop)}</td><td>${c.area ? fmt((c.pop || 0) / c.area) : '—'}</td><td>${(c.children || []).length}</td></tr>`).join('')}</tbody></table></div>` : ''}</div>`;
+}
+
+loadState().then(() => {
+  $('#btn-fx').textContent = '🎬 Transisi: ' + (S.cfg.fx ? 'ON' : 'OFF');
+  initCanvasEvents();
+  render();
+});
+</script>
+</body>
+</html>
